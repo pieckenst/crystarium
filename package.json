@@ -6,9 +6,10 @@
   "dependencies": {
     "canvas": "^2.11.2",
     "dotenv": "^16.3.1",
-    "eris": "^0.17.2",
     "erela.js": "^2.4.0",
     "erela.js-spotify": "^1.2.0",
+    "eris": "^0.17.2",
+    "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "mathjs": "^11.8.2",
     "ms": "^2.1.3",
