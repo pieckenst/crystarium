@@ -35,6 +35,7 @@ const client = new Eris(token, {
 });
 
 client.commands = new Map();
+client.slashCommands = new Map();
 client.cooldowns = new Map();
 const clientID = config.clientID;
 const clientSecret = config.clientSecret;
@@ -47,7 +48,11 @@ const loadCommands = (dir = './commands') => {
         try {
           const command = require(filePath);
           if ('name' in command && 'execute' in command) {
-            client.commands.set(command.name, command);
+            if (command.slash) {
+              client.slashCommands.set(command.name, command);
+            } else {
+              client.commands.set(command.name, command);
+            }
             console.log(`[UPSTART] Loaded ${file}`);
           } else {
             console.log(`[WARNING] The command at ${filePath} is missing a required "name" or "execute" property.`);
@@ -131,6 +136,14 @@ client.on("ready", () => {
       client.editStatus("online", { name: "In development : Using Eris", type: 3 });
       client.manager.init(client.user.id);
       console.log("[UPSTART] Status setup complete");
+
+      // Register slash commands
+      const slashCommands = Array.from(client.slashCommands.values()).map(command => ({
+        name: command.name,
+        description: command.description,
+        options: command.options
+      }));
+      client.bulkEditCommands(slashCommands);
     } catch (error) {
       console.error("[ERROR] Failed to complete ready event:", error.message);
     }
@@ -226,6 +239,23 @@ client.on("messageCreate", async (message) => {
           fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
         }
       }).catch(sendError => console.error("Error sending error message:", sendError.message));
+    }
+});
+
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.data.name) return;
+
+    const command = client.slashCommands.get(interaction.data.name);
+    if (!command) return;
+
+    try {
+        await command.execute(client, interaction);
+    } catch (error) {
+        console.error("[ERROR] Failed to process slash command:", error.message);
+        await interaction.createMessage({
+            content: "There was an error while executing this command!",
+            flags: 64
+        }).catch(sendError => console.error("Error sending error message:", sendError.message));
     }
 });
 
