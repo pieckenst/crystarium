@@ -1,58 +1,64 @@
-const { MessageEmbed } = require('discord.js');
+const Eris = require('eris');
 const config = require('../config.json');
 
 module.exports = {
-
- name: 'unmute',
- description: 'Unmute a person.',
- aliases: ["unmmute"],
- usage: '<@user/ID> [Reason]',
- permissions: ["MANAGE_ROLES"],
+    name: 'unmute',
+    description: 'Unmute a person.',
+    aliases: ["unmmute"],
+    usage: '<@user/ID> [Reason]',
+    permissions: ["moderateMembers"],
 
     async execute(client, message, args) {
-        const mutemember = message.mentions.members.first() || message.guild.members.cache.get(args[0])
-        let muteReason = args.slice(1).join(' ');
-        if(!muteReason) muteReason = "Not Specified."
+        const mutememberId = message.mentions[0]?.id || args[0];
+        const mutemember = message.channel.guild.members.get(mutememberId);
+        const muteReason = args.slice(1).join(' ') || "Not Specified.";
 
-        if(!mutemember){
-            const missingArgs = new MessageEmbed()
-              .setColor("RED")
-              .setTitle("Missing arguments")
-              .setDescription(
-                `**Command:** \`${this.name}\`\n**Description:** \`${
-                this.description || "None"
-                }\`\n**Aliases:** \`${
-                this.aliases.join(", ") || "None"
-                }\`\n**Usage:** \`${config.prefix}${this.name}${
-                this.usage
-               }\`\n**Permissions:**\`${this.permissions || "None"}\``
-            )
-            .setTimestamp();
-           return message.channel.send(missingArgs);
+        if (!mutemember) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    title: "Missing arguments",
+                    description: `**Command:** \`${this.name}\`\n**Description:** \`${
+                        this.description || "None"
+                    }\`\n**Aliases:** \`${
+                        this.aliases.join(", ") || "None"
+                    }\`\n**Usage:** \`${config.prefix}${this.name} ${
+                        this.usage
+                    }\`\n**Permissions:** \`${this.permissions || "None"}\``,
+                    timestamp: new Date()
+                }
+            });
         }
-        let muteRole = message.guild.roles.cache.find(r => r.name === "Muted")
 
-        if(!muteRole){
-            const err = new MessageEmbed()
-                .setColor("RED")
-                .setDescription(`**There is no role called \`Muted\` on this server!**`)
-            return message.channel.send(err);
-        } else {
-            if(!mutemember.roles.cache.has(muteRole.id)) {
-                const err = new MessageEmbed()
-                    .setColor("RED")
-                    .setDescription(`${member} **is not muted!**`)
-                return message.channel.send(err);
-            } else {
-                await mutemember.roles.remove(muteRole)
+        if (!mutemember.communicationDisabledUntil) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: `${mutemember.mention} **is not muted!**`
+                }
+            });
+        }
 
-                let embed = new MessageEmbed()
-                    .setColor("GREEN")
-                    .setTitle("Member Unmuted")
-                    .setTimestamp()
-                    .setDescription(`**Unmuted:** \`${mutemember.user.tag}\`\n**Moderator:** ${message.member}\n**Reason:** \`${muteReason}\``)
-                return message.channel.send(embed); 
-            }
+        try {
+            await client.editGuildMember(message.channel.guild.id, mutemember.id, {
+                communicationDisabledUntil: null
+            }, muteReason);
+            return message.channel.createMessage({
+                embed: {
+                    color: 0x00FF00,
+                    title: "Member Unmuted",
+                    description: `**Unmuted:** \`${mutemember.user.username}#${mutemember.user.discriminator}\`\n**Moderator:** ${message.member.mention}\n**Reason:** \`${muteReason}\``,
+                    timestamp: new Date()
+                }
+            });
+        } catch (error) {
+            console.error("Error unmuting member:", error);
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: "An error occurred while trying to unmute the member."
+                }
+            });
         }
     }
-}
+};

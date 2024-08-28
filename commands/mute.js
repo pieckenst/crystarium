@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const Eris = require('eris');
 const config = require('../config.json');
 const ms = require('ms');
 const prettyMilliseconds = require('pretty-ms');
@@ -8,143 +8,97 @@ module.exports = {
     description: 'Mute a user for a certain amount of time.',
     aliases: ["tmute"],
     usage: '<@user/ID> <time> [reason]',
-    permissions: ["MANAGE_ROLES"],
+    permissions: ["moderateMembers"],
     async execute(client, message, args) {
-        const mutemember = message.mentions.members.first() || message.guild.members.cache.get(args[0]);
-        let muteReason = args.slice(2).join(' ');
-        if(!muteReason) muteReason = "Not Specified."
+        const mutemember = message.mentions[0] || client.users.get(args[0]);
+        const muteDuration = ms(args[1]);
+        const muteReason = args.slice(2).join(' ') || "Not Specified.";
 
-        if(!mutemember || !ms(args[1])){
-            const missingArgs = new MessageEmbed()
-                .setColor("RED")
-                .setTitle("Missing arguments")
-                .setDescription(
-                  `**Command:** \`${this.name}\`\n**Description:** \`${
-                  this.description || "None"
-                  }\`\n**Aliases:** \`${
-                  this.aliases.join(", ") || "None"
-                  }\`\n**Usage:** \`${config.prefix}${this.name}${
-                  this.usage
-                  }\`\n**Permissions:**\`${this.permissions || "None"}\``
-                )
-                .setTimestamp()
-            return message.channel.send(missingArgs);
-        }
-        if(mutemember == message.member){
-            const err = new MessageEmbed()
-                .setColor("RED")
-                .setDescription(`**You cannot mute yourself!**`)
-            return message.channel.send(err);
-        }
-        if (mutemember.roles.highest.position >= message.member.roles.highest.position){
-            const err = new MessageEmbed()
-                .setColor("RED")
-                .setDescription(`**You cannot mute someone with an equal or higher role!**`)
-            return message.channel.send(err);
+        if (!mutemember || !muteDuration) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    title: "Missing arguments",
+                    description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Aliases:** \`${this.aliases.join(", ") || "None"}\`\n**Usage:** \`${config.prefix}${this.name}${this.usage}\`\n**Permissions:** \`${this.permissions || "None"}\``,
+                    timestamp: new Date()
+                }
+            });
         }
 
-        let muteRole = message.guild.roles.cache.find(r => r.name === "Muted") 
+        const guildMember = message.member.guild.members.get(mutemember.id);
 
-        if(!muteRole){
-            try {
-                muteRole = await message.guild.roles.create({
-                    data: {
-                        name: "Muted",
-                        color: "#000000",
-                        permissions: []
-                    },
-                    reason: "Creating a muted role."
-                })
-                message.guild.channels.cache.forEach((channel) => {
-                    channel.overwritePermissions([
-                        {
-                            id: muteRole.id,
-                            deny: ['SEND_MESSAGES', 'ADD_REACTIONS']
-                        }
-                    ]);
-                });
-            } catch (error) {
-                const err = new MessageEmbed()
-                    .setColor("RED")
-                    .setDescription(`**Something went wrong check my perms and try again!**`)
-                return message.channel.send(err);
+        if (guildMember.id === message.member.id) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: "**You cannot mute yourself!**"
+                }
+            });
+        }
+
+        if (guildMember.highestRole.position >= message.member.highestRole.position) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: "**You cannot mute someone with an equal or higher role!**"
+                }
+            });
+        }
+
+        try {
+            await guildMember.edit({
+                communicationDisabledUntil: new Date(Date.now() + muteDuration)
+            }, muteReason);
+        } catch (error) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: "**Something went wrong. Check my permissions and try again!**"
+                }
+            });
+        }
+
+        const muteEmbed = {
+            color: 0x0000FF,
+            description: `**You have been __muted__ in \`${message.member.guild.name}\` for \`${prettyMilliseconds(muteDuration)}\` Reason: \`${muteReason}\`!**`
+        };
+
+        client.getDMChannel(mutemember.id).then(channel => {
+            channel.createMessage({ embed: muteEmbed }).catch(() => {});
+        });
+
+        message.channel.createMessage({
+            embed: {
+                color: 0x00FF00,
+                title: "Member Muted",
+                description: `**Muted:** \`${mutemember.username}#${mutemember.discriminator}\`\n**Moderator:** ${message.member.mention}\n**Time:** \`${prettyMilliseconds(muteDuration)}\`\n**Reason:** \`${muteReason}\``,
+                timestamp: new Date()
             }
+        });
 
-            try {
-                await mutemember.roles.add(muteRole);
-            } catch (error) {
-                const err = new MessageEmbed()
-                    .setColor("RED")
-                    .setDescription(`**Something went wrong check my perms and try again!**`)
-                return message.channel.send(err);
-            }
-            const mute = new MessageEmbed()
-                .setColor("BLUE")
-                .setDescription(`**You have been __muted__ in \`${message.guild.name}\` for \`${prettyMilliseconds(ms(args[1]))}\` Reason: \`${muteReason}\`!**`)
-            await mutemember.send(mute).catch(err => null);
+        setTimeout(() => {
+            guildMember.edit({
+                communicationDisabledUntil: null
+            }).catch(() => {});
 
-            let embed = new MessageEmbed()
-                .setColor("GREEN")
-                .setTitle("Member Muted")
-                .setTimestamp()
-                .setDescription(`**Muted:** \`${mutemember.user.tag}\`\n**Moderator:** ${message.member}\n**Time:** \`${prettyMilliseconds(ms(args[1]))}\`\n**Reason:** \`${muteReason}\``)
-            message.channel.send(embed);
+            const unmuteEmbed = {
+                color: 0x0000FF,
+                description: `**You have been __unmuted__ in \`${message.member.guild.name}\`!**`
+            };
 
-            setTimeout(() => {
-                mutemember.roles.remove(muteRole).catch(err => null)
+            client.getDMChannel(mutemember.id).then(channel => {
+                channel.createMessage({ embed: unmuteEmbed }).catch(() => {});
+            });
 
-                const mute = new MessageEmbed()
-                    .setColor("BLUE")
-                    .setDescription(`**You have been __muted__ in \`${message.guild.name}\` for \`${prettyMilliseconds(ms(args[1]))}\` Reason: \`${muteReason}\`!**`)
-                mutemember.send(mute).catch(err => null);
-
-                let unmute = new MessageEmbed()
-                    .setTitle("Member Unmuted")
-                    .setColor("BLUE")
-                    .addField("Unmuted:", member, true)
-                    .setThumbnail(member.user.displayAvatarURL({dynamic: true}))
-                    .setTimestamp()
-                message.channel.send(unmute);
-            }, ms(args[1]))
-
-        } else {
-            try {
-                await mutemember.roles.add(muteRole);
-            } catch (error) {
-                const err = new MessageEmbed()
-                    .setColor("RED")
-                    .setDescription(`**Something went wrong check my perms and try again!**`)
-                return message.channel.send(err);
-            }
-            const mute = new MessageEmbed()
-                .setColor("BLUE")
-                .setDescription(`**You have been __muted__ in \`${message.guild.name}\` for \`${prettyMilliseconds(ms(args[1]))}\` Reason: \`${muteReason}\`!**`)
-            await mutemember.send(mute).catch(err => null);
-
-            let embed = new MessageEmbed()
-                .setColor("GREEN")
-                .setTitle("Member Muted")
-                .setTimestamp()
-                .setDescription(`**Muted:** \`${mutemember.user.tag}\`\n**Moderator:** ${message.member}\n**Time:** \`${prettyMilliseconds(ms(args[1]))}\`\n**Reason:** \`${muteReason}\``)
-            message.channel.send(embed);
-
-            setTimeout(() => {
-
-                mutemember.roles.remove(muteRole).catch(err => null);
-
-                const mute = new MessageEmbed()
-                    .setColor("BLUE")
-                    .setDescription(`**You have been __unmuted__ in \`${message.guild.name}\` for \`${muteReason}\`!**`)
-                mutemember.send(mute).catch(err => null);
-
-                let unmute = new MessageEmbed()
-                    .setTitle("Member Unmuted")
-                    .setColor("BLUE")
-                    .addField("Unmuted:", mutemember, true)
-                    .setThumbnail(mutemember.user.displayAvatarURL({dynamic: true}))
-                    .setTimestamp()
-                message.channel.send(unmute);
-            }, ms(args[1]))
-        }
+            message.channel.createMessage({
+                embed: {
+                    title: "Member Unmuted",
+                    color: 0x0000FF,
+                    fields: [{ name: "Unmuted:", value: mutemember.mention, inline: true }],
+                    thumbnail: { url: mutemember.avatarURL },
+                    timestamp: new Date()
+                }
+            });
+        }, muteDuration);
     }
 }

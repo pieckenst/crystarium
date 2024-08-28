@@ -1,4 +1,4 @@
-const { MessageEmbed } = require("discord.js");
+const Eris = require("eris");
 const config = require("../config.json");
 
 module.exports = {
@@ -7,78 +7,76 @@ module.exports = {
   category: "moderation",
   aliases: [""],
   usage: "<@user/ID> [reason]",
-  permissions: ["BAN_MEMBERS"],
+  permissions: ["banMembers"],
 
   async execute(client, message, args) {
-    const banmember =
-      message.mentions.members.first() ||
-      message.guild.members.cache.get(args[0]);
-    let banReason = args.join(" ").slice(23);
-    if (!banReason) banReason = "Not Specified.";
+    const userId = message.mentions[0]?.id || args[0];
+    const banReason = args.slice(1).join(" ") || "Not Specified.";
 
-    if (!banmember) {
-      const missingArgs = new MessageEmbed()
-        .setColor("RED")
-        .setTitle("Missing arguments")
-        .setDescription(
-          `**Command:** \`${this.name}\`\n**Description:** \`${
-            this.description || "None"
-          }\`\n**Aliases:** \`${
-            this.aliases.join(", ") || "None"
-          }\`\n**Usage:** \`${config.prefix}${this.name}${
-            this.usage
-          }\`\n**Permissions:**\`${this.permissions || "None"}\``
-        )
-        .setTimestamp();
-      return message.channel.send(missingArgs);
+    if (!userId) {
+      return sendMissingArgsEmbed(message, this);
     }
 
-    if (!banmember.bannable) {
-      const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription("**That person can't be banned!**");
-      return message.channel.send(err);
+    const banMember = message.channel.guild.members.get(userId);
+
+    if (!banMember) {
+      return sendErrorEmbed(message, "User not found.");
     }
 
-    if (
-      message.guild.me.roles.highest.comparePositionTo(
-        banmember.roles.highest
-      ) < 0
-    ) {
-      const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription(
-          `**My role must be higher than \`${banmember.user.tag}\` highest role!**`
-        );
-      return message.channel.send(err);
+    if (!canBanMember(message.member, banMember)) {
+      return sendErrorEmbed(message, "You don't have permission to ban this user.");
     }
 
     try {
-      banmember.ban({ reason: banReason });
-
-      const kick = new MessageEmbed()
-        .setColor("BLUE")
-        .setTitle("You have beek banned!")
-        .setDescription(
-          `**Server: \`${message.guild.name}\`\nReason:\`${banReason}\`\nModerator: \`${message.author.tag}\`**`
-        );
-      banmember.send(kick).catch((err) => null);
-
-      const embed = new MessageEmbed()
-        .setColor("GREEN")
-        .setTitle("Member Banned")
-        .setTimestamp()
-        .setDescription(
-          `**Banned:** \`${banmember.user.tag}\`\n**Moderator:** ${message.member}\n**Reason:** \`${banReason}\``
-        );
-      return message.channel.send(embed);
+      await message.channel.guild.banMember(userId, 0, banReason);
+      await sendBanDM(client, banMember, message.channel.guild, banReason, message.author);
+      await sendBanConfirmation(message, banMember, banReason);
     } catch (error) {
-      const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription(
-          "**Something went wrong check my perms and try again!**"
-        );
-      return message.channel.send(err);
+      console.error("Ban error:", error);
+      return sendErrorEmbed(message, "An error occurred while trying to ban the user.");
     }
   },
 };
+
+function sendMissingArgsEmbed(message, command) {
+  const embed = {
+    color: 0xFF0000,
+    title: "Missing arguments",
+    description: `**Command:** \`${command.name}\`\n**Description:** \`${command.description || "None"}\`\n**Aliases:** \`${command.aliases.join(", ") || "None"}\`\n**Usage:** \`${config.prefix}${command.name}${command.usage}\`\n**Permissions:** \`${command.permissions || "None"}\``,
+    timestamp: new Date()
+  };
+  return message.channel.createMessage({ embed });
+}
+
+function sendErrorEmbed(message, errorMessage) {
+  const embed = {
+    color: 0xFF0000,
+    description: errorMessage
+  };
+  return message.channel.createMessage({ embed });
+}
+
+function canBanMember(moderator, targetMember) {
+  return moderator.permission.has("banMembers") &&
+         moderator.highestRole.position > targetMember.highestRole.position;
+}
+
+async function sendBanDM(client, banMember, guild, reason, moderator) {
+  const dmChannel = await client.getDMChannel(banMember.id);
+  const embed = {
+    color: 0x0000FF,
+    title: "You have been banned!",
+    description: `**Server:** \`${guild.name}\`\n**Reason:** \`${reason}\`\n**Moderator:** \`${moderator.username}#${moderator.discriminator}\``
+  };
+  return dmChannel.createMessage({ embed }).catch(() => {});
+}
+
+function sendBanConfirmation(message, banMember, reason) {
+  const embed = {
+    color: 0x00FF00,
+    title: "Member Banned",
+    description: `**Banned:** \`${banMember.username}#${banMember.discriminator}\`\n**Moderator:** ${message.author.mention}\n**Reason:** \`${reason}\``,
+    timestamp: new Date()
+  };
+  return message.channel.createMessage({ embed });
+}

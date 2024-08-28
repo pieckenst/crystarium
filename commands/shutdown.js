@@ -1,4 +1,4 @@
-const Discord = module.require("discord.js")
+const Eris = require("eris");
 
 module.exports = {
   name: "shutdown",
@@ -7,23 +7,34 @@ module.exports = {
   accessableby: "Owner",
   aliases: [""],
   async execute(client, message, args) {
-    
-    if(message.author.id !== "540142383270985738") {
+    const ownerId = "540142383270985738";
 
-        return await message.channel.send(new Discord.MessageEmbed().setTitle("You Are Not The Bot Owner!").setColor(0xff0000).setFooter(message.guild.me.displayName).setTimestamp())
+    if (message.author.id !== ownerId) {
+      return await message.channel.createMessage({
+        embed: {
+          title: "You Are Not The Bot Owner!",
+          color: 0xff0000,
+          footer: { text: message.member.guild.name },
+          timestamp: new Date()
+        }
+      });
     }
-	else {
-		await message.channel.send(new Discord.MessageEmbed().setTitle("Bot Is Shutting Down...").setColor("GREEN").setTimestamp().setFooter(message.guild.me.displayName));
-        await client.user.setPresence({
-           status: "online",
-           activity: {
-              name: "❤️ for ya :) | Reboot or shutdown incoming - wait a bit ",
-              type: "WATCHING",
-           },
-        });
-        await new Promise(r => setTimeout(r, 5000));
-        process.exit();
-		
-	}
+
+    await message.channel.createMessage({
+      embed: {
+        title: "Bot Is Shutting Down...",
+        color: 0x00ff00,
+        footer: { text: message.member.guild.name },
+        timestamp: new Date()
+      }
+    });
+
+    await client.editStatus("online", {
+      name: "❤️ for ya :) | Reboot or shutdown incoming - wait a bit",
+      type: 3 // 3 corresponds to "WATCHING" in Eris
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    process.exit();
   }
 };

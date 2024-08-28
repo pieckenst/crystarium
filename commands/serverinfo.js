@@ -1,44 +1,47 @@
-// Server information command 
-
-const Discord = require('discord.js');
-
-// ========================================== \\
+const Eris = require('eris');
 
 module.exports = {
     name: 'serverinfo',
-    description: 'Informations about discord where bot is on',
-    execute(client , message, args) {
-        const { guild } = message
+    description: 'Information about the Discord server where the bot is on',
+    execute(client, message, args) {
+        const guild = message.channel.guild;
 
-        const { name, region, memberCount, owner, joinedAt, createdAt } = guild
-        const icons = guild.iconURL()
+        const infoserver = {
+            embed: {
+                color: 0xF8AA2A,
+                title: `Information about the server: ${guild.name}`,
+                thumbnail: { url: guild.iconURL },
+                fields: [
+                    {
+                        name: 'Region',
+                        value: guild.region,
+                        inline: true
+                    },
+                    {
+                        name: 'Created At',
+                        value: new Date(guild.createdAt).toUTCString(),
+                        inline: true
+                    },
+                    {
+                        name: 'Member Count',
+                        value: guild.memberCount,
+                        inline: true
+                    },
+                    {
+                        name: 'Joined At',
+                        value: new Date(guild.joinedAt).toUTCString(),
+                        inline: true
+                    },
+                    {
+                        name: 'Server Owner',
+                        value: client.users.get(guild.ownerID).username,
+                        inline: true
+                    }
+                ],
+                timestamp: new Date()
+            }
+        };
 
-        const infoserver = new Discord.MessageEmbed()
-        .setColor('#F8AA2A')
-        .setTitle(`Information about the server : ${name} `)
-        .setThumbnail(icons)
-        .setTimestamp()
-        .addFields(
-            {
-            name: 'Region',
-            value: region,
-            },
-            {
-                name: 'Created At',
-                value: createdAt,
-            },
-            {
-            name: 'Member Count',
-            value: memberCount,
-            },
-            {
-            name: 'Joined At',
-            value: joinedAt,
-            },
-            {
-            name: 'Discord Owner',
-            value: owner.user.tag,
-            });
-        message.reply(infoserver);
+        client.createMessage(message.channel.id, infoserver);
     }
-}
+};

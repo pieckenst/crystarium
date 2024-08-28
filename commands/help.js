@@ -1,5 +1,5 @@
-const { MessageEmbed } = require("discord.js");
-config = require("../config.json");
+const Eris = require("eris");
+const config = require("../config.json");
 
 module.exports = {
   name: "help",
@@ -7,25 +7,24 @@ module.exports = {
   description: "Help command - self explanatory",
 
   async execute(client, message, args) {
-    const commands = message.client.commands.array();
+    const commands = Array.from(client.commands.values());
 
-    const helpEmbed = new MessageEmbed()
-      .setTitle("Terra: Help")
-      .setDescription("Bot commands are listed below")
-      .setColor("#F8AA2A");
+    const helpEmbed = {
+      title: "Terra: Help",
+      description: "Bot commands are listed below",
+      color: 0xF8AA2A,
+      fields: commands.map((cmd) => ({
+        name: `**${config.prefix}${cmd.name}${cmd.aliases ? ` (${cmd.aliases.join(", ")})` : ""}**`,
+        value: cmd.description,
+        inline: true
+      })),
+      timestamp: new Date().toISOString()
+    };
 
-    commands.forEach((cmd) => {
-      helpEmbed.addField(
-        `**${config.prefix}${cmd.name} ${
-          cmd.aliases ? `(${cmd.aliases})` : ""
-        }**`,
-        `${cmd.description}`,
-        true
-      );
-    });
-
-    helpEmbed.setTimestamp();
-
-    return message.channel.send(helpEmbed).catch(console.error);
+    try {
+      await message.channel.createMessage({ embed: helpEmbed });
+    } catch (error) {
+      console.error("Error sending help message:", error);
+    }
   },
 };

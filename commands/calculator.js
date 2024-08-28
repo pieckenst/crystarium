@@ -1,151 +1,106 @@
-const discord = require("discord.js");
-const disbut = require("discord-buttons");
+const Eris = require("eris");
 const math = require("mathjs");
 
 module.exports = {
   name: "calculator",
   description: "Bring up a calculator using Buttons!",
   async execute(client, message, args) {
-    const button = new Array([], [], [], [], []);
-    const row = [];
-    const text = [
-      "Exit",
-      "(",
-      ")",
-      "/",
-      "7",
-      "8",
-      "9",
-      "*",
-      "4",
-      "5",
-      "6",
-      "-",
-      "1",
-      "2",
-      "3",
-      "+",
-      ".",
-      "0",
-      "00",
-      "=",
+    const buttons = [
+      ["Exit", "(", ")", "/"],
+      ["7", "8", "9", "*"],
+      ["4", "5", "6", "-"],
+      ["1", "2", "3", "+"],
+      [".", "0", "00", "="]
     ];
-    let current = 0;
 
-    for (let i = 0; i < text.length; i++) {
-      if (button[current].length === 4) current++;
-      button[current].push(createButton(text[i]));
-      if (i === text.length - 1) {
-        for (const btn of button) row.push(addRow(btn));
+    const components = buttons.map(row => ({
+      type: 1,
+      components: row.map(label => createButton(label))
+    }));
+
+    const embed = {
+      type: "rich",
+      description: "0",
+      color: 0x0000FF
+    };
+
+    const msg = await message.channel.createMessage({ embeds: [embed], components });
+
+    let value = "";
+    let isWrong = false;
+    const time = 600000;
+
+    const collector = new Eris.MessageCollector(client, message.channel.id, {
+      filter: m => m.author.id === message.author.id && m.data && m.data.custom_id && m.data.custom_id.startsWith("cal"),
+      time: time
+    });
+
+    collector.on("collect", async (interaction) => {
+      const val = interaction.data.custom_id.slice(3);
+
+      if (val === "Exit") {
+        await interaction.acknowledge();
+        await msg.edit({
+          embeds: [{
+            title: "Exiting calculator",
+            description: " calculator on request ",
+            color: 0xD87093,
+            footer: { text: "Terra" }
+          }],
+          components: []
+        });
+        collector.stop();
+        return;
       }
-    }
 
-    const embed = new discord.MessageEmbed()
-      .setColor("BLUE")
-      .setDescription("0");
+      if (val === "=") {
+        value = mathEval(value);
+      } else if (isWrong) {
+        value = val;
+        isWrong = false;
+      } else if (value === "0") {
+        value = val;
+      } else {
+        value += val;
+      }
 
-    message.channel
-      .send({
-        components: row,
-        embed: embed,
-      })
-      .then((msg) => {
-        let isWrong = false;
-        const time = 600000;
-        let value = "";
-        const embed1 = new discord.MessageEmbed().setColor("BLUE");
-
-        function createCollector(val, result = false) {
-          const filter = (buttons1) =>
-            buttons1.clicker.user.id === message.author.id &&
-            buttons1.id === "cal" + val;
-          const collect = msg.createButtonCollector(filter, { time: time });
-
-          collect.on("collect", async (x) => {
-            x.defer();
-
-            if (result === true) {
-              value = mathEval(value);
-              result = value;
-            } else if (isWrong) {
-              value = val;
-              isWrong = false;
-            } else if (result === "new") {
-              const exitembed = {
-                title: "Exiting calculator",
-                description: "```Exiting calculator on request ```",
-                color: 14187389,
-                footer: {
-                  text: "Terra",
-                },
-              };
-              msg.edit({
-                component: null,
-                embed: exitembed,
-              });
-              return;
-            } else if (result === "0") value = val;
-            else if (result) {
-              isWrong = true;
-              value = mathEval(value);
-            } else value += val;
-
-            embed1.setDescription("```" + value + "```");
-            msg.edit({
-              components: row,
-              embed: embed1,
-            });
-          });
-        }
-
-        for (const txt of text) {
-          let result;
-          if (txt === "Exit") result = "new";
-          else if (txt === "=") result = true;
-          else result = false;
-          createCollector(txt, result);
-        }
-
-        setTimeout(() => {
-          embed1
-            .setDescription("Your time to use the calculator is running out...")
-            .setColor("RED");
-          msg.edit({
-            embed: embed1,
-          });
-        }, time);
+      await interaction.acknowledge();
+      await msg.edit({
+        embeds: [{ ...embed, description: "" + value + "" }],
+        components
       });
+    });
 
-    function addRow(btns) {
-      const row1 = new disbut.MessageActionRow();
+    setTimeout(async () => {
+      await msg.edit({
+        embeds: [{
+          ...embed,
+          description: "Your time to use the calculator is running out...",
+          color: 0xFF0000
+        }]
+      });
+    }, time - 10000);
 
-      for (const btn of btns) {
-        row1.addComponent(btn);
-      }
-      return row1;
-    }
+    function createButton(label) {
+      let style = 2; // grey
+      if (label === "Exit") style = 4; // red
+      else if (label === "=") style = 3; // green
+      else if (isNaN(label) && label !== ".") style = 1; // blue
 
-    function createButton(label, style = "grey") {
-      if (label === "Exit") style = "red";
-      else if (label === ".") style = "grey";
-      else if (label === "=") style = "green";
-      else if (isNaN(label)) style = "blurple";
-
-      const btn = new disbut.MessageButton()
-
-        .setLabel(label)
-        .setStyle(style)
-        .setID("cal" + label);
-
-      return btn;
+      return {
+        type: 2,
+        style,
+        label,
+        custom_id: "cal" + label
+      };
     }
 
     function mathEval(input) {
       try {
-        const res = math.evaluate(input);
-        return res;
+        return math.evaluate(input).toString();
       } catch {
-        return "An error occured while evaluating your calculation!";
+        isWrong = true;
+        return "An error occurred while evaluating your calculation!";
       }
     }
   },

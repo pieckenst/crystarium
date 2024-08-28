@@ -1,92 +1,96 @@
-const { MessageEmbed } = require("discord.js");
+const Eris = require("eris");
+
 module.exports = {
   name: "kick",
   category: "moderation",
   description: "This will kick a user of your choice from the server",
-  permissions: ["KICK_MEMBERS"],
+  permissions: ["kickMembers"],
   async execute(client, message, args) {
-    const kickmember =
-      message.mentions.members.first() ||
-      message.guild.members.cache.get(args[0]);
-    let kickReason = args.join(" ").slice(23);
-    if (!kickReason) kickReason = "Not Specified.";
+    const kickMemberId = message.mentions[0]?.id || args[0];
+    const kickReason = args.slice(1).join(" ") || "Not Specified.";
 
-    if (!kickmember) {
-      const missingArgs = new MessageEmbed()
-        .setColor("RED")
-        .setTitle("Missing arguments")
-        .setDescription(
-          `**Command:** \`${this.name}\`\n**Description:** \`${
-            this.description || "None"
-          }\`\n**Aliases:** \`${
-            this.aliases.join(", ") || "None"
-          }\`\n**Usage:** \`${config.prefix}${this.name}${
-            this.usage
-          }\`\n**Permissions:**\`${this.permissions || "None"}\``
-        )
-        .setTimestamp();
-      return message.channel.send(missingArgs);
+    if (!kickMemberId) {
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          title: "Missing arguments",
+          description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Usage:** \`${client.config.prefix}${this.name} <user> [reason]\`\n**Permissions:** \`${this.permissions.join(", ") || "None"}\``,
+          timestamp: new Date()
+        }
+      });
     }
 
-    if (!kickmember.kickable) {
-      const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription("**That person can't be kicked!**");
-      return message.channel.send(err);
-    }
-	
-	
-	if (kickmember.hasPermission('MANAGE_ROLES ') || kickmember.hasPermission('MANAGE_GUILD') ) {
-		const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription("**I cannot kick a moderator or administrator**");
-      return message.channel.send(err);
-	}
+    const kickMember = message.channel.guild.members.get(kickMemberId);
 
-    if (
-      message.guild.me.roles.highest.comparePositionTo(
-        kickmember.roles.highest
-      ) < 0
-    ) {
-      if (
-        message.guild.me.roles.highest.comparePositionTo(
-          banmember.roles.highest
-        ) < 0
-      ) {
-        const err = new MessageEmbed()
-          .setColor("RED")
-          .setDescription(
-            `**My role must be higher than \`${kickmember.user.tag}\` highest role!**`
-          );
-        return message.channel.send(err);
-      }
+    if (!kickMember) {
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          description: "**User not found!**"
+        }
+      });
+    }
+
+    if (!kickMember.kickable) {
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          description: "**That person can't be kicked!**"
+        }
+      });
+    }
+
+    const memberRoles = kickMember.roles.map(roleId => message.channel.guild.roles.get(roleId));
+    if (memberRoles.some(role => role.permissions.has("manageRoles") || role.permissions.has("manageGuild"))) {
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          description: "**I cannot kick a moderator or administrator**"
+        }
+      });
+    }
+
+    const botMember = message.channel.guild.members.get(client.user.id);
+    const botHighestRole = Math.max(...botMember.roles.map(roleId => message.channel.guild.roles.get(roleId).position));
+    const memberHighestRole = Math.max(...memberRoles.map(role => role.position));
+
+    if (botHighestRole <= memberHighestRole) {
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          description: `**My highest role must be higher than \`${kickMember.username}#${kickMember.discriminator}\`'s highest role!**`
+        }
+      });
     }
 
     try {
-      kickmember.kick(kickReason);
-      const kick = new MessageEmbed()
-        .setColor("BLUE")
-        .setTitle("You have been kicked!")
-        .setDescription(
-          `**Server: \`${message.guild.name}\`\nReason:\`${kickReason}\`\nModerator: \`${message.author.tag}\`**`
-        );
-      kickmember.send(kick).catch((err) => null);
+      await client.kickGuildMember(message.channel.guild.id, kickMember.id, kickReason);
 
-      const embed = new MessageEmbed()
-        .setColor("GREEN")
-        .setTitle("Member Kicked")
-        .setTimestamp()
-        .setDescription(
-          `**Kicked:** \`${kickmember.user.tag}\`\n**Moderator:** ${message.member}\n**Reason:** \`${kickReason}\``
-        );
-      return message.channel.send(embed);
+      client.createDMChannel(kickMember.id).then(channel => {
+        channel.createMessage({
+          embed: {
+            color: 0x0000FF,
+            title: "You have been kicked!",
+            description: `**Server: \`${message.channel.guild.name}\`\nReason: \`${kickReason}\`\nModerator: \`${message.author.username}#${message.author.discriminator}\`**`
+          }
+        }).catch(() => {});
+      });
+
+      return message.channel.createMessage({
+        embed: {
+          color: 0x00FF00,
+          title: "Member Kicked",
+          description: `**Kicked:** \`${kickMember.username}#${kickMember.discriminator}\`\n**Moderator:** ${message.author.mention}\n**Reason:** \`${kickReason}\``,
+          timestamp: new Date()
+        }
+      });
     } catch (error) {
-      const err = new MessageEmbed()
-        .setColor("RED")
-        .setDescription(
-          "**Something went wrong check my perms and try again!**"
-        );
-      return message.channel.send(err);
+      return message.channel.createMessage({
+        embed: {
+          color: 0xFF0000,
+          description: "**Something went wrong. Check my permissions and try again!**"
+        }
+      });
     }
   },
 };

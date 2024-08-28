@@ -1,17 +1,25 @@
+const Eris = require('eris');
+
 module.exports = {
-    name: "stop",
-    aliases: ['stop','dc'],
-    description: "Stops the current playing music",
-    async execute(client, message) {
-      const player = message.client.manager.get(message.guild.id);
-      if (!player) return message.reply("there is no player for this guild.");
-  
-      const { channel } = message.member.voice;
-      
-      if (!channel) return message.reply("you need to join a voice channel.");
-      if (channel.id !== player.voiceChannel) return message.reply("you're not in the same voice channel.");
-      
+  name: 'stop',
+  aliases: ['dc'],
+  description: 'Stops the current playing music',
+  run: async (client, message, args) => {
+      const player = client.manager.get(message.guildID);
+      if (!player) {
+          return message.channel.createMessage('There is no player for this guild.');
+      }
+
+      const memberVoiceState = message.member.voiceState;
+      if (!memberVoiceState.channelID) {
+          return message.channel.createMessage('You need to join a voice channel.');
+      }
+
+      if (memberVoiceState.channelID !== player.voiceChannel) {
+          return message.channel.createMessage('You\'re not in the same voice channel.');
+      }
+
       player.destroy();
-      return message.reply("destroyed the player.");
-    }
+      return message.channel.createMessage('Destroyed the player.');
   }
+};

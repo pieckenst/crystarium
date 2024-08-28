@@ -1,23 +1,35 @@
+const Eris = require('eris');
+
 module.exports = {
-    name: "volume",
-    aliases: ['v'],
-    description: "Set volume level of the music",
-    async execute(client, message, args) {
-      const player = message.client.manager.get(message.guild.id);
-  
-      if (!player) return message.reply("there is no player for this guild.");
-      if (!args.length) return message.reply(`the player volume is \`${player.volume}\`.`)
-  
-      const { channel } = message.member.voice;
-      
-      if (!channel) return message.reply("you need to join a voice channel.");
-      if (channel.id !== player.voiceChannel) return message.reply("you're not in the same voice channel.");
-  
-      const volume = Number(args[0]);
-      
-      if (!volume || volume < 1 || volume > 100) return message.reply("you need to give me a volume between 1 and 100.");
-  
+  name: 'volume',
+  aliases: ['v'],
+  description: 'Set volume level of the music',
+  async execute(message, args, client) {
+      const player = client.manager.get(message.guildID);
+
+      if (!player) {
+          return message.channel.createMessage('There is no player for this guild.');
+      }
+
+      if (args.length === 0) {
+          return message.channel.createMessage(`The player volume is \`${player.volume}\`.`);
+      }
+
+      const memberVoiceState = message.member.voiceState;
+      if (!memberVoiceState.channelID) {
+          return message.channel.createMessage('You need to join a voice channel.');
+      }
+
+      if (memberVoiceState.channelID !== player.voiceChannel) {
+          return message.channel.createMessage("You're not in the same voice channel.");
+      }
+
+      const volume = parseInt(args[0]);
+      if (isNaN(volume) || volume < 1 || volume > 100) {
+          return message.channel.createMessage('You need to give me a volume between 1 and 100.');
+      }
+
       player.setVolume(volume);
-      return message.reply(`set the player volume to \`${volume}\`.`);
-    }
+      return message.channel.createMessage(`Set the player volume to \`${volume}\`.`);
   }
+};

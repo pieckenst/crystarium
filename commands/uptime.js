@@ -1,19 +1,27 @@
+const { Constants } = require('eris');
+
 module.exports = {
     name: "uptime",
-    aliases: [''],
+    aliases: [],
     description: "Show bot's uptime",
     async execute(client, message) {
-        let seconds = Math.floor(message.client.uptime / 1000);
-        let minutes = Math.floor(seconds / 60);
-        let hours = Math.floor(minutes / 60);
-        let days = Math.floor(hours / 24);
+        const uptime = client.uptime;
+        const days = Math.floor(uptime / 86400000);
+        const hours = Math.floor((uptime % 86400000) / 3600000);
+        const minutes = Math.floor((uptime % 3600000) / 60000);
+        const seconds = Math.floor((uptime % 60000) / 1000);
 
-        seconds %= 60;
-        minutes %= 60;
-        hours %= 24;
+        const uptimeString = [
+            days && `${days} day${days !== 1 ? 's' : ''}`,
+            hours && `${hours} hour${hours !== 1 ? 's' : ''}`,
+            minutes && `${minutes} minute${minutes !== 1 ? 's' : ''}`,
+            seconds && `${seconds} second${seconds !== 1 ? 's' : ''}`
+        ].filter(Boolean).join(', ');
 
-     return message
-      .reply(`Uptime: \`${days} day(s),${hours} hours, ${minutes} minutes, ${seconds} seconds\``)
-      .catch(console.error);
+        try {
+            await message.channel.createMessage(`Uptime: \`${uptimeString}\``);
+        } catch (error) {
+            console.error('Error sending uptime message:', error);
+        }
     }
-  };
+};

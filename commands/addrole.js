@@ -1,67 +1,84 @@
-const { MessageEmbed } = require('discord.js');
+const Eris = require('eris');
 const config = require('../config.json');
 
 module.exports = {
-  name: "addrole",
-  description: "Adds the specified role to the provided user.",
-  aliases: [""],
-  usage: '<@user/ID> <@role/ID>',
-  permissions: ["MANAGE_ROLES"],
-  async execute(client, message, args) {
-     const member = message.mentions.members.first() || message.guild.members.cache.get(args[0])
-        
-        const role = message.guild.roles.cache.get(args[1]) || 
-        message.guild.roles.cache.find(r => r.name === args[1]) || 
-        message.mentions.roles.first();
+    name: "addrole",
+    description: "Adds the specified role to the provided user.",
+    aliases: [""],
+    usage: '<@user/ID> <@role/ID>',
+    permissions: ["manageRoles"],
+    async execute(client, message, args) {
+      const getMember = (arg) => {
+        const mentionRegex = /^<@!?(\d+)>$/;
+        const mentionMatch = arg.match(mentionRegex);
+        return mentionMatch
+          ? message.channel.guild.members.get(mentionMatch[1])
+          : message.channel.guild.members.get(arg);
+      };
 
-        if(!member || !role){
-            const missingArgs = new MessageEmbed()
-              .setColor("RED")
-              .setTitle("Missing arguments")
-              .setDescription(
-                `**Command:** \`${this.name}\`\n**Description:** \`${
-                this.description || "None"
-                }\`\n**Aliases:** \`${
-                this.aliases.join(", ") || "None"
-                }\`\n**Usage:** \`${config.prefix}${this.name}${
-                this.usage
-               }\`\n**Permissions:**\`${this.permissions || "None"}\``
-            )
-            .setTimestamp();
-           return message.channel.send(missingArgs);
-        } else {
-            try {
-				if (message.guild.me.roles.highest.comparePositionTo(role) < 0) {
-                    const err = new MessageEmbed()
-                        .setColor("RED")
-                        .setDescription("**I cannot give this role!**")
-                    return message.channel.send(err);
-				} else {
-					if (member.roles.cache.has(role.id)) {
-                        const err = new MessageEmbed()
-                            .setColor("RED")
-                            .setDescription(`${member} **already has ${role} role!**`)
-                        return message.channel.send(err);
-					} else {
-						member.roles.add(role).then(() => {
-                            const succes = new MessageEmbed()
-                                .setColor("GREEN")
-                                .setDescription(`**Succesfully added ${role} role for ${member}!**`)
-                            return message.channel.send(succes);
-                        }).catch((error) => {
-                            const err = new MessageEmbed()
-                                .setColor("RED")
-                                .setDescription("**I cannot give this role!**")
-                            return message.channel.send(err);
-                        });
-					}
-				}
-			} catch (error) {
-				const err = new MessageEmbed()
-                    .setColor("RED")
-                    .setDescription("**I cannot give this role!**")
-                return message.channel.send(err);
-			}
+      const getRole = (arg) => {
+        const mentionRegex = /^<@&(\d+)>$/;
+        const mentionMatch = arg.match(mentionRegex);
+        return mentionMatch
+          ? message.channel.guild.roles.get(mentionMatch[1])
+          : message.channel.guild.roles.find(r => r.id === arg || r.name === arg);
+      };
+
+      const member = getMember(args[0]);
+      const role = getRole(args[1]);
+
+      if (!member || !role) {
+        return client.createMessage(message.channel.id, {
+          embed: {
+            color: 0xFF0000,
+            title: "Missing arguments",
+            description: `**Command:** \`${this.name}\`\n**Description:** \`${
+              this.description || "None"
+            }\`\n**Aliases:** \`${
+              this.aliases.join(", ") || "None"
+            }\`\n**Usage:** \`${config.prefix}${this.name} ${
+              this.usage
+            }\`\n**Permissions:** \`${this.permissions || "None"}\``,
+            timestamp: new Date()
+          }
+        });
+      }
+
+      try {
+        const botMember = message.channel.guild.members.get(client.user.id);
+        if (botMember.roles.length > 0 && !botMember.roles.some(r => r.position > role.position)) {
+          return client.createMessage(message.channel.id, {
+            embed: {
+              color: 0xFF0000,
+              description: "**I cannot give this role!**"
+            }
+          });
         }
+
+        if (member.roles.includes(role.id)) {
+          return client.createMessage(message.channel.id, {
+            embed: {
+              color: 0xFF0000,
+              description: `<@${member.id}> **already has ${role.name} role!**`
+            }
+          });
+        }
+
+        await member.addRole(role.id, "Role added by addrole command");
+        return client.createMessage(message.channel.id, {
+          embed: {
+            color: 0x00FF00,
+            description: `**Successfully added ${role.name} role for <@${member.id}>!**`
+          }
+        });
+      } catch (error) {
+        console.error("Error in addrole command:", error);
+        return client.createMessage(message.channel.id, {
+          embed: {
+            color: 0xFF0000,
+            description: "**An error occurred while trying to add the role!**"
+          }
+        });
+      }
     }
 }

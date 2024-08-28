@@ -1,28 +1,44 @@
-const Discord = module.require("discord.js")
+const Eris = require("eris");
+
 module.exports = {
   name: "setstatus",
   description: "A Command To Set bot activity!",
   usage: "setstatus [your status]",
   accessableby: "Owner",
-  aliases: [""],	
+  aliases: [""],
   async execute(client, message, args) {
-  
-    if(message.author.id !== "540142383270985738") {
+    const ownerId = "540142383270985738";
 
-        return await message.channel.send(new Discord.MessageEmbed().setTitle("You Are Not The Bot Owner!").setColor(0xff0000).setFooter(message.guild.me.displayName).setTimestamp())
+    if (message.author.id !== ownerId) {
+      return message.channel.createMessage({
+        embed: {
+          title: "You Are Not The Bot Owner!",
+          color: 0xff0000,
+          footer: { text: client.user.username },
+          timestamp: new Date()
+        }
+      });
     }
-	else {
-		let setActivity = args.join(" ").slice(0);
-        await client.user.setPresence({
-           status: "online",
-           activity: {
-              name: setActivity,
-              type: "WATCHING",
-           },
-        });
-        
-		return await message.channel.send(new Discord.MessageEmbed().setTitle("Requested status has been set").setColor("GREEN").setFooter(message.guild.me.displayName).setTimestamp())
-		
-	}
+
+    const setActivity = args.join(" ");
+    
+    try {
+      await client.editStatus("online", {
+        name: setActivity,
+        type: Eris.Constants.ActivityTypes.WATCHING
+      });
+
+      return message.channel.createMessage({
+        embed: {
+          title: "Requested status has been set",
+          color: 0x00ff00,
+          footer: { text: client.user.username },
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error("Error setting status:", error);
+      return message.channel.createMessage("An error occurred while setting the status.");
+    }
   }
 };

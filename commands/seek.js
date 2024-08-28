@@ -1,58 +1,74 @@
-const { MessageEmbed } = require('discord.js')
+const Eris = require('eris');
 
 module.exports = {
-    name: "seek",
-    aliases: [''],
-    description: "seek the current playing music",
-    async execute(client, message, args) {
-        try{
-            function createBar(player)
-            {
-                try{
-                    if (!player.queue.current) return `**"[""🔘""▬".repeat(size - 1)}]**\n**00:00:00 / 00:00:00**`;
-                    let current = player.queue.current.duration !== 0 ? player.position : player.queue.current.duration;
-                    let total = player.queue.current.duration;
-                    let size = 15;
-                    let bar = String("| ") + String("🔘").repeat(Math.round(size * (current / total))) + String("▬").repeat(size - Math.round(size * (current / total))) + String(" |");
-                    return `**${bar}**\n**${new Date(player.position).toISOString().substr(11, 8)+" / "+(player.queue.current.duration==0?" ◉ LIVE":new Date(player.queue.current.duration).toISOString().substr(11, 8))}**`;
-                  }catch (e){
-                    console.log(String(e.stack).bgRed)
+  name: "seek",
+  aliases: [''],
+  description: "seek the current playing music",
+  async execute(client, message, args) {
+      try {
+          const player = client.manager.get(message.guildID);
+          if (!player || !player.queue.current) {
+              return message.channel.createMessage({
+                  embed: {
+                      color: 0xFF0000,
+                      title: "Error | No song is currently playing"
                   }
-            }
-
-            function format(millis)
-            {
-                try {
-                    var h = Math.floor(millis / 3600000),
-                      m = Math.floor(millis / 60000),
-                      s = ((millis % 60000) / 1000).toFixed(0);
-                    if (h < 1) return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s + " | " + (Math.floor(millis / 1000)) + " Seconds";
-                    else return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s + " | " + (Math.floor(millis / 1000)) + " Seconds";
-                  } catch (e) {
-                    console.log(String(e.stack).bgRed)
-                  }
-            }
-
-            const player = message.client.manager.get(message.guild.id);
-            if (Number(args[0]) < 0 || Number(args[0]) >= player.queue.current.duration / 1000)
-              return message.channel.send(new MessageEmbed()
-                .setColor('RED')
-                .setTitle(` Error | You may seek from \`0\` - \`${player.queue.current.duration}\``)
-              );
-
-            player.seek(Number(args[0]) * 1000);
-            return message.channel.send(new MessageEmbed()
-              .setTitle(`Success | Seeked song to: ${format(Number(args[0]) * 1000)}`)
-              .addField(`Progress: `, createBar(player))
-              .setColor('GREEN')
-            );
-          } catch (e) {
-            console.log(String(e.stack).bgRed)
-            return message.channel.send(new MessageEmbed()
-              .setColor('RED')
-              .setTitle(`ERROR | An error occurred`)
-              .setDescription(`\`\`\`${e.message}\`\`\``)
-            );
+              });
           }
-    }
+
+          const seekTime = Number(args[0]);
+          if (isNaN(seekTime) || seekTime < 0 || seekTime >= player.queue.current.duration / 1000) {
+              return message.channel.createMessage({
+                  embed: {
+                      color: 0xFF0000,
+                      title: `Error | You may seek from 0 - ${Math.floor(player.queue.current.duration / 1000)} seconds`
+                  }
+              });
+          }
+
+          await player.seek(seekTime * 1000);
+
+          const embed = new Eris.Embed()
+              .setTitle(`Success | Seeked song to: ${formatTime(seekTime * 1000)}`)
+              .addField("Progress", createProgressBar(player))
+              .setColor(0x00FF00);
+
+          return message.channel.createMessage({ embed });
+      } catch (e) {
+          console.error(e);
+          return message.channel.createMessage({
+              embed: {
+                  color: 0xFF0000,
+                  title: "ERROR | An error occurred",
+                  description: `\`\`\`${e.message}\`\`\``
+              }
+          });
+      }
+  }
+};
+
+function createProgressBar(player) {
+  if (!player.queue.current) return "No song is currently playing";
+
+  const current = player.position;
+  const total = player.queue.current.duration;
+  const size = 15;
+  const progress = Math.round((size * current) / total);
+
+  const bar = `${"▬".repeat(progress)}🔘${"▬".repeat(size - progress)}`;
+  const timeString = `${formatTime(current)} / ${total === 0 ? "◉ LIVE" : formatTime(total)}`;
+
+  return `${bar}\n${timeString}`;
+}
+
+function formatTime(milliseconds) {
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  const paddedSeconds = String(seconds % 60).padStart(2, '0');
+  const paddedMinutes = String(minutes % 60).padStart(2, '0');
+  const paddedHours = String(hours).padStart(2, '0');
+
+  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
 }

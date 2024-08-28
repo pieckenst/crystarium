@@ -1,41 +1,46 @@
+const Eris = require('eris');
+
 module.exports = {
     name: "sqrt",
-    aliases: [''],
+    aliases: [],
     description: "Calculates a square root",
-    async execute(client, message, args) {
-        if (args > 5000 || args < 0) {
-            const embederrormath = {
-              "title": "Oops!",
-               "description": "```An error occurred while executing the command```",
-               "color": 0xff0000,
-               "fields": [
-                 {
-                   "name": "Invalid Value",
-                   "value": "```Value must be between 1 and 5000```"
-                 }
-               ]
-            };
-            message.channel.send({ embed:embederrormath });
-            return
-	    }
-        else{
-            result = Math.sqrt(args)
-            const embed = {
-              "title": "Mathematics",
-              "description": "```Square Root```",
-              "color": 9555352,
-              "fields": [
-                {
-                  "name": "You entered",
-                  "value": `\`\`\`fix\n${args}\n\`\`\``
-                },
-                {
-                  "name": "You got",
-                  "value": `\`\`\`fix\n${result}\n\`\`\``
+    execute: async (client, message, args) => {
+        const input = parseFloat(args[0]);
+
+        if (isNaN(input) || input > 5000 || input < 0) {
+            return message.channel.createMessage({
+                embed: {
+                    title: "Oops!",
+                    description: "An error occurred while executing the command",
+                    color: 0xff0000,
+                    fields: [
+                        {
+                            name: "Invalid Value",
+                            value: "Value must be between 0 and 5000"
+                        }
+                    ]
                 }
-              ]
-            };
-            message.channel.send({ embed });
-	    }
+            });
+        }
+
+        const result = Math.sqrt(input);
+
+        return message.channel.createMessage({
+            embed: {
+                title: "Mathematics",
+                description: "Square Root",
+                color: 9555352,
+                fields: [
+                    {
+                        name: "You entered",
+                        value: `${input}`
+                    },
+                    {
+                        name: "You got",
+                        value: `${result}`
+                    }
+                ]
+            }
+        });
     }
-  };
+};
