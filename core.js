@@ -1,7 +1,32 @@
 const fs = require("fs");
+const colors = require('colors');
+
+// Function to check and import dependencies
+const checkAndImportDependencies = () => {
+  const dependencies = [
+    { name: 'Eris', importName: 'eris' },
+    { name: 'Erela.js Manager', importName: 'erela.js' },
+    { name: 'Erela.js Spotify', importName: 'erela.js-spotify' },
+    { name: 'dotenv', importName: 'dotenv' }
+  ];
+
+  for (const dep of dependencies) {
+    try {
+      require(dep.importName);
+      console.log(`[UPSTART] Successfully imported ${dep.name}`.green);
+    } catch (error) {
+      console.error(`[ERROR] Failed to import ${dep.name}. Please make sure it's installed.`.red);
+      process.exit(1);
+    }
+  }
+};
+
+// Run the dependency check
+checkAndImportDependencies();
+
+// Now import the dependencies
 const Eris = require("eris");
 const keepAlive = require('./server');
-
 const { Manager } = require("erela.js");
 const Spotify = require("erela.js-spotify");
 const { prefix } = require("./config.json");
@@ -16,11 +41,11 @@ try {
     }
 } catch (error) {
     if (error.code === 'MODULE_NOT_FOUND') {
-      console.error("Error: .env file not found. Please create a .env file with your token.");
+      console.error("Error: .env file not found. Please create a .env file with your token.".red);
     } else if (error.message === "Token not found in .env file") {
-      console.error("Error: Token not found in .env file. Please add your token to the .env file.");
+      console.error("Error: Token not found in .env file. Please add your token to the .env file.".red);
     } else {
-      console.error("Error loading .env file:", error.message);
+      console.error("Error loading .env file:".red, error.message.red);
     }
     process.exit(1);
 }
@@ -53,16 +78,16 @@ const loadCommands = (dir = './commands') => {
             } else {
               client.commands.set(command.name, command);
             }
-            console.log(`[UPSTART] Loaded ${file}`);
+            console.log(`[UPSTART] Loaded ${file}`.green);
           } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "name" or "execute" property.`);
+            console.log(`[WARNING] The command at  ${filePath} is missing a required "name" or "execute" property.`.yellow);
           }
         } catch (error) {
-          console.error(`[ERROR] Failed to load command ${file}:`, error.message);
+          console.error(`[ERROR] Failed to load command ${file}:`.red, error.message.red);
         }
       }
     } catch (error) {
-      console.error("[ERROR] Failed to load commands:", error.message);
+      console.error("[ERROR] Failed to load commands:".red, error.message.red);
     }
 };
 
@@ -86,8 +111,8 @@ const initializeManager = () => {
       });
 
       client.manager
-        .on("nodeConnect", node => console.log(`Node "${node.options.identifier}" has connected.`))
-        .on("nodeError", (node, error) => console.log(`Node "${node.options.identifier}" encountered an error: ${error.message}.`))
+        .on("nodeConnect", node => console.log(`Node "${node.options.identifier}" has connected.`.green))
+        .on("nodeError", (node, error) => console.log(`Node "${node.options.identifier}" encountered an error: ${error.message}.`.red))
         .on("trackStart", (player, track) => {
           const channel = client.getChannel(player.textChannel);
           if (channel) {
@@ -98,7 +123,7 @@ const initializeManager = () => {
                 description: `[${track.title}](${track.uri})`,
                 fields: [{ name: "Requested By", value: track.requester.username, inline: true }]
               }
-            }).catch(error => console.error("Error sending trackStart message:", error.message));
+            }).catch(error => console.error("Error sending trackStart message:".red, error.message.red));
           }
         })
         .on("trackStuck", (player, track) => {
@@ -110,7 +135,7 @@ const initializeManager = () => {
                 author: { name: "Track Stuck", icon_url: client.user.avatarURL },
                 description: track.title
               }
-            }).catch(error => console.error("Error sending trackStuck message:", error.message));
+            }).catch(error => console.error("Error sending trackStuck message:".red, error.message.red));
           }
         })
         .on("queueEnd", player => {
@@ -121,21 +146,21 @@ const initializeManager = () => {
                 color: Math.floor(Math.random() * 0xFFFFFF),
                 author: { name: "Queue has ended", icon_url: client.user.avatarURL }
               }
-            }).catch(error => console.error("Error sending queueEnd message:", error.message));
+            }).catch(error => console.error("Error sending queueEnd message:".red, error.message.red));
           }
           player.destroy();
         });
     } catch (error) {
-      console.error("[ERROR] Failed to initialize manager:", error.message);
+      console.error("[ERROR] Failed to initialize manager:".red, error.message.red);
     }
 };
 
 client.on("ready", () => {
     try {
-      console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username}`);
+      console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username}`.green);
       client.editStatus("online", { name: "In development : Using Eris", type: 3 });
       client.manager.init(client.user.id);
-      console.log("[UPSTART] Status setup complete");
+      console.log("[UPSTART] Status setup complete".green);
 
       // Register slash commands
       const slashCommands = Array.from(client.slashCommands.values()).map(command => ({
@@ -145,7 +170,7 @@ client.on("ready", () => {
       }));
       client.bulkEditCommands(slashCommands);
     } catch (error) {
-      console.error("[ERROR] Failed to complete ready event:", error.message);
+      console.error("[ERROR] Failed to complete ready event:".red, error.message.red);
     }
 });
 
@@ -155,7 +180,7 @@ client.on("rawWS", (packet) => {
         client.manager.updateVoiceState(packet.d);
       }
     } catch (error) {
-      console.error("[ERROR] Failed to process rawWS event:", error.message);
+      console.error("[ERROR] Failed to process rawWS event:".red, error.message.red);
     }
 });
 
@@ -230,7 +255,7 @@ client.on("messageCreate", async (message) => {
 
       await command.execute(client, message, args);
     } catch (error) {
-      console.error("[ERROR] Failed to process message:", error.message);
+      console.error("[ERROR] Failed to process message:".red, error.message.red);
       message.channel.createMessage({
         embed: {
           title: "Oops!",
@@ -238,7 +263,7 @@ client.on("messageCreate", async (message) => {
           color: 0xff0000,
           fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
         }
-      }).catch(sendError => console.error("Error sending error message:", sendError.message));
+      }).catch(sendError => console.error("Error sending error message:".red, sendError.message.red));
     }
 });
 
@@ -251,11 +276,11 @@ client.on("interactionCreate", async (interaction) => {
     try {
         await command.execute(client, interaction);
     } catch (error) {
-        console.error("[ERROR] Failed to process slash command:", error.message);
+        console.error("[ERROR] Failed to process slash command:".red, error.message.red);
         await interaction.createMessage({
             content: "There was an error while executing this command!",
             flags: 64
-        }).catch(sendError => console.error("Error sending error message:", sendError.message));
+        }).catch(sendError => console.error("Error sending error message:".red, sendError.message.red));
     }
 });
 
@@ -265,6 +290,6 @@ try {
     keepAlive();
     client.connect();
 } catch (error) {
-    console.error("[FATAL ERROR] Failed to start the bot:", error.message);
+    console.error("[FATAL ERROR] Failed to start the bot:".red, error.message.red);
     process.exit(1);
 }

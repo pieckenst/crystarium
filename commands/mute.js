@@ -1,7 +1,6 @@
 const Eris = require('eris');
 const config = require('../config.json');
 const ms = require('ms');
-const prettyMilliseconds = require('pretty-ms');
 
 module.exports = {
     name: 'mute',
@@ -58,9 +57,16 @@ module.exports = {
             });
         }
 
+        const formatDuration = async (duration) => {
+            const prettyMs = await import('pretty-ms');
+            return prettyMs.default(duration);
+        };
+
+        const formattedDuration = await formatDuration(muteDuration);
+
         const muteEmbed = {
             color: 0x0000FF,
-            description: `**You have been __muted__ in \`${message.member.guild.name}\` for \`${prettyMilliseconds(muteDuration)}\` Reason: \`${muteReason}\`!**`
+            description: `**You have been __muted__ in \`${message.member.guild.name}\` for \`${formattedDuration}\` Reason: \`${muteReason}\`!**`
         };
 
         client.getDMChannel(mutemember.id).then(channel => {
@@ -71,12 +77,12 @@ module.exports = {
             embed: {
                 color: 0x00FF00,
                 title: "Member Muted",
-                description: `**Muted:** \`${mutemember.username}#${mutemember.discriminator}\`\n**Moderator:** ${message.member.mention}\n**Time:** \`${prettyMilliseconds(muteDuration)}\`\n**Reason:** \`${muteReason}\``,
+                description: `**Muted:** \`${mutemember.username}#${mutemember.discriminator}\`\n**Moderator:** ${message.member.mention}\n**Time:** \`${formattedDuration}\`\n**Reason:** \`${muteReason}\``,
                 timestamp: new Date()
             }
         });
 
-        setTimeout(() => {
+        setTimeout(async () => {
             guildMember.edit({
                 communicationDisabledUntil: null
             }).catch(() => {});

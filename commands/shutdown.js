@@ -34,7 +34,9 @@ module.exports = {
       type: 3 // 3 corresponds to "WATCHING" in Eris
     });
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    process.exit();
+    setTimeout(() => {
+      client.disconnect();
+      process.exit(0);
+    }, 5000);
   }
 };

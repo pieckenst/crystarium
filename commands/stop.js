@@ -4,7 +4,7 @@ module.exports = {
   name: 'stop',
   aliases: ['dc'],
   description: 'Stops the current playing music',
-  run: async (client, message, args) => {
+  execute: async (client, message, args) => {
       const player = client.manager.get(message.guildID);
       if (!player) {
           return message.channel.createMessage('There is no player for this guild.');

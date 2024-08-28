@@ -13,13 +13,18 @@ module.exports = {
       title: "Terra: Help",
       description: "Bot commands are listed below",
       color: 0xF8AA2A,
-      fields: commands.map((cmd) => ({
+      fields: [],
+      timestamp: new Date().toISOString()
+    };
+
+    for (let i = 0; i < Math.min(commands.length, 25); i++) {
+      const cmd = commands[i];
+      helpEmbed.fields.push({
         name: `**${config.prefix}${cmd.name}${cmd.aliases ? ` (${cmd.aliases.join(", ")})` : ""}**`,
         value: cmd.description,
         inline: true
-      })),
-      timestamp: new Date().toISOString()
-    };
+      });
+    }
 
     try {
       await message.channel.createMessage({ embed: helpEmbed });
