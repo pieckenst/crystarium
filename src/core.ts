@@ -1,11 +1,4 @@
-    import { Client, Constants, Collection, CommandInteraction } from 'eris';
-    import fs from 'fs';
-    import { Manager } from 'erela.js';
-    import Spotify from 'erela.js-spotify';
-    import dotenv from 'dotenv';
-    import consola from 'consola';
-    import colors from 'colors';
-    import * as eris from 'eris';
+   
     // Function to check and import dependencies
     const checkAndImportDependencies = () => {
         const dependencies = [
@@ -32,6 +25,14 @@
 
     // Run the dependency check
     checkAndImportDependencies();
+    import { Client, Constants, Collection, CommandInteraction } from 'eris';
+    import fs from 'fs';
+    import { Manager } from 'erela.js';
+    import Spotify from 'erela.js-spotify';
+    import dotenv from 'dotenv';
+    import consola from 'consola';
+    import colors from 'colors';
+    import * as eris from 'eris';
 
     import { prefix } from "./config.json";
     import config from './config.json';
