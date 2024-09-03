@@ -1,5 +1,5 @@
-    // Function to check and import dependencies
-    const checkAndImportDependencies = () => {
+  // Function to check and import dependencies
+const checkAndImportDependencies = () => {
       const dependencies = [
         { name: 'fs', importName: 'fs' },
         { name: 'colors', importName: 'colors' },
@@ -20,41 +20,48 @@
           process.exit(1);
         }
       }
-    };
+};
 
-    // Import colors before using it
-    const colors = require('colors');
+// Import colors before using it
+const colors = require('colors');
 
-    // Run the dependency check
-    checkAndImportDependencies();
+// Run the dependency check
+checkAndImportDependencies();
 
-    // Now import the dependencies
-    const Eris = require('eris');
-    const { Constants, Collection, CommandInteraction } = Eris;
-    const fs = require('fs');
-    const { Manager } = require('erela.js');
-    const Spotify = require('erela.js-spotify');
-    const dotenv = require('dotenv');
-    const consola = require('consola');
+// Now import the dependencies
+const Eris = require('eris');
+const { Constants, Collection, CommandInteraction } = Eris;
+const fs = require('fs');
+const { Manager } = require('erela.js');
+const Spotify = require('erela.js-spotify');
+const dotenv = require('dotenv');
+const consola = require('consola');
 
-    dotenv.config();
-
-    const { prefix } = require("./config.json");
-    const config = require('./config.json');
-    const keepAlive = require('./server');
-
-    let token;
-    try {
-      token = process.env.TOKEN;
+let token;
+try {
+      require("dotenv").config();
+      token = process.env.token;
       if (!token) {
         throw new Error("Token not found in .env file");
       }
-    } catch (error) {
-      console.error("Error loading token:".red, error.message.red);
+} catch (error) {
+      if (error.code === 'MODULE_NOT_FOUND') {
+        console.error("Error: .env file not found. Please create a .env file with your token.".red);
+      } else if (error.message === "Token not found in .env file") {
+        console.error("Error: Token not found in .env file. Please add your token to the .env file.".red);
+      } else {
+        console.error("Error loading .env file:".red, error.message.red);
+      }
       process.exit(1);
-    }
+}
 
-    const client = new Eris(token, {
+const { prefix } = require("./config.json");
+const config = require('./config.json');
+const keepAlive = require('./server');
+
+
+
+const client = new Eris(token, {
       intents: [
         Constants.Intents.guilds,
         Constants.Intents.guildMessages,
@@ -68,16 +75,16 @@
         roles: false,
         users: false
       }
-    });
+});
 
-    client.commands = new Collection();
-    client.slashCommands = new Collection();
-    client.cooldowns = new Map();
-    const clientID = config.clientID;
-    const clientSecret = config.clientSecret;
+client.commands = new Collection();
+client.slashCommands = new Collection();
+client.cooldowns = new Map();
+const clientID = config.clientID;
+const clientSecret = config.clientSecret;
 
-    const loadCommands = (dir = './commands') => {
-      try {
+const loadCommands = (dir = './commands') => {
+  try {
         const commandFiles = fs.readdirSync(dir).filter(file => file.endsWith(".js"));
         for (const file of commandFiles) {
           const filePath = `${dir}/${file}`;
@@ -108,9 +115,9 @@
       } catch (error) {
         console.error("[ERROR] Failed to load commands:".red, error.message.red);
       }
-    };
+};
 
-    const initializeManager = () => {
+const initializeManager = () => {
       try {
         client.manager = new Manager({
           plugins: [
@@ -172,9 +179,9 @@
       } catch (error) {
         console.error("[ERROR] Failed to initialize manager:".red, error.message.red);
       }
-    };
+};
 
-    client.on("ready", () => {
+client.on("ready", () => {
       try {
         console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username}`.green);
         client.editStatus("online", { name: "In development : Using Eris", type: 3 });
@@ -192,9 +199,9 @@
       } catch (error) {
         console.error("[ERROR] Failed to complete ready event:".red, error.message.red);
       }
-    });
+});
 
-    client.on("rawWS", (packet) => {
+client.on("rawWS", (packet) => {
       try {
         if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
           client.manager.updateVoiceState(packet.d);
@@ -202,9 +209,9 @@
       } catch (error) {
         console.error("[ERROR] Failed to process rawWS event:".red, error.message.red);
       }
-    });
+});
 
-    client.on("messageCreate", async (message) => {
+client.on("messageCreate", async (message) => {
       try {
         if (!message.content || !message.content.startsWith(prefix) || message.author.bot) return;
 
@@ -285,9 +292,9 @@
           }
         }).catch(sendError => console.error("Error sending error message:".red, sendError.message.red));
       }
-    });
+});
 
-    client.on("interactionCreate", async (interaction) => {
+client.on("interactionCreate", async (interaction) => {
       if (interaction instanceof CommandInteraction) {
         const command = client.slashCommands.get(interaction.data.name);
         if (!command) return;
@@ -302,14 +309,14 @@
           }).catch(sendError => console.error("Error sending error message:".red, sendError.message.red));
         }
       }
-    });
+});
 
-    try {
+try {
       loadCommands();
       initializeManager();
       keepAlive();
       client.connect();
-    } catch (error) {
+} catch (error) {
       console.error("[FATAL ERROR] Failed to start the bot:".red, error.message.red);
       process.exit(1);
-    }
+}
