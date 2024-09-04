@@ -1,12 +1,13 @@
     import { Message, Client, Member, Role } from 'eris';
+    import { Harmonix } from '../core';
 
     export default {
       name: "addrole",
       description: "Adds the specified role to the provided user.",
       usage: '<@user/ID> <@role/ID>',
       permissions: ["manageRoles"],
-      execute: async (msg: Message, args: string[]) => {
-        const client = msg.channel.client as Client;
+      execute: async (harmonix: Harmonix, msg: Message, args: string[]) => {
+        const client = harmonix.client;
 
         const getMember = (arg: string): Member | null => {
           const mentionRegex = /^<@!?(\d+)>$/;
@@ -32,7 +33,7 @@
         const role = getRole(args[1]);
 
         if (!member || !role) {
-          await msg.channel.createMessage({
+          await client.createMessage(msg.channel.id, {
             embed: {
               color: 0xFF0000,
               title: "Missing arguments",
@@ -47,7 +48,7 @@
           if (msg.channel.type === 0 && 'guild' in msg.channel) {
             const botMember = msg.channel.guild.members.get(client.user.id);
             if (botMember && botMember.roles.length > 0 && !botMember.roles.some(r => 'guild' in msg.channel && msg.channel.guild.roles.get(r)!.position > role.position)) {
-              await msg.channel.createMessage({
+              await client.createMessage(msg.channel.id, {
                 embed: {
                   color: 0xFF0000,
                   description: "**I cannot give this role!**"
@@ -57,7 +58,7 @@
             }
 
             if (member.roles.includes(role.id)) {
-              await msg.channel.createMessage({
+              await client.createMessage(msg.channel.id, {
                 embed: {
                   color: 0xFF0000,
                   description: `<@${member.id}> **already has ${role.name} role!**`
@@ -67,7 +68,7 @@
             }
 
             await member.addRole(role.id, "Role added by addrole command");
-            await msg.channel.createMessage({
+            await client.createMessage(msg.channel.id, {
               embed: {
                 color: 0x00FF00,
                 description: `**Successfully added ${role.name} role for <@${member.id}>!**`
@@ -76,11 +77,12 @@
           }
         } catch (error) {
           console.error("Error in addrole command:", error);
-          await msg.channel.createMessage({
+          await client.createMessage(msg.channel.id, {
             embed: {
               color: 0xFF0000,
               description: "**An error occurred while trying to add the role!**"
             }
           });
         }
-      }};
+      }
+    };

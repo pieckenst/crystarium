@@ -1,44 +1,45 @@
-const Eris = require("eris");
+import { Message, TextableChannel, Constants } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
+export default {
   name: "setstatus",
   description: "A Command To Set bot activity!",
   usage: "setstatus [your status]",
   accessableby: "Owner",
   aliases: [""],
-  async execute(client, message, args) {
-    const ownerId = "540142383270985738";
+  execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
+      const ownerId = "540142383270985738";
 
-    if (message.author.id !== ownerId) {
-      return message.channel.createMessage({
-        embed: {
-          title: "You Are Not The Bot Owner!",
-          color: 0xff0000,
-          footer: { text: client.user.username },
-          timestamp: new Date()
-        }
-      });
-    }
+      if (msg.author.id !== ownerId) {
+          return harmonix.client.createMessage(msg.channel.id, {
+              embed: {
+                  title: "You Are Not The Bot Owner!",
+                  color: 0xff0000,
+                  footer: { text: harmonix.client.user.username },
+                  timestamp: new Date()
+              }
+          });
+      }
 
-    const setActivity = args.join(" ");
-    
-    try {
-      await client.editStatus("online", {
-        name: setActivity,
-        type: Eris.Constants.ActivityTypes.WATCHING
-      });
+      const setActivity = args.join(" ");
+        
+      try {
+          await harmonix.client.editStatus("online", {
+              name: setActivity,
+              type: Constants.ActivityTypes.WATCHING
+          });
 
-      return message.channel.createMessage({
-        embed: {
-          title: "Requested status has been set",
-          color: 0x00ff00,
-          footer: { text: client.user.username },
-          timestamp: new Date()
-        }
-      });
-    } catch (error) {
-      console.error("Error setting status:", error);
-      return message.channel.createMessage("An error occurred while setting the status.");
-    }
+          return harmonix.client.createMessage(msg.channel.id, {
+              embed: {
+                  title: "Requested status has been set",
+                  color: 0x00ff00,
+                  footer: { text: harmonix.client.user.username },
+                  timestamp: new Date()
+              }
+          });
+      } catch (error) {
+          console.error("Error setting status:", error);
+          return harmonix.client.createMessage(msg.channel.id, "An error occurred while setting the status.");
+      }
   }
 };

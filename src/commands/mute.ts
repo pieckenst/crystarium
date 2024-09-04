@@ -1,15 +1,16 @@
-const Eris = require('eris');
-const config = require('../config.json');
-const ms = require('ms');
+import { Message, Member, User, TextChannel } from 'eris';
+import { Harmonix } from '../core';
+import ms from 'ms';
+import prettyMs from 'pretty-ms';
 
-module.exports = {
+export default {
     name: 'mute',
     description: 'Mute a user for a certain amount of time.',
     aliases: ["tmute"],
     usage: '<@user/ID> <time> [reason]',
     permissions: ["moderateMembers"],
-    async execute(client, message, args) {
-        const mutemember = message.mentions[0] || client.users.get(args[0]);
+    async execute(harmonix: Harmonix, message: Message<TextChannel>, args: string[]) {
+        const mutemember = message.mentions[0] || harmonix.client.users.get(args[0]);
         const muteDuration = ms(args[1]);
         const muteReason = args.slice(2).join(' ') || "Not Specified.";
 
@@ -18,13 +19,22 @@ module.exports = {
                 embed: {
                     color: 0xFF0000,
                     title: "Missing arguments",
-                    description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Aliases:** \`${this.aliases.join(", ") || "None"}\`\n**Usage:** \`${config.prefix}${this.name}${this.usage}\`\n**Permissions:** \`${this.permissions || "None"}\``,
+                    description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Aliases:** \`${this.aliases.join(", ") || "None"}\`\n**Usage:** \`${harmonix.options.prefix}${this.name} ${this.usage}\`\n**Permissions:** \`${this.permissions || "None"}\``,
                     timestamp: new Date()
                 }
             });
         }
 
         const guildMember = message.member.guild.members.get(mutemember.id);
+
+        if (!guildMember) {
+            return message.channel.createMessage({
+                embed: {
+                    color: 0xFF0000,
+                    description: "**User not found in this guild!**"
+                }
+            });
+        }
 
         if (guildMember.id === message.member.id) {
             return message.channel.createMessage({
@@ -35,11 +45,11 @@ module.exports = {
             });
         }
 
-        if (guildMember.highestRole.position >= message.member.highestRole.position) {
+        if (guildMember.permissions.has("moderateMembers") || guildMember.permissions.has("administrator")) {
             return message.channel.createMessage({
                 embed: {
                     color: 0xFF0000,
-                    description: "**You cannot mute someone with an equal or higher role!**"
+                    description: "**You cannot mute someone with moderation or administration permissions!**"
                 }
             });
         }
@@ -57,19 +67,14 @@ module.exports = {
             });
         }
 
-        const formatDuration = async (duration) => {
-            const prettyMs = await import('pretty-ms');
-            return prettyMs.default(duration);
-        };
-
-        const formattedDuration = await formatDuration(muteDuration);
+        const formattedDuration = prettyMs(muteDuration);
 
         const muteEmbed = {
             color: 0x0000FF,
             description: `**You have been __muted__ in \`${message.member.guild.name}\` for \`${formattedDuration}\` Reason: \`${muteReason}\`!**`
         };
 
-        client.getDMChannel(mutemember.id).then(channel => {
+        harmonix.client.getDMChannel(mutemember.id).then(channel => {
             channel.createMessage({ embed: muteEmbed }).catch(() => {});
         });
 
@@ -92,7 +97,7 @@ module.exports = {
                 description: `**You have been __unmuted__ in \`${message.member.guild.name}\`!**`
             };
 
-            client.getDMChannel(mutemember.id).then(channel => {
+            harmonix.client.getDMChannel(mutemember.id).then(channel => {
                 channel.createMessage({ embed: unmuteEmbed }).catch(() => {});
             });
 

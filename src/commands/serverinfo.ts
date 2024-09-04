@@ -1,22 +1,23 @@
-const Eris = require('eris');
+import { Message, TextableChannel, Guild, GuildChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
+export default {
     name: 'serverinfo',
     description: 'Information about the Discord server where the bot is on',
-    execute(client, message, args) {
-        const guild = message.channel.guild;
+    execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
+        if (!(msg.channel instanceof GuildChannel)) {
+            await harmonix.client.createMessage(msg.channel.id, "This command can only be used in a server.");
+            return;
+        }
+
+        const guild: Guild = msg.channel.guild;
 
         const infoserver = {
             embed: {
                 color: 0xF8AA2A,
                 title: `Information about the server: ${guild.name}`,
-                thumbnail: { url: guild.iconURL },
+                thumbnail: guild.iconURL ? { url: guild.iconURL } : undefined,
                 fields: [
-                    {
-                        name: 'Region',
-                        value: guild.region,
-                        inline: true
-                    },
                     {
                         name: 'Created At',
                         value: new Date(guild.createdAt).toUTCString(),
@@ -24,7 +25,7 @@ module.exports = {
                     },
                     {
                         name: 'Member Count',
-                        value: guild.memberCount,
+                        value: guild.memberCount.toString(),
                         inline: true
                     },
                     {
@@ -34,7 +35,7 @@ module.exports = {
                     },
                     {
                         name: 'Server Owner',
-                        value: client.users.get(guild.ownerID).username,
+                        value: (await harmonix.client.getRESTUser(guild.ownerID)).username,
                         inline: true
                     }
                 ],
@@ -42,6 +43,5 @@ module.exports = {
             }
         };
 
-        client.createMessage(message.channel.id, infoserver);
-    }
-};
+        await harmonix.client.createMessage(msg.channel.id, infoserver);
+    }};

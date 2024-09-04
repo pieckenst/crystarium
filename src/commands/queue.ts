@@ -1,18 +1,24 @@
-const Eris = require("eris");
+import { Message, TextableChannel, GuildChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
-    name: "queue",
-    aliases: ['q'],
-    description: "Displays the queue",
-    async execute(client, message, args) {
-      const player = client.manager.get(message.guildID);
-      if (!player) return message.channel.createMessage("There is no player for this guild.");
+export default {
+  name: "queue",
+  aliases: ['q'],
+  description: "Displays the queue",
+  execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
+      const player = harmonix.manager.get(msg.guildID!);
+      if (!player) return msg.channel.createMessage("There is no player for this guild.");
 
       const queue = player.queue;
-      const embed = {
-        author: { name: `Queue for ${message.channel.guild.name}` },
-        fields: [],
-        footer: { text: "" }
+      const embed: {
+          author: { name: string };
+          fields: { name: string; value: string }[];
+          footer: { text: string };
+          description?: string;
+      } = {
+          author: { name: `Queue for ${msg.channel instanceof GuildChannel ? msg.channel.guild.name : 'Unknown Guild'}` },
+          fields: [],
+          footer: { text: "" }
       };
 
       const tracksPerPage = 10;
@@ -24,22 +30,21 @@ module.exports = {
       const tracks = queue.slice(start, end);
 
       if (queue.current) {
-        embed.fields.push({
-          name: "Current",
-          value: `[${queue.current.title}](${queue.current.uri})`
-        });
+          embed.fields.push({
+              name: "Current",
+              value: `[${queue.current.title}](${queue.current.uri})`
+          });
       }
 
       if (tracks.length === 0) {
-        embed.description = `No tracks in ${page > 1 ? `page ${page}` : "the queue"}.`;
+          embed.description = `No tracks in ${page > 1 ? `page ${page}` : "the queue"}.`;
       } else {
-        embed.description = tracks.map((track, i) => 
-          `${start + i + 1} - [${track.title}](${track.uri})`
-        ).join("\n");
+          embed.description = tracks.map((track, i) => 
+              `${start + i + 1} - [${track.title}](${track.uri})`
+          ).join("\n");
       }
 
       embed.footer.text = `Page ${Math.min(page, maxPages)} of ${maxPages}`;
 
-      return message.channel.createMessage({ embed });
-    }
-};
+      return msg.channel.createMessage({ embed });
+  }};

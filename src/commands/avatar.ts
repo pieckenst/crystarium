@@ -1,10 +1,10 @@
-    import { Message, Client } from 'eris';
+    import { Message, TextableChannel } from 'eris';
+    import { Harmonix } from '../core';
 
     export default {
         name: 'avatar',
         description: 'Show user discord avatar by command',
-        execute: async (msg: Message, args: string[]) => {
-            const client = msg.channel.client as Client;
+        execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
             const targetUser = msg.mentions[0] || msg.author;
         
             const avatarEmbed = {
@@ -19,6 +19,6 @@
                 }
             };
 
-            await client.createMessage(msg.channel.id, { embed: avatarEmbed });
+            await harmonix.client.createMessage(msg.channel.id, { embed: avatarEmbed });
         }
     };

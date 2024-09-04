@@ -1,74 +1,85 @@
-const Eris = require('eris');
+import { Message, TextableChannel, GuildChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
-  name: "seek",
-  aliases: [''],
-  description: "seek the current playing music",
-  async execute(client, message, args) {
-      try {
-          const player = client.manager.get(message.guildID);
-          if (!player || !player.queue.current) {
-              return message.channel.createMessage({
-                  embed: {
-                      color: 0xFF0000,
-                      title: "Error | No song is currently playing"
-                  }
-              });
-          }
+export default {
+    name: "seek",
+    aliases: [''],
+    description: "seek the current playing music",
+    execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
+        try {
+            if (!(msg.channel instanceof GuildChannel)) {
+                return harmonix.client.createMessage(msg.channel.id, {
+                    embed: {
+                        color: 0xFF0000,
+                        title: "Error | This command can only be used in a guild"
+                    }
+                });
+            }
 
-          const seekTime = Number(args[0]);
-          if (isNaN(seekTime) || seekTime < 0 || seekTime >= player.queue.current.duration / 1000) {
-              return message.channel.createMessage({
-                  embed: {
-                      color: 0xFF0000,
-                      title: `Error | You may seek from 0 - ${Math.floor(player.queue.current.duration / 1000)} seconds`
-                  }
-              });
-          }
+            const player = harmonix.manager.get(msg.channel.guild.id);
+            if (!player || !player.queue.current) {
+                return harmonix.client.createMessage(msg.channel.id, {
+                    embed: {
+                        color: 0xFF0000,
+                        title: "Error | No song is currently playing"
+                    }
+                });
+            }
 
-          await player.seek(seekTime * 1000);
+            const seekTime = Number(args[0]);
+            const currentDuration = player.queue.current.duration || 0;
+            if (isNaN(seekTime) || seekTime < 0 || seekTime >= currentDuration / 1000) {
+                return harmonix.client.createMessage(msg.channel.id, {
+                    embed: {
+                        color: 0xFF0000,
+                        title: `Error | You may seek from 0 - ${Math.floor(currentDuration / 1000)} seconds`
+                    }
+                });
+            }
 
-          const embed = new Eris.Embed()
-              .setTitle(`Success | Seeked song to: ${formatTime(seekTime * 1000)}`)
-              .addField("Progress", createProgressBar(player))
-              .setColor(0x00FF00);
+            await player.seek(seekTime * 1000);
 
-          return message.channel.createMessage({ embed });
-      } catch (e) {
-          console.error(e);
-          return message.channel.createMessage({
-              embed: {
-                  color: 0xFF0000,
-                  title: "ERROR | An error occurred",
-                  description: `\`\`\`${e.message}\`\`\``
-              }
-          });
-      }
-  }
-};
+            const embed = {
+                title: `Success | Seeked song to: ${formatTime(seekTime * 1000)}`,
+                fields: [{ name: "Progress", value: createProgressBar(player) }],
+                color: 0x00FF00
+            };
 
-function createProgressBar(player) {
-  if (!player.queue.current) return "No song is currently playing";
+            return harmonix.client.createMessage(msg.channel.id, { embed });
+        } catch (e) {
+            console.error(e);
+            return harmonix.client.createMessage(msg.channel.id, {
+                embed: {
+                    color: 0xFF0000,
+                    title: "ERROR | An error occurred",
+                    description: `\`\`\`${e.message}\`\`\``
+                }
+            });
+        }
+    }};
 
-  const current = player.position;
-  const total = player.queue.current.duration;
-  const size = 15;
-  const progress = Math.round((size * current) / total);
+function createProgressBar(player: any) {
+    if (!player.queue.current) return "No song is currently playing";
 
-  const bar = `${"▬".repeat(progress)}🔘${"▬".repeat(size - progress)}`;
-  const timeString = `${formatTime(current)} / ${total === 0 ? "◉ LIVE" : formatTime(total)}`;
+    const current = player.position;
+    const total = player.queue.current.duration;
+    const size = 15;
+    const progress = Math.round((size * current) / total);
 
-  return `${bar}\n${timeString}`;
+    const bar = `${"▬".repeat(progress)}🔘${"▬".repeat(size - progress)}`;
+    const timeString = `${formatTime(current)} / ${total === 0 ? "◉ LIVE" : formatTime(total)}`;
+
+    return `${bar}\n${timeString}`;
 }
 
-function formatTime(milliseconds) {
-  const seconds = Math.floor(milliseconds / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
+function formatTime(milliseconds: number) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
 
-  const paddedSeconds = String(seconds % 60).padStart(2, '0');
-  const paddedMinutes = String(minutes % 60).padStart(2, '0');
-  const paddedHours = String(hours).padStart(2, '0');
+    const paddedSeconds = String(seconds % 60).padStart(2, '0');
+    const paddedMinutes = String(minutes % 60).padStart(2, '0');
+    const paddedHours = String(hours).padStart(2, '0');
 
-  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+    return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
 }

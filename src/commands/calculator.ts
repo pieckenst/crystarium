@@ -1,10 +1,11 @@
-const Eris = require("eris");
-const math = require("mathjs");
+import { ActionRow, InteractionButton, Message, TextableChannel } from 'eris';
+import { Harmonix } from '../core';
+import * as math from 'mathjs';
 
-module.exports = {
+export default {
   name: "calculator",
   description: "Bring up a calculator using Buttons!",
-  async execute(client, message, args) {
+  execute: async (harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) => {
     const buttons = [
       ["Exit", "(", ")", "/"],
       ["7", "8", "9", "*"],
@@ -16,7 +17,7 @@ module.exports = {
     const components = buttons.map(row => ({
       type: 1,
       components: row.map(label => createButton(label))
-    }));
+    })) as ActionRow[];
 
     const embed = {
       type: "rich",
@@ -24,13 +25,13 @@ module.exports = {
       color: 0x0000FF
     };
 
-    const msg = await message.channel.createMessage({ embeds: [embed], components });
+    const msg = await harmonix.client.createMessage(message.channel.id, { embeds: [embed], components });
 
     let value = "";
     let isWrong = false;
     const time = 600000;
 
-    const collector = new Eris.MessageCollector(client, message.channel.id, {
+    const collector = new Eris.MessageCollector(message.channel, {
       filter: m => m.author.id === message.author.id && m.data && m.data.custom_id && m.data.custom_id.startsWith("cal"),
       time: time
     });
@@ -40,7 +41,7 @@ module.exports = {
 
       if (val === "Exit") {
         await interaction.acknowledge();
-        await msg.edit({
+        await harmonix.client.editMessage(message.channel.id, msg.id, {
           embeds: [{
             title: "Exiting calculator",
             description: " calculator on request ",
@@ -65,14 +66,14 @@ module.exports = {
       }
 
       await interaction.acknowledge();
-      await msg.edit({
+      await harmonix.client.editMessage(message.channel.id, msg.id, {
         embeds: [{ ...embed, description: "" + value + "" }],
         components
       });
     });
 
     setTimeout(async () => {
-      await msg.edit({
+      await harmonix.client.editMessage(message.channel.id, msg.id, {
         embeds: [{
           ...embed,
           description: "Your time to use the calculator is running out...",
@@ -81,11 +82,11 @@ module.exports = {
       });
     }, time - 10000);
 
-    function createButton(label) {
-      let style = 2; // grey
+    function createButton(label: string): InteractionButton {
+      let style: 1 | 2 | 3 | 4 = 2; // grey
       if (label === "Exit") style = 4; // red
       else if (label === "=") style = 3; // green
-      else if (isNaN(label) && label !== ".") style = 1; // blue
+      else if (isNaN(Number(label)) && label !== ".") style = 1; // blue
 
       return {
         type: 2,
@@ -95,7 +96,7 @@ module.exports = {
       };
     }
 
-    function mathEval(input) {
+    function mathEval(input: string): string {
       try {
         return math.evaluate(input).toString();
       } catch {

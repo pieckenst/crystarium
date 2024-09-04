@@ -1,4 +1,4 @@
-import { Message, Client, Constants, EmbedOptions } from 'eris';
+import { Message, Constants, EmbedOptions } from 'eris';
 import { stripIndents } from 'common-tags';
 import { Harmonix } from '../core';
 
@@ -8,23 +8,23 @@ export default {
   usage: '<command_name>',
   aliases: ['h'],
   category: 'Info',
-  execute: async (msg: Message, args: string[], harmonix: Harmonix) => {
+  execute: async (harmonix: Harmonix, msg: Message, args: string[]) => {
     const commandName = args[0];
 
     if (commandName) {
-      await showSpecificCommandHelp(msg, commandName, harmonix);
+      await showSpecificCommandHelp(harmonix, msg, commandName);
     } else {
-      await showMainHelpMenu(msg, harmonix);
+      await showMainHelpMenu(harmonix, msg);
     }
   }
 };
 
-async function showSpecificCommandHelp(msg: Message, commandName: string, harmonix: Harmonix) {
-  const command = harmonix.commands?.get(commandName) || 
-    Array.from(harmonix.commands?.values() || []).find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+async function showSpecificCommandHelp(harmonix: Harmonix, msg: Message, commandName: string) {
+  const command = harmonix.commands.get(commandName) || 
+    Array.from(harmonix.commands.values()).find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
   if (!command) {
-    return msg.channel.createMessage({
+    return harmonix.client.createMessage(msg.channel.id, {
       embed: {
         title: "Invalid command",
         description: `Use \`${harmonix.options.prefix}help\` to see all commands.`,
@@ -45,12 +45,12 @@ async function showSpecificCommandHelp(msg: Message, commandName: string, harmon
     `
   };
 
-  return msg.channel.createMessage({ embed });
+  return harmonix.client.createMessage(msg.channel.id, { embed });
 }
 
-async function showMainHelpMenu(msg: Message, harmonix: Harmonix) {
+async function showMainHelpMenu(harmonix: Harmonix, msg: Message) {
   if (!harmonix.commands) {
-    return msg.channel.createMessage({
+    return harmonix.client.createMessage(msg.channel.id, {
       embed: {
         title: "Error",
         description: "Commands are not available at the moment.",
@@ -77,5 +77,5 @@ async function showMainHelpMenu(msg: Message, harmonix: Harmonix) {
 
   embed.footer = { text: `Total Commands: ${harmonix.commands.size}` };
 
-  return msg.channel.createMessage({ embed });
+  return harmonix.client.createMessage(msg.channel.id, { embed });
 }

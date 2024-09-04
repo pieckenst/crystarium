@@ -1,32 +1,37 @@
-const Eris = require('eris');
+import { Message, TextableChannel, GuildChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
+export default {
     name: "repeat",
     aliases: ['loop', 'lp'],
     description: "Toggles repeat modes",
-    async execute(client, message, args) {
-        const player = client.manager.get(message.guildID);
-        if (!player) {
-            return message.channel.createMessage("There is no player for this guild.");
+    execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
+        if (!(msg.channel instanceof GuildChannel)) {
+            return harmonix.client.createMessage(msg.channel.id, "This command can only be used in a guild.");
         }
 
-        const memberVoiceState = message.member.voiceState;
-        if (!memberVoiceState.channelID) {
-            return message.channel.createMessage("You need to join a voice channel.");
+        const player = harmonix.manager.get(msg.channel.guild.id);
+        if (!player) {
+            return harmonix.client.createMessage(msg.channel.id, "There is no player for this guild.");
+        }
+
+        const memberVoiceState = msg.member?.voiceState;
+        if (!memberVoiceState?.channelID) {
+            return harmonix.client.createMessage(msg.channel.id, "You need to join a voice channel.");
         }
 
         if (memberVoiceState.channelID !== player.voiceChannel) {
-            return message.channel.createMessage("You're not in the same voice channel.");
+            return harmonix.client.createMessage(msg.channel.id, "You're not in the same voice channel.");
         }
 
         if (args.length && /queue/i.test(args[0])) {
             player.setQueueRepeat(!player.queueRepeat);
             const queueRepeat = player.queueRepeat ? "Enabled" : "Disabled";
-            return message.channel.createMessage(`${queueRepeat} queue repeat.`);
+            return harmonix.client.createMessage(msg.channel.id, `${queueRepeat} queue repeat.`);
         }
 
         player.setTrackRepeat(!player.trackRepeat);
         const trackRepeat = player.trackRepeat ? "Enabled" : "Disabled";
-        return message.channel.createMessage(`${trackRepeat} track repeat.`);
+        return harmonix.client.createMessage(msg.channel.id, `${trackRepeat} track repeat.`);
     }
 };

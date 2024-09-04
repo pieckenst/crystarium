@@ -1,29 +1,30 @@
-const Eris = require('eris');
+import { Message, TextableChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
-  name: 'pause',
-  aliases: ['ps'],
-  description: 'Pauses the current playing music',
-  run: async (client, message, args) => {
-      const voiceConnection = client.voiceConnections.get(message.guildID);
+export default {
+    name: 'pause',
+    aliases: ['ps'],
+    description: 'Pauses the current playing music',
+    execute: async (harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) => {
+      const voiceConnection = harmonix.client.voiceConnections.get(message.guildID ?? "default value");
       if (!voiceConnection) {
-          return message.channel.createMessage('There is no active voice connection in this guild.');
+        return harmonix.client.createMessage(message.channel.id, 'There is no active voice connection in this guild.');
       }
 
-      const memberVoiceState = message.member.voiceState;
-      if (!memberVoiceState.channelID) {
-          return message.channel.createMessage('You need to join a voice channel.');
+      const memberVoiceState = message.member?.voiceState;
+      if (!memberVoiceState?.channelID) {
+        return harmonix.client.createMessage(message.channel.id, 'You need to join a voice channel.');
       }
 
       if (memberVoiceState.channelID !== voiceConnection.channelID) {
-          return message.channel.createMessage('You\'re not in the same voice channel.');
+        return harmonix.client.createMessage(message.channel.id, 'You\'re not in the same voice channel.');
       }
 
       if (voiceConnection.paused) {
-          return message.channel.createMessage('The player is already paused.');
+        return harmonix.client.createMessage(message.channel.id, 'The player is already paused.');
       }
 
       voiceConnection.pause();
-      return message.channel.createMessage('Paused the player.');
-  }
+      return harmonix.client.createMessage(message.channel.id, 'Paused the player.');
+    }
 };

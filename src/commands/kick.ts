@@ -1,29 +1,37 @@
-const Eris = require("eris");
+import { Message, Member, Constants } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
+export default {
   name: "kick",
   category: "moderation",
   description: "This will kick a user of your choice from the server",
   permissions: ["kickMembers"],
-  async execute(client, message, args) {
+  async execute(harmonix: Harmonix, message: Message, args: string[]) {
+    if (!message.guildID) {
+      return harmonix.client.createMessage(message.channel.id, "This command can only be used in a server.");
+    }
+
+    const guild = harmonix.client.guilds.get(message.guildID);
+    if (!guild) return;
+
     const kickMemberId = message.mentions[0]?.id || args[0];
     const kickReason = args.slice(1).join(" ") || "Not Specified.";
 
     if (!kickMemberId) {
-      return message.channel.createMessage({
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
           title: "Missing arguments",
-          description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Usage:** \`${client.config.prefix}${this.name} <user> [reason]\`\n**Permissions:** \`${this.permissions.join(", ") || "None"}\``,
+          description: `**Command:** \`${this.name}\`\n**Description:** \`${this.description || "None"}\`\n**Usage:** \`${harmonix.options.prefix}${this.name} <user> [reason]\`\n**Permissions:** \`${this.permissions.join(", ") || "None"}\``,
           timestamp: new Date()
         }
       });
     }
 
-    const kickMember = message.channel.guild.members.get(kickMemberId);
+    const kickMember = guild.members.get(kickMemberId);
 
     if (!kickMember) {
-      return message.channel.createMessage({
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
           description: "**User not found!**"
@@ -31,18 +39,18 @@ module.exports = {
       });
     }
 
-    if (!kickMember.kickable) {
-      return message.channel.createMessage({
+    if (!guild.members.get(harmonix.client.user.id)?.permission.has("kickMembers")) {
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
-          description: "**That person can't be kicked!**"
+          description: "**I don't have permission to kick members!**"
         }
       });
     }
 
-    const memberRoles = kickMember.roles.map(roleId => message.channel.guild.roles.get(roleId));
-    if (memberRoles.some(role => role.permissions.has("manageRoles") || role.permissions.has("manageGuild"))) {
-      return message.channel.createMessage({
+    const memberRoles = kickMember.roles.map(roleId => guild.roles.get(roleId));
+    if (memberRoles.some(role => role?.permissions.has("manageRoles") || role?.permissions.has("manageGuild"))) {
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
           description: "**I cannot kick a moderator or administrator**"
@@ -50,12 +58,14 @@ module.exports = {
       });
     }
 
-    const botMember = message.channel.guild.members.get(client.user.id);
-    const botHighestRole = Math.max(...botMember.roles.map(roleId => message.channel.guild.roles.get(roleId).position));
-    const memberHighestRole = Math.max(...memberRoles.map(role => role.position));
+    const botMember = guild.members.get(harmonix.client.user.id);
+    if (!botMember) return;
+
+    const botHighestRole = Math.max(...botMember.roles.map(roleId => guild.roles.get(roleId)?.position || 0));
+    const memberHighestRole = Math.max(...memberRoles.map(role => role?.position || 0));
 
     if (botHighestRole <= memberHighestRole) {
-      return message.channel.createMessage({
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
           description: `**My highest role must be higher than \`${kickMember.username}#${kickMember.discriminator}\`'s highest role!**`
@@ -64,19 +74,19 @@ module.exports = {
     }
 
     try {
-      await client.kickGuildMember(message.channel.guild.id, kickMember.id, kickReason);
+      await guild.kickMember(kickMember.id, kickReason);
 
-      client.createDMChannel(kickMember.id).then(channel => {
+      harmonix.client.getDMChannel(kickMember.id).then(channel => {
         channel.createMessage({
           embed: {
             color: 0x0000FF,
             title: "You have been kicked!",
-            description: `**Server: \`${message.channel.guild.name}\`\nReason: \`${kickReason}\`\nModerator: \`${message.author.username}#${message.author.discriminator}\`**`
+            description: `**Server: \`${guild.name}\`\nReason: \`${kickReason}\`\nModerator: \`${message.author.username}#${message.author.discriminator}\`**`
           }
         }).catch(() => {});
       });
 
-      return message.channel.createMessage({
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0x00FF00,
           title: "Member Kicked",
@@ -85,12 +95,11 @@ module.exports = {
         }
       });
     } catch (error) {
-      return message.channel.createMessage({
+      return harmonix.client.createMessage(message.channel.id, {
         embed: {
           color: 0xFF0000,
           description: "**Something went wrong. Check my permissions and try again!**"
         }
       });
     }
-  },
-};
+  },};

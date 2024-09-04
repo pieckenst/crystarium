@@ -1,4 +1,5 @@
-import Eris, { Message, TextableChannel, Constants, EmbedOptions, Collection } from 'eris';
+import Eris, { Message, TextableChannel, Constants, EmbedOptions } from 'eris';
+import { Collection } from 'eris';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
@@ -8,6 +9,8 @@ import { watch } from 'chokidar';
 import { debounce } from 'perfect-debounce';
 import { globby } from 'globby';
 import path from 'path';
+import { Manager } from 'erela.js';
+import Spotify from 'erela.js-spotify';
 
 // Types
 type HarmonixOptions = {
@@ -19,6 +22,11 @@ type HarmonixOptions = {
     events: string;
   };
   debug: boolean;
+  clientID: string;
+  clientSecret: string;
+  host: string;
+  port: number;
+  password: string;
 };
 
 type HarmonixCommand = {
@@ -27,7 +35,7 @@ type HarmonixCommand = {
   aliases?: string[];
   usage?: string;
   category?: string;
-  execute: (msg: Eris.Message, args: string[]) => void;
+  execute: (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => void;
 };
 
 type HarmonixEvent = {
@@ -41,6 +49,7 @@ export type Harmonix = {
     commands: Collection<any>;
     events: Collection<any>;
     startTime: Date;
+    manager: Manager;
 };
 
 // Load configuration
@@ -77,14 +86,82 @@ async function initHarmonix(): Promise<Harmonix> {
     ],
   });
 
-  return {
+  const harmonix: Harmonix = {
     client,
     options: { ...config, token },
     commands: new Collection<string, HarmonixCommand>(),
     events: new Collection<string, HarmonixEvent>(),
     startTime: new Date(),
+    manager: new Manager({
+      plugins: [
+        new Spotify({ clientID: config.clientID, clientSecret: config.clientSecret })
+      ],
+      nodes: [{
+        host: config.host,
+        port: config.port,
+        password: config.password,
+        retryDelay: 5000,
+      }],
+      autoPlay: true,
+      send: (id, payload) => {
+        const guild = client.guilds.get(id);
+        if (guild) guild.shard.sendWS(payload.op, payload.d);
+      }
+    })
   };
+
+  initializeManager(harmonix);
+
+  return harmonix;
 }
+
+function initializeManager(harmonix: Harmonix): void {
+  try {
+    harmonix.manager
+      .on("nodeConnect", node => consola.success(colors.green(`[UPSTART] Node "${node.options.identifier}" has connected.`)))
+      .on("nodeError", (node, error) => consola.error(colors.red(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`)))
+      .on("trackStart", (player, track) => {
+        let channel = harmonix.client.getChannel(player.textChannel as any);
+        if (channel && 'createMessage' in channel) {
+          channel.createMessage({
+            embeds: [{
+              color: Math.floor(Math.random() * 0xFFFFFF),
+              author: { name: "NOW PLAYING", icon_url: harmonix.client.user.avatarURL || undefined },
+              description: `[${track.title}](${track.uri})`,
+              fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
+            }]
+          }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStart message: ${error.message}`)));
+        }
+      })
+      .on("trackStuck", (player, track) => {
+        const channel = harmonix.client.getChannel(player.textChannel as any);
+        if (channel && 'createMessage' in channel) {
+          channel.createMessage({
+            embeds: [{
+              color: Math.floor(Math.random() * 0xFFFFFF),
+              author: { name: "Track Stuck", icon_url: harmonix.client.user.avatarURL || undefined },
+              description: track.title
+            }]
+          }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStuck message: ${error.message}`)));
+        }
+      })
+      .on("queueEnd", player => {
+        const channel = harmonix.client.getChannel(player.textChannel as any);
+        if (channel && 'createMessage' in channel) {
+          channel.createMessage({
+            embeds: [{
+              color: Math.floor(Math.random() * 0xFFFFFF),
+              author: { name: "Queue has ended", icon_url: harmonix.client.user.avatarURL || undefined }
+            }]
+          }).catch(error => consola.error(colors.red(`[ERROR] Error sending queueEnd message: ${error.message}`)));
+        }
+        player.destroy();
+      });
+  } catch (error: any) {
+    consola.error(colors.red(`[ERROR] Failed to initialize manager: ${error.message}`));
+  }
+}
+
 // Scan for command and event files
 async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   const pattern = '**/*.{js,ts}';
@@ -103,11 +180,22 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
       const commandModule = require(file);
       const command = commandModule.default || commandModule;
       
-      if (command && typeof command === 'object' && command.name) {
-        harmonix.commands.set(command.name, command);
-        
-        consola.info(colors.blue(`Loaded command: ${command.name}`));
-        
+      if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+        if (command.slash) {
+          harmonix.client.createCommand(command);
+          consola.info(colors.blue(`Loaded slash command: ${command.name}`));
+        } else {
+          harmonix.commands.set(command.name, command);
+          consola.info(colors.blue(`Loaded regular command: ${command.name}`));
+        }
+
+        // Handle interval limits
+        if (command.intervalLimit) {
+          const list = command.intervalLimit;
+          if (list.minute > list.hour || list.hour > list.day) {
+            throw new Error('Impolitic Custom Interval style!');
+          }
+        }
       } else {
         consola.warn(colors.yellow(`Skipping invalid command in file: ${file}`));
       }
@@ -117,6 +205,8 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
       continue;
     }
   }
+
+  consola.info(colors.green(`Loaded ${harmonix.commands.size} text commands.`));
 }
 
 // Load events
@@ -193,9 +283,11 @@ async function main() {
 
   harmonix.client.on('ready', () => {
     consola.success(colors.green(`Logged in as ${harmonix.client.user.username}`));
+    harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
+    harmonix.manager.init(harmonix.client.user.id);
   });
 
-  harmonix.client.on('messageCreate', (msg) => {
+  harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
     if (!msg.content.startsWith(harmonix.options.prefix)) {
       if (msg.mentions.includes(harmonix.client.user)) {
         consola.info(colors.yellow(`Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
@@ -216,15 +308,32 @@ async function main() {
       if (command && 'execute' in command) {
         consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
         try {
-          command.execute(msg as Message<TextableChannel>, args);
+          command.execute(harmonix, msg, args);
         } catch (error) {
           consola.error(colors.red(`Error executing command "${commandName}": "${error}"`));
           // Send an error message to the channel
-          harmonix.client.createMessage(msg.channel.id, `An error occurred while executing the command "${commandName}". Please try again later.`);
+          harmonix.client.createMessage(msg.channel.id, {
+            embed: {
+              title: "Oops!",
+              description: "An error occurred while executing the command",
+              color: 0xff0000,
+              fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
+            }
+          }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
         }
       } else {
         consola.warn(colors.yellow(`Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
       }
+    }
+  });
+
+  harmonix.client.on("rawWS", (packet: any) => {
+    try {
+      if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
+        harmonix.manager.updateVoiceState(packet.d);
+      }
+    } catch (error: any) {
+      consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
     }
   });
 
@@ -238,23 +347,16 @@ async function main() {
 // Run the bot
 main().catch((error) => {
   consola.error(colors.red('An error occurred:'), error);
-  if (error instanceof TypeError) {
-    consola.warn(colors.yellow('TypeError detected. Gracefully disconnecting the bot...'));
-    try {
-      const harmonix = global.harmonix as Harmonix;
-      if (harmonix && harmonix.client) {
-        harmonix.client.disconnect({ reconnect: false });
-        consola.info(colors.green('Bot successfully disconnected.'));
-        process.exit(1);
-      } else {
-        consola.warn(colors.yellow('Unable to access the bot client. Exiting...'));
-        process.exit(1);
-      }
-    } catch (disconnectError) {
-      consola.error(colors.red('Error during graceful shutdown:'), disconnectError);
-      process.exit(1);
-    }
-  } else {
-    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-  }
+  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+});
+
+// Global error handling
+process.on('uncaughtException', (error) => {
+  consola.error(colors.red('Uncaught Exception:'), error);
+  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
+  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
 });
