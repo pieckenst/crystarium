@@ -4,7 +4,7 @@ import { Harmonix } from '../core';
 export default {
     name: 'channelunlock',
     description: 'Unlocks a channel.',
-    category: 'moderator',
+    category: 'moderation',
     aliases: ["chanunlock"],
     usage: '',
     permissions: ["manageChannels"],

@@ -4,7 +4,7 @@ import { Harmonix } from '../core';
 export default {
     name: 'recreatechannel',
     description: 'Deletes the channel and all messages in it and then recreates it with empty contents.',
-    category: 'moderator',
+    category: 'moderation',
     aliases: ["rchannel"],
     usage: '',
     permissions: ["manageChannels"],

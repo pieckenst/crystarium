@@ -7,7 +7,7 @@ export default {
   description: 'Displays all commands that the bot has.',
   usage: '<command_name>',
   aliases: ['h'],
-  category: 'Info',
+  category: 'information',
   execute: async (harmonix: Harmonix, msg: Message, args: string[]) => {
     const commandName = args[0];
 
