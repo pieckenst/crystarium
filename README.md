@@ -17,6 +17,6 @@
 <h3 align="center">Main bot features</h3>
 <h3 align="center"> Music </h3>
 <h3 align="center"> Moderation </h3>
-<h3 align="center"> Information Commands and wikipedia Search</h3>
+<h3 align="center"> Information Commands </h3>
 </div>
 Discord bot written in typescript  and uses Eris library for discord bot functionality
