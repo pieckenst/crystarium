@@ -17,6 +17,7 @@
     "erela.js": "^2.4.0",
     "erela.js-spotify": "^1.2.0",
     "eris": "^0.17.2",
+    "eslint": "^9.9.1",
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "globby": "^14.0.2",
@@ -41,7 +42,10 @@
   },
   "license": "EPL-2.0",
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "@eslint/js": "^9.9.1",
+    "globals": "^15.9.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.4.0"
   },
   "bugs": {
     "url": "https://github.com/pieckenst/terra/issues"
