@@ -4,6 +4,7 @@ import { Harmonix } from '../core';
 export default {
     name: 'pmute',
     description: 'Permanently mute a person.',
+    category: "moderation",
     aliases: ["permmute"],
     usage: '<@user/ID> [Reason]',
     permissions: ["manageRoles"],
