@@ -1,4 +1,3 @@
-   
     // Function to check and import dependencies
     const checkAndImportDependencies = () => {
         const dependencies = [
@@ -13,7 +12,7 @@
 
         for (const dep of dependencies) {
             try {
-                console.log(`Dependency check for ${dep.name}`.yellow);
+                console.log(`[UPSTART] Dependency check for ${dep.name}`.yellow);
                 require(dep.importName);
                 console.log(`[UPSTART] Successfully imported ${dep.name}`.green);
             } catch (error) {
@@ -33,8 +32,12 @@
     import consola from 'consola';
     import colors from 'colors';
     import * as eris from 'eris';
+    import path from 'path';
 
+    const configPath = path.resolve('./config.json');
+    console.log(`[UPSTART] Loading config from: ${configPath}`.cyan);
     import { prefix } from "./config.json";
+    import { disabledCommandCategories } from "./config.json";
     import config from './config.json';
     import keepAlive from './server';
 
@@ -43,12 +46,14 @@
         slashCommands: Collection<any>;
         cooldowns: Map<string, Collection<any>>;
         manager: Manager;
+        disabledCommandCategories: string[];
 
         constructor(token: string, options: any) {
             super(token, options);
-            this.commands = new Collection(options);
-            this.slashCommands = new Collection(options);
+            this.commands = new Collection();
+            this.slashCommands = new Collection();
             this.cooldowns = new Map();
+            this.disabledCommandCategories = disabledCommandCategories;
             this.loadCommands();
             this.initializeManager();
         }
@@ -63,12 +68,32 @@
                         if ('name' in command && 'execute' in command) {
                             if (command.slash) {
                                 this.slashCommands.set(command.name, command);
-                                consola.debug(`[DEBUG] Registered slash command: ${command.name}`.cyan);
+                                consola.debug(`[UPSTART] Registered slash command: ${command.name}`.cyan);
                             } else {
                                 this.commands.set(command.name, command);
-                                consola.debug(`[DEBUG] Registered regular command: ${command.name}`.cyan);
+                                consola.debug(`[UPSTART] Registered regular command: ${command.name}`.cyan);
                             }
                             console.log(`[UPSTART] Loaded ${file}`.green);
+
+                            
+
+                            // Handle categories
+                            const category = path.basename(path.dirname(filePath));
+                            if (category && !this.disabledCommandCategories.includes(category)) {
+                                command.category = category;
+                                if (!this.commands.has(category)) {
+                                    this.commands.set(category, new Collection());
+                                }
+                                this.commands.get(category).set(command.name, command);
+                            }
+
+                            // Handle interval limits
+                            if (command.intervalLimit) {
+                                const list = command.intervalLimit;
+                                if (list.minute > list.hour || list.hour > list.day) {
+                                    throw 'Impolitic Custom Interval style!';
+                                }
+                            }
                         } else {
                             console.warn(`[WARNING] The command at ${filePath} is missing a required "name" or "execute" property.`.yellow);
                         }
@@ -82,15 +107,24 @@
                         }
                     }
                 }
+
                 console.log("[UPSTART] Registered Slash Commands:".green);
-                this.slashCommands.forEach(cmd => console.log(`- ${cmd.name}`.green));
+                this.slashCommands.forEach(cmd => console.log(`[UPSTART] - ${cmd.name}`.green));
                 console.log("[UPSTART] Registered Regular Commands:".green);
-                this.commands.forEach(cmd => console.log(`- ${cmd.name}`.green));
-            } catch (error: any) {
+                this.commands.forEach((category, categoryName) => {
+                    if (category instanceof Collection) {
+                        category.forEach(cmd => console.log(`[UPSTART] - ${categoryName}/${cmd.name}`.green));
+                    } else {
+                        console.log(`[UPSTART] - ${categoryName}`.green);
+                    }
+                });
+
+                console.log(colors.green.bold(`Loaded ${this.commands.size} text commands.`));
+                console.log(colors.green.bold(`Loaded ${this.slashCommands.size} slash commands.`));
+            } catch (error) {
                 console.error("[ERROR] Failed to load commands:".red, error.message.red);
             }
-        }
-        initializeManager() {
+        }        initializeManager() {
             try {
                 this.manager = new Manager({
                     plugins: [
@@ -110,8 +144,8 @@
                 });
 
                 this.manager
-                    .on("nodeConnect", node => console.log(`Node "${node.options.identifier}" has connected.`.green))
-                    .on("nodeError", (node, error) => console.error(`Node "${node.options.identifier}" encountered an error: ${error.message}.`.red))
+                    .on("nodeConnect", node => console.log(`[UPSTART] Node "${node.options.identifier}" has connected.`.green))
+                    .on("nodeError", (node, error) => console.error(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`.red))
                     .on("trackStart", (player, track) => {
                         let channel :any = this.getChannel(player.textChannel as any);
                         if (channel && 'createMessage' in channel) {
@@ -122,7 +156,7 @@
                                     description: `[${track.title}](${track.uri})`,
                                     fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
                                 }]
-                            }).catch(error => console.error("Error sending trackStart message:".red, error.message.red));
+                            }).catch(error => console.error("[ERROR] Error sending trackStart message:".red, error.message.red));
                         }
                     })
                     .on("trackStuck", (player, track) => {
@@ -134,7 +168,7 @@
                                     author: { name: "Track Stuck", icon_url: this.user.avatarURL || undefined },
                                     description: track.title
                                 }]
-                            }).catch(error => console.error("Error sending trackStuck message:".red, error.message.red));
+                            }).catch(error => console.error("[ERROR] Error sending trackStuck message:".red, error.message.red));
                         }
                     })
                     .on("queueEnd", player => {
@@ -145,7 +179,7 @@
                                     color: Math.floor(Math.random() * 0xFFFFFF),
                                     author: { name: "Queue has ended", icon_url: this.user.avatarURL || undefined }
                                 }]
-                            }).catch(error => console.error("Error sending queueEnd message:".red, error.message.red));
+                            }).catch(error => console.error("[ERROR] Error sending queueEnd message:".red, error.message.red));
                         }
                         player.destroy();
                     });            } catch (error: any) {
@@ -163,11 +197,11 @@
         }
     } catch (error: any) {
         if (error.code === 'MODULE_NOT_FOUND') {
-            console.error("Error: .env file not found. Please create a .env file with your token.".red);
+            console.error("[ERROR] .env file not found. Please create a .env file with your token.".red);
         } else if (error.message === "Token not found in .env file") {
-            console.error("Error: Token not found in .env file. Please add your token to the .env file.".red);
+            console.error("[ERROR] Token not found in .env file. Please add your token to the .env file.".red);
         } else {
-            console.error("Error loading .env file:".red, error.message.red);
+            console.error("[ERROR] Error loading .env file:".red, error.message.red);
         }
         process.exit(1);
     }
@@ -190,7 +224,7 @@
 
     client.on("ready", () => {
         try {
-            console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username}`.green);
+            console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username} || Prefix: ${prefix}`.green);
             client.editStatus("online", { name: "In development : Using Eris", type: 3 });
             client.manager.init(client.user.id);
             console.log("[UPSTART] Status setup complete".green);
@@ -207,7 +241,9 @@
         } catch (error: any) {
             console.error("[ERROR] Failed to complete ready event:".red, error.message.red);
         }
-    });    client.on("rawWS", (packet: any) => {
+    });
+
+    client.on("rawWS", (packet: any) => {
         try {
             if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
                 client.manager.updateVoiceState(packet.d);
@@ -216,7 +252,6 @@
             console.error("[ERROR] Failed to process rawWS event:".red, error.message.red);
         }
     });
-
     client.on("messageCreate", async (message: eris.Message) => {
         let anyfuckingtime = "bleh";
         try {
@@ -302,7 +337,7 @@
                     color: 0xff0000,
                     fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
                 }
-            }).catch((sendError: any) => console.error("Error sending error message:".red, sendError.message.red));
+            }).catch((sendError: any) => console.error("[ERROR] Error sending error message:".red, sendError.message.red));
         }
     });    client.on("interactionCreate", async (interaction: eris.CommandInteraction) => {        if (interaction instanceof eris.CommandInteraction) {
             const command = client.slashCommands.get(interaction.data.name);
@@ -313,7 +348,7 @@
                 await interaction.createMessage({
                     content: "There was an error while executing this command!",
                     flags: 64
-                }).catch((sendError: any) => console.error("Error sending error message:".red, sendError.message.red));
+                }).catch((sendError: any) => console.error("[ERROR] Error sending error message:".red, sendError.message.red));
             }
         }
     });

@@ -1,5 +1,6 @@
 {
   "prefix": "c.",
+  "disabledCommandCategories": [],
   "clientID":"ff19557155d64791bac20d2bca24a0a2",
   "clientSecret":"fd6db77d2ec64e77939269e45c2c4ffd",
   "host": "n17.danbot.host",
