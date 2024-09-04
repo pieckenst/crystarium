@@ -1,112 +1,86 @@
-    const Eris = require("eris");
- 
+    import { Message, Client, Member, Role } from 'eris';
 
-    interface Config {
-      prefix: string;
-    }
+    export default {
+      name: "addrole",
+      description: "Adds the specified role to the provided user.",
+      usage: '<@user/ID> <@role/ID>',
+      permissions: ["manageRoles"],
+      execute: async (msg: Message, args: string[]) => {
+        const client = msg.channel.client as Client;
 
-    interface Command {
-      name: string;
-      description: string;
-      aliases: string[];
-      usage: string;
-      permissions: string[];
-      execute: (client: Client, message: Message, args: string[]) => Promise<void>;
-    }
-
-    const config: Config = {
-      prefix: '!' // Replace with your actual prefix
-    };
-
-    module.exports = {
-        name: "addrole",
-        description: "Adds the specified role to the provided user.",
-        aliases: [""],
-        usage: '<@user/ID> <@role/ID>',
-        permissions: ["manageRoles"],
-        async execute(client: Client, message: Message, args: string[]): Promise<void> {
-          const getMember = (arg: string) => {
-            const mentionRegex = /^<@!?(\d+)>$/;
-            const mentionMatch = arg.match(mentionRegex);
-            if (message.channel.type === 0 && 'guild' in message.channel) {
-              return mentionMatch
-                ? message.channel.guild.members.get(mentionMatch[1])
-                : message.channel.guild.members.get(arg);
-            }
-            return null;
-          };
-
-          const getRole = (arg: string) => {
-            const mentionRegex = /^<@&(\d+)>$/;
-            const mentionMatch = arg.match(mentionRegex);
-            if (message.channel.type === 0 && 'guild' in message.channel) {
-              return mentionMatch
-                ? message.channel.guild.roles.get(mentionMatch[1])
-                : message.channel.guild.roles.find(r => r.id === arg || r.name === arg);
-            }
-            return null;
-          };
-
-          const member = getMember(args[0]);
-          const role = getRole(args[1]);
-
-          if (!member || !role) {
-            await client.createMessage(message.channel.id, {
-              embed: {
-                color: 0xFF0000,
-                title: "Missing arguments",
-                description: `**Command:** \`${this.name}\`\n**Description:** \`${
-                  this.description || "None"
-                }\`\n**Aliases:** \`${
-                  this.aliases.join(", ") || "None"
-                }\`\n**Usage:** \`${config.prefix}${this.name} ${
-                  this.usage
-                }\`\n**Permissions:** \`${this.permissions || "None"}\``,
-                timestamp: new Date()
-              }
-            });
-            return;
+        const getMember = (arg: string): Member | null => {
+          const mentionRegex = /^<@!?(\d+)>$/;
+          const mentionMatch = arg.match(mentionRegex);
+          if (msg.channel.type === 0 && 'guild' in msg.channel) {
+            return mentionMatch
+              ? msg.channel.guild.members.get(mentionMatch[1]) ?? null
+              : msg.channel.guild.members.get(arg) ?? null;
           }
+          return null;
+        };
+        const getRole = (arg: string): Role | null => {
+          const mentionRegex = /^<@&(\d+)>$/;
+          const mentionMatch = arg.match(mentionRegex);
+          if (msg.channel.type === 0 && 'guild' in msg.channel) {
+            return mentionMatch
+              ? msg.channel.guild.roles.get(mentionMatch[1]) ?? null
+              : msg.channel.guild.roles.find(r => r.id === arg || r.name === arg) ?? null;
+          }
+          return null;
+        };
+        const member = getMember(args[0]);
+        const role = getRole(args[1]);
 
-          try {
-            if (message.channel.type === 0 && 'guild' in message.channel) {
-              const botMember = message.channel.guild.members.get(client.user.id);
-              if (botMember && botMember.roles.length > 0 && !botMember.roles.some(r => 'guild' in message.channel && message.channel.guild.roles.get(r)!.position > role.position)) {
-                await client.createMessage(message.channel.id, {
-                  embed: {
-                    color: 0xFF0000,
-                    description: "**I cannot give this role!**"
-                  }
-                });
-                return;
-              }
+        if (!member || !role) {
+          await msg.channel.createMessage({
+            embed: {
+              color: 0xFF0000,
+              title: "Missing arguments",
+              description: `**Command:** \`addrole\`\n**Description:** \`Adds the specified role to the provided user.\`\n**Usage:** \`<@user/ID> <@role/ID>\`\n**Permissions:** \`manageRoles\``,
+              timestamp: new Date()
+            }
+          });
+          return;
+        }
 
-              if (member.roles.includes(role.id)) {
-                await client.createMessage(message.channel.id, {
-                  embed: {
-                    color: 0xFF0000,
-                    description: `<@${member.id}> **already has ${role.name} role!**`
-                  }
-                });
-                return;
-              }
-
-              await member.addRole(role.id, "Role added by addrole command");
-              await client.createMessage(message.channel.id, {
+        try {
+          if (msg.channel.type === 0 && 'guild' in msg.channel) {
+            const botMember = msg.channel.guild.members.get(client.user.id);
+            if (botMember && botMember.roles.length > 0 && !botMember.roles.some(r => 'guild' in msg.channel && msg.channel.guild.roles.get(r)!.position > role.position)) {
+              await msg.channel.createMessage({
                 embed: {
-                  color: 0x00FF00,
-                  description: `**Successfully added ${role.name} role for <@${member.id}>!**`
+                  color: 0xFF0000,
+                  description: "**I cannot give this role!**"
                 }
               });
+              return;
             }
-          } catch (error) {
-            console.error("Error in addrole command:", error);
-            await client.createMessage(message.channel.id, {
+
+            if (member.roles.includes(role.id)) {
+              await msg.channel.createMessage({
+                embed: {
+                  color: 0xFF0000,
+                  description: `<@${member.id}> **already has ${role.name} role!**`
+                }
+              });
+              return;
+            }
+
+            await member.addRole(role.id, "Role added by addrole command");
+            await msg.channel.createMessage({
               embed: {
-                color: 0xFF0000,
-                description: "**An error occurred while trying to add the role!**"
+                color: 0x00FF00,
+                description: `**Successfully added ${role.name} role for <@${member.id}>!**`
               }
             });
           }
+        } catch (error) {
+          console.error("Error in addrole command:", error);
+          await msg.channel.createMessage({
+            embed: {
+              color: 0xFF0000,
+              description: "**An error occurred while trying to add the role!**"
+            }
+          });
         }
-    };
+      }};

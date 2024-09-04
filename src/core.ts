@@ -1,362 +1,260 @@
-    // Function to check and import dependencies
-    const checkAndImportDependencies = () => {
-        const dependencies = [
-            { name: 'fs', importName: 'fs' },
-            { name: 'colors', importName: 'colors' },
-            { name: 'Eris', importName: 'eris' }, 
-            { name: 'Erela.js Manager', importName: 'erela.js' },
-            { name: 'Erela.js Spotify', importName: 'erela.js-spotify' },
-            { name: 'dotenv', importName: 'dotenv' },
-            { name: 'consola', importName: 'consola' }
-        ];
+import Eris, { Message, TextableChannel, Constants, EmbedOptions, Collection } from 'eris';
+import dotenv from 'dotenv';
+import { resolve } from 'path';
+import { readFileSync } from 'fs';
+import consola from 'consola';
+import { colors } from 'consola/utils';
+import { watch } from 'chokidar';
+import { debounce } from 'perfect-debounce';
+import { globby } from 'globby';
+import path from 'path';
 
-        for (const dep of dependencies) {
-            try {
-                console.log(`[UPSTART] Dependency check for ${dep.name}`.yellow);
-                require(dep.importName);
-                console.log(`[UPSTART] Successfully imported ${dep.name}`.green);
-            } catch (error) {
-                console.error(`[ERROR] Failed to import ${dep.name}. Please make sure it's installed.`.red);
-                process.exit(1);
-            }
-        }
-    };
+// Types
+type HarmonixOptions = {
+  token: string;
+  prefix: string;
+  
+  dirs: {
+    commands: string;
+    events: string;
+  };
+  debug: boolean;
+};
 
-    // Run the dependency check
-    checkAndImportDependencies();
-    import { Client, Constants, Collection, CommandInteraction } from 'eris';
-    import fs from 'fs';
-    import { Manager } from 'erela.js';
-    import Spotify from 'erela.js-spotify';
-    import dotenv from 'dotenv';
-    import consola from 'consola';
-    import colors from 'colors';
-    import * as eris from 'eris';
-    import path from 'path';
+type HarmonixCommand = {
+  name: string;
+  description: string;
+  aliases?: string[];
+  usage?: string;
+  category?: string;
+  execute: (msg: Eris.Message, args: string[]) => void;
+};
 
-    const configPath = path.resolve('./config.json');
-    console.log(`[UPSTART] Loading config from: ${configPath}`.cyan);
-    import { prefix } from "./config.json";
-    import { disabledCommandCategories } from "./config.json";
-    import config from './config.json';
-    import keepAlive from './server';
+type HarmonixEvent = {
+  name: string;
+  execute: (...args: any[]) => void;
+};
 
-    export default class MyClient extends Client {
-        commands: Collection<any>;
-        slashCommands: Collection<any>;
-        cooldowns: Map<string, Collection<any>>;
-        manager: Manager;
-        disabledCommandCategories: string[];
+export type Harmonix = {
+    client: Eris.Client;
+    options: HarmonixOptions;
+    commands: Collection<any>;
+    events: Collection<any>;
+    startTime: Date;
+};
 
-        constructor(token: string, options: any) {
-            super(token, options);
-            this.commands = new Collection();
-            this.slashCommands = new Collection();
-            this.cooldowns = new Map();
-            this.disabledCommandCategories = disabledCommandCategories;
-            this.loadCommands();
-            this.initializeManager();
-        }
+// Load configuration
+function loadConfig(): HarmonixOptions {
+  const configPath = resolve(process.cwd(), 'config.json');
+  const configFile = readFileSync(configPath, 'utf-8');
+  return JSON.parse(configFile);
+}
 
-        loadCommands(dir = './commands') {
-            try {
-                const commandFiles = fs.readdirSync(dir).filter(file => file.endsWith(".js") || file.endsWith(".ts"));
-                for (const file of commandFiles) {
-                    const filePath = `${dir}/${file}`;
-                    try {
-                        const command = require(filePath);
-                        if ('name' in command && 'execute' in command) {
-                            if (command.slash) {
-                                this.slashCommands.set(command.name, command);
-                                consola.debug(`[UPSTART] Registered slash command: ${command.name}`.cyan);
-                            } else {
-                                this.commands.set(command.name, command);
-                                consola.debug(`[UPSTART] Registered regular command: ${command.name}`.cyan);
-                            }
-                            console.log(`[UPSTART] Loaded ${file}`.green);
+// Load token from .env
+function loadToken(): string {
+  dotenv.config();
+  const token = process.env.token;
+  if (!token) {
+    consola.error(colors.red('[ERROR] Token not found in .env file. Please add your token to the .env file.'));
+    process.exit(1);
+  }
+  return token;
+}
 
-                            
+// Initialize Harmonix
+async function initHarmonix(): Promise<Harmonix> {
+  const config = loadConfig();
+  const token = loadToken();
 
-                            // Handle categories
-                            const category = path.basename(path.dirname(filePath));
-                            if (category && !this.disabledCommandCategories.includes(category)) {
-                                command.category = category;
-                                if (!this.commands.has(category)) {
-                                    this.commands.set(category, new Collection());
-                                }
-                                this.commands.get(category).set(command.name, command);
-                            }
+  const client = new Eris.Client(token, {
+    intents: [
+        Constants.Intents.guilds,
+        Constants.Intents.guildMessages,
+        Constants.Intents.guildMessageReactions,
+        Constants.Intents.directMessages,
+        Constants.Intents.directMessageReactions,
+        Constants.Intents.guildVoiceStates
+    ],
+  });
 
-                            // Handle interval limits
-                            if (command.intervalLimit) {
-                                const list = command.intervalLimit;
-                                if (list.minute > list.hour || list.hour > list.day) {
-                                    throw 'Impolitic Custom Interval style!';
-                                }
-                            }
-                        } else {
-                            console.warn(`[WARNING] The command at ${filePath} is missing a required "name" or "execute" property.`.yellow);
-                        }
-                    } catch (error: any) {
-                        if (file === 'avatar.js' && error.message.includes('The module \'canvas\' was compiled against a different Node.js ABI version')) {
-                            console.error(`[ERROR] Failed to load command ${file}:`.red, 'The canvas module needs to be recompiled for this version of Node.js. Please reinstall the canvas package.'.red);
-                        } else if (file === 'help.js' && error.message.includes('undefined is not an object (evaluating \'options.description\')')) {
-                            console.error(`[ERROR] Failed to load command ${file}:`.red, 'The options object is missing a description property. Please add a description to the command.'.red);
-                        } else {
-                            console.error(`[ERROR] Failed to load command ${file}:`.red, error.message.red);
-                        }
-                    }
-                }
+  return {
+    client,
+    options: { ...config, token },
+    commands: new Collection<string, HarmonixCommand>(),
+    events: new Collection<string, HarmonixEvent>(),
+    startTime: new Date(),
+  };
+}
+// Scan for command and event files
+async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
+  const pattern = '**/*.{js,ts}';
+  const files = await globby(pattern, {
+    cwd: resolve(harmonix.options.dirs[dir]),
+    absolute: true,
+  });
+  return files;
+}
 
-                console.log("[UPSTART] Registered Slash Commands:".green);
-                this.slashCommands.forEach(cmd => console.log(`[UPSTART] - ${cmd.name}`.green));
-                console.log("[UPSTART] Registered Regular Commands:".green);
-                this.commands.forEach((category, categoryName) => {
-                    if (category instanceof Collection) {
-                        category.forEach(cmd => console.log(`[UPSTART] - ${categoryName}/${cmd.name}`.green));
-                    } else {
-                        console.log(`[UPSTART] - ${categoryName}`.green);
-                    }
-                });
-
-                console.log(colors.green.bold(`Loaded ${this.commands.size} text commands.`));
-                console.log(colors.green.bold(`Loaded ${this.slashCommands.size} slash commands.`));
-            } catch (error) {
-                console.error("[ERROR] Failed to load commands:".red, error.message.red);
-            }
-        }        initializeManager() {
-            try {
-                this.manager = new Manager({
-                    plugins: [
-                        new Spotify({ clientID: config.clientID, clientSecret: config.clientSecret })
-                    ],
-                    nodes: [{
-                        host: config.host,
-                        port: config.port,
-                        password: config.password,
-                        retryDelay: 5000,
-                    }],
-                    autoPlay: true,
-                    send: (id, payload) => {
-                        const guild = this.guilds.get(id);
-                        if (guild) guild.shard.sendWS(payload.op, payload.d);
-                    }
-                });
-
-                this.manager
-                    .on("nodeConnect", node => console.log(`[UPSTART] Node "${node.options.identifier}" has connected.`.green))
-                    .on("nodeError", (node, error) => console.error(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`.red))
-                    .on("trackStart", (player, track) => {
-                        let channel :any = this.getChannel(player.textChannel as any);
-                        if (channel && 'createMessage' in channel) {
-                            channel.createMessage({
-                                embeds: [{
-                                    color: Math.floor(Math.random() * 0xFFFFFF),
-                                    author: { name: "NOW PLAYING", icon_url: this.user.avatarURL || undefined },
-                                    description: `[${track.title}](${track.uri})`,
-                                    fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
-                                }]
-                            }).catch(error => console.error("[ERROR] Error sending trackStart message:".red, error.message.red));
-                        }
-                    })
-                    .on("trackStuck", (player, track) => {
-                        const channel = this.getChannel(player.textChannel as any);
-                        if (channel && 'createMessage' in channel) {
-                            channel.createMessage({
-                                embeds: [{
-                                    color: Math.floor(Math.random() * 0xFFFFFF),
-                                    author: { name: "Track Stuck", icon_url: this.user.avatarURL || undefined },
-                                    description: track.title
-                                }]
-                            }).catch(error => console.error("[ERROR] Error sending trackStuck message:".red, error.message.red));
-                        }
-                    })
-                    .on("queueEnd", player => {
-                        const channel = this.getChannel(player.textChannel as any);
-                        if (channel && 'createMessage' in channel) {
-                            channel.createMessage({
-                                embeds: [{
-                                    color: Math.floor(Math.random() * 0xFFFFFF),
-                                    author: { name: "Queue has ended", icon_url: this.user.avatarURL || undefined }
-                                }]
-                            }).catch(error => console.error("[ERROR] Error sending queueEnd message:".red, error.message.red));
-                        }
-                        player.destroy();
-                    });            } catch (error: any) {
-                console.error("[ERROR] Failed to initialize manager:".red, error.message.red);
-            }
-        }
-    }
-
-    let token: string;
+// Load commands
+async function loadCommands(harmonix: Harmonix): Promise<void> {
+  const files = await scanFiles(harmonix, 'commands');
+  for (const file of files) {
     try {
-        dotenv.config();
-        token = process.env.token as string;
-        if (!token) {
-            throw new Error("Token not found in .env file");
-        }
-    } catch (error: any) {
-        if (error.code === 'MODULE_NOT_FOUND') {
-            console.error("[ERROR] .env file not found. Please create a .env file with your token.".red);
-        } else if (error.message === "Token not found in .env file") {
-            console.error("[ERROR] Token not found in .env file. Please add your token to the .env file.".red);
-        } else {
-            console.error("[ERROR] Error loading .env file:".red, error.message.red);
-        }
-        process.exit(1);
+      const commandModule = require(file);
+      const command = commandModule.default || commandModule;
+      
+      if (command && typeof command === 'object' && command.name) {
+        harmonix.commands.set(command.name, command);
+        
+        consola.info(colors.blue(`Loaded command: ${command.name}`));
+        
+      } else {
+        consola.warn(colors.yellow(`Skipping invalid command in file: ${file}`));
+      }
+    } catch (error) {
+      consola.error(colors.red(`Error loading command from file: ${file}`));
+      consola.error(colors.red(`Error details: ${error.message}`));
+      continue;
     }
+  }
+}
 
-    const client = new MyClient(token, {
-        intents: [
-            Constants.Intents.guilds,
-            Constants.Intents.guildMessages,
-            Constants.Intents.guildMessageReactions,
-            Constants.Intents.directMessages,
-            Constants.Intents.directMessageReactions,
-            Constants.Intents.guildVoiceStates
-        ],
-        allowedMentions: {
-            everyone: false,
-            roles: false,
-            users: false
+// Load events
+async function loadEvents(harmonix: Harmonix): Promise<void> {
+  const files = await scanFiles(harmonix, 'events');
+  for (const file of files) {
+    const event = require(file).default as HarmonixEvent;
+    harmonix.events.set(event.name, event);
+    harmonix.client.on(event.name, (...args) => event.execute(...args));
+    if (harmonix.options.debug) {
+      consola.info(colors.blue(`Loaded event: ${event.name}`));
+    }
+  }
+}
+
+// Watch for file changes and reload
+function watchAndReload(harmonix: Harmonix): void {
+  const watcher = watch([
+    harmonix.options.dirs.commands,
+    harmonix.options.dirs.events,
+  ]);
+
+  const reload = debounce(async () => {
+    consola.info(colors.yellow('Reloading commands and events...'));
+    harmonix.commands.clear();
+    harmonix.events.clear();
+    await loadCommands(harmonix);
+    await loadEvents(harmonix);
+    consola.success(colors.green('Reload complete'));
+  }, 100);
+
+  watcher.on('change', reload);
+}
+
+// Function to create an embed with bot start time and uptime
+function createBotInfoEmbed(harmonix: Harmonix): EmbedOptions {
+  const uptime = Date.now() - harmonix.startTime.getTime();
+  const days = Math.floor(uptime / 86400000);
+  const hours = Math.floor((uptime % 86400000) / 3600000);
+  const minutes = Math.floor((uptime % 3600000) / 60000);
+  const seconds = Math.floor((uptime % 60000) / 1000);
+
+  return {
+    title: 'Bot Information',
+    fields: [
+      {
+        name: 'Start Time',
+        value: harmonix.startTime.toUTCString(),
+        inline: true
+      },
+      {
+        name: 'Uptime',
+        value: `${days}d ${hours}h ${minutes}m ${seconds}s`,
+        inline: true
+      }
+    ],
+    color: 0x7289DA, // Discord blurple color
+    footer: {
+      text: `${harmonix.client.user.username}`,
+      icon_url: harmonix.client.user.avatarURL
+    },
+    timestamp: new Date().toISOString()
+  };
+}
+
+// Main function
+async function main() {
+  const harmonix = await initHarmonix();
+
+  consola.info(colors.blue('Initializing Terra...'));
+
+  await loadCommands(harmonix);
+  await loadEvents(harmonix);
+
+  harmonix.client.on('ready', () => {
+    consola.success(colors.green(`Logged in as ${harmonix.client.user.username}`));
+  });
+
+  harmonix.client.on('messageCreate', (msg) => {
+    if (!msg.content.startsWith(harmonix.options.prefix)) {
+      if (msg.mentions.includes(harmonix.client.user)) {
+        consola.info(colors.yellow(`Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
+        const embed = createBotInfoEmbed(harmonix);
+        if (msg.channel.id) {
+          harmonix.client.createMessage(msg.channel.id, { embed });
         }
-    });
+      }
+      return;
+    }
+    if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
+      const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
+      const commandName = args.shift()?.toLowerCase();
 
-    client.on("ready", () => {
+      if (!commandName) return;
+
+      const command = harmonix.commands.get(commandName);
+      if (command && 'execute' in command) {
+        consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
         try {
-            console.log(`[UPSTART] Started the bot || Service logged in as ${client.user.username} || Prefix: ${prefix}`.green);
-            client.editStatus("online", { name: "In development : Using Eris", type: 3 });
-            client.manager.init(client.user.id);
-            console.log("[UPSTART] Status setup complete".green);
-
-            // Register slash commands
-            const slashCommands = Array.from(client.slashCommands.values()).map(command => ({
-                name: command.name,
-                description: command.description,
-                options: command.options,
-                type: 1 as const // Specify the type as a const assertion
-            }));
-            client.bulkEditCommands(slashCommands);
-            console.log(`[UPSTART] Registered ${slashCommands.length} slash commands`.green);
-        } catch (error: any) {
-            console.error("[ERROR] Failed to complete ready event:".red, error.message.red);
+          command.execute(msg as Message<TextableChannel>, args);
+        } catch (error) {
+          consola.error(colors.red(`Error executing command "${commandName}": "${error}"`));
+          // Send an error message to the channel
+          harmonix.client.createMessage(msg.channel.id, `An error occurred while executing the command "${commandName}". Please try again later.`);
         }
-    });
+      } else {
+        consola.warn(colors.yellow(`Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
+      }
+    }
+  });
 
-    client.on("rawWS", (packet: any) => {
-        try {
-            if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
-                client.manager.updateVoiceState(packet.d);
-            }
-        } catch (error: any) {
-            console.error("[ERROR] Failed to process rawWS event:".red, error.message.red);
-        }
-    });
-    client.on("messageCreate", async (message: eris.Message) => {
-        let anyfuckingtime = "bleh";
-        try {
-            if (!message.content || !message.content.startsWith(prefix) || message.author.bot) return;
+  if (harmonix.options.debug) {
+    watchAndReload(harmonix);
+  }
 
-            const args = message.content.slice(prefix.length).trim().split(/ +/);
-            const commandName = args.shift()?.toLowerCase() || '';
+  harmonix.client.connect();
+}
 
-            const command = client.commands.get(commandName) ||
-                client.commands.find((cmd: eris.Command) => cmd.aliases && cmd.aliases.includes(commandName));
-
-            if (!command) return;
-
-            if (command.guildOnly && !(message.channel instanceof eris.GuildChannel)) {
-                return message.channel.createMessage("I can't execute that command inside DMs!");
-            }
-
-            if (message.content === prefix) {
-                return message.channel.createMessage({
-                    embed: {
-                        title: "Oops!",
-                        description: "There is a problem here",
-                        color: 0xff0000,
-                        fields: [{ name: "Your message is just the bot prefix", value: "Please pass down a command" }]
-                    }
-                });
-            }
-
-            if (command.permissions && message.member) {
-                const memberPerms = message.member.permission.json;
-                if (!memberPerms[command.permissions]) {
-                    return message.channel.createMessage({
-                        embed: {
-                            title: "Oops!",
-                            description: "You cannot execute this command!",
-                            color: 0xff0000,
-                            fields: [{ name: "You require this permission", value: `\`\`\`fix\n${command.permissions}\n\`\`\`` }]
-                        }
-                    });
-                }
-            }
-
-            if (command.args && !args.length) {
-                let reply = `You didn't provide any arguments, ${message.author.mention}!`;
-                if (command.usage) {
-                    reply += `\nThe proper usage would be: \`${prefix}${command.name} ${command.usage}\``;
-                }
-                return message.channel.createMessage(reply);
-            }
-
-            const cooldowns = client.cooldowns;
-            let anyfuckingarray:any  = []
-
-            if (!cooldowns.has(command.name)) {
-                cooldowns.set(command.name, new Collection(anyfuckingarray));
-            }
-
-            const now = Date.now();
-            const timestamps = cooldowns.get(command.name);
-            if (!timestamps) {
-                return;
-            }
-            const cooldownAmount = (command.cooldown || 3) * 1000;
-
-            if (timestamps.has(message.author.id)) {
-                const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-                if (now < expirationTime) {
-                    const timeLeft = (expirationTime - now) / 1000;
-                    return message.channel.createMessage(`Please wait ${timeLeft.toFixed(1)} more second(s) before reusing the \`${command.name}\` command.`);
-                }
-            }
-
-            timestamps.set(message.author.id, now);
-            setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
-
-            await command.execute(client, message, args);
-        } catch (error: any) {
-            console.error("[ERROR] Failed to process message:".red, error.message.red);
-            message.channel.createMessage({
-                embed: {
-                    title: "Oops!",
-                    description: "An error occurred while executing the command",
-                    color: 0xff0000,
-                    fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
-                }
-            }).catch((sendError: any) => console.error("[ERROR] Error sending error message:".red, sendError.message.red));
-        }
-    });    client.on("interactionCreate", async (interaction: eris.CommandInteraction) => {        if (interaction instanceof eris.CommandInteraction) {
-            const command = client.slashCommands.get(interaction.data.name);
-            if (!command) return;
-            try {                await command.execute(client, interaction);
-            } catch (error: any) {
-                console.error("[ERROR] Failed to process slash command:".red, error.message.red);
-                await interaction.createMessage({
-                    content: "There was an error while executing this command!",
-                    flags: 64
-                }).catch((sendError: any) => console.error("[ERROR] Error sending error message:".red, sendError.message.red));
-            }
-        }
-    });
-
+// Run the bot
+main().catch((error) => {
+  consola.error(colors.red('An error occurred:'), error);
+  if (error instanceof TypeError) {
+    consola.warn(colors.yellow('TypeError detected. Gracefully disconnecting the bot...'));
     try {
-        keepAlive();
-        client.connect();
-    } catch (error: any) {
-        console.error("[FATAL ERROR] Failed to start the bot:".red, error.message.red);
+      const harmonix = global.harmonix as Harmonix;
+      if (harmonix && harmonix.client) {
+        harmonix.client.disconnect({ reconnect: false });
+        consola.info(colors.green('Bot successfully disconnected.'));
         process.exit(1);
+      } else {
+        consola.warn(colors.yellow('Unable to access the bot client. Exiting...'));
+        process.exit(1);
+      }
+    } catch (disconnectError) {
+      consola.error(colors.red('Error during graceful shutdown:'), disconnectError);
+      process.exit(1);
     }
+  } else {
+    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+  }
+});

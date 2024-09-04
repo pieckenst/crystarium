@@ -1,53 +1,56 @@
-const Eris = require("eris");
-const config = require("../config.json");
+import { Message, Member, GuildChannel } from 'eris';
+import { Harmonix } from '../core';
 
-module.exports = {
+export default {
   name: "ban",
   description: "Ban a user from the guild.",
   category: "moderation",
   aliases: [""],
   usage: "<@user/ID> [reason]",
-  permissions: ["banMembers"],
+  execute: async (msg: Message, args: string[], harmonix: Harmonix) => {
+    if (!msg.channel.guild) {
+      return sendErrorEmbed(msg, "This command can only be used in a guild.");
+    }
 
-  async execute(client, message, args) {
-    const userId = message.mentions[0]?.id || args[0];
+    const userId = msg.mentions[0]?.id || args[0];
     const banReason = args.slice(1).join(" ") || "Not Specified.";
 
     if (!userId) {
-      return sendMissingArgsEmbed(message, this);
+      return sendMissingArgsEmbed(msg, this);
     }
 
-    const banMember = message.channel.guild.members.get(userId);
+    const guild = (msg.channel as GuildChannel).guild;
+    const banMember = guild.members.get(userId);
 
     if (!banMember) {
-      return sendErrorEmbed(message, "User not found.");
+      return sendErrorEmbed(msg, "User not found.");
     }
 
-    if (!canBanMember(message.member, banMember)) {
-      return sendErrorEmbed(message, "You don't have permission to ban this user.");
+    if (!canBanMember(msg.member!, banMember)) {
+      return sendErrorEmbed(msg, "You don't have permission to ban this user.");
     }
 
     try {
-      await message.channel.guild.banMember(userId, 0, banReason);
-      await sendBanDM(client, banMember, message.channel.guild, banReason, message.author);
-      await sendBanConfirmation(message, banMember, banReason);
+      await guild.banMember(userId, 0, banReason);
+      await sendBanDM(harmonix.client, banMember, guild, banReason, msg.author);
+      await sendBanConfirmation(msg, banMember, banReason);
     } catch (error) {
       console.error("Ban error:", error);
-      return sendErrorEmbed(message, "An error occurred while trying to ban the user.");
+      return sendErrorEmbed(msg, "An error occurred while trying to ban the user.");
     }
+
   },
 };
 
-function sendMissingArgsEmbed(message, command) {
+function sendMissingArgsEmbed(message: Message, command: any) {
   const embed = {
     color: 0xFF0000,
     title: "Missing arguments",
-    description: `**Command:** \`${command.name}\`\n**Description:** \`${command.description || "None"}\`\n**Aliases:** \`${command.aliases.join(", ") || "None"}\`\n**Usage:** \`${config.prefix}${command.name}${command.usage}\`\n**Permissions:** \`${command.permissions || "None"}\``,
+    description: `**Command:** \`${command.name}\`\n**Description:** \`${command.description || "None"}\`\n**Aliases:** \`${command.aliases.join(", ") || "None"}\`\n**Usage:** \`${command.name} ${command.usage}\`\n**Permissions:** \`${command.permissions || "None"}\``,
     timestamp: new Date()
   };
   return message.channel.createMessage({ embed });
 }
-
 function sendErrorEmbed(message, errorMessage) {
   const embed = {
     color: 0xFF0000,

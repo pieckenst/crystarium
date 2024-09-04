@@ -1,98 +1,81 @@
-const Eris = require('eris');
-const fs = require('fs');
-const path = require('path');
-const { stripIndents } = require('common-tags');
+import { Message, Client, Constants, EmbedOptions } from 'eris';
+import { stripIndents } from 'common-tags';
+import { Harmonix } from '../core';
 
-function getKeyByValue(object, value) {
-  return Object.keys(object).find(key => object[key] === value);
-}
-
-class HelpCommand extends Eris.Command {
-  constructor(bot) {
-    super("help", {
-      description: "Displays all commands that the bot has.",
-      options: [
-        {
-          name: "command",
-          description: "The command name",
-          type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
-          required: false
-        }
-      ]
-    });
-    this.bot = bot;
-    this.category = 'Info';
-    this.usage = '<command_name>';
-    this.aliases = ['h'];
-  }
-
-  async execute(interaction) {
-    const commandName = interaction.data.options?.[0]?.value;
+export default {
+  name: 'help',
+  description: 'Displays all commands that the bot has.',
+  usage: '<command_name>',
+  aliases: ['h'],
+  category: 'Info',
+  execute: async (msg: Message, args: string[], harmonix: Harmonix) => {
+    const commandName = args[0];
 
     if (commandName) {
-      await this.showHelpForCommand(interaction, commandName);
+      await showSpecificCommandHelp(msg, commandName, harmonix);
     } else {
-      await this.showHelp(interaction);
+      await showMainHelpMenu(msg, harmonix);
     }
-  }
-
-  async showHelp(interaction) {
-    const categories = new Set(this.bot.commands.map(cmd => cmd.category || "Uncategorized"));
-    const embed = new Eris.Embed()
-      .setThumbnail(this.bot.user.dynamicAvatarURL("png", 2048))
-      .setColor(0x7289DA)
-      .setAuthor("Command List");
-
-    for (let category of categories) {
-      const commands = this.bot.commands.filter(cmd => (cmd.category || "Uncategorized") === category);
-      embed.addField(
-        `❯ ${category.toString().toUpperCase()} [${commands.size}]`,
-        commands.map(cmd => `\`${cmd.name}\``).join(', ')
-      );
-    }
-
-    embed.setFooter(`Total Commands: ${this.bot.commands.size}`);
-
-    return interaction.createMessage({ embeds: [embed] });
-  }
-
-  async showHelpForCommand(interaction, commandName) {
-    const command = this.bot.commands.get(commandName) || this.bot.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
-
-    if (!command) {
-      return interaction.createMessage({
-        embeds: [{
-          title: "Invalid command",
-          description: `Use \`/${this.name}\` to see all commands.`,
-          color: 0xFF0000
-        }]
-      });
-    }
-
-    const embed = new Eris.Embed()
-      .setThumbnail(this.bot.user.dynamicAvatarURL("png", 2048))
-      .setColor(0x7289DA)
-      .setDescription(stripIndents`
-        Name: \`${command.name}\`
-        Description: \`${command.description || "No description available"}\`
-        Usage: ${command.usage ? `\`/${command.name} ${command.usage}\`` : "No usage specified"}
-        Category: \`${command.category || "Uncategorized"}\`
-        Aliases: \`${command.aliases ? command.aliases.join(', ') : "No aliases"}\`
-      `);
-
-    return interaction.createMessage({ embeds: [embed] });
-  }
-}
-
-module.exports = {
-  name: 'help',
-  execute: (bot) => {
-    const helpCommand = new HelpCommand(bot);
-    return {
-      name: helpCommand.name,
-      description: helpCommand.description,
-      options: helpCommand.options,
-      execute: (interaction) => helpCommand.execute(interaction)
-    };
   }
 };
+
+async function showSpecificCommandHelp(msg: Message, commandName: string, harmonix: Harmonix) {
+  const command = harmonix.commands?.get(commandName) || 
+    Array.from(harmonix.commands?.values() || []).find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+
+  if (!command) {
+    return msg.channel.createMessage({
+      embed: {
+        title: "Invalid command",
+        description: `Use \`${harmonix.options.prefix}help\` to see all commands.`,
+        color: 0xFF0000
+      }
+    });
+  }
+
+  const embed: EmbedOptions = {
+    thumbnail: { url: harmonix.client.user.dynamicAvatarURL("png", 2048) },
+    color: 0x7289DA,
+    description: stripIndents`
+      Name: \`${command.name}\`
+      Description: \`${command.description || "No description available"}\`
+      Usage: ${command.usage ? `\`${harmonix.options.prefix}${command.name} ${command.usage}\`` : "No usage specified"}
+      Category: \`${command.category}\`
+      Aliases: \`${command.aliases ? command.aliases.join(', ') : "No aliases"}\`
+    `
+  };
+
+  return msg.channel.createMessage({ embed });
+}
+
+async function showMainHelpMenu(msg: Message, harmonix: Harmonix) {
+  if (!harmonix.commands) {
+    return msg.channel.createMessage({
+      embed: {
+        title: "Error",
+        description: "Commands are not available at the moment.",
+        color: 0xFF0000
+      }
+    });
+  }
+
+  const categories = new Set(Array.from(harmonix.commands.values()).map(cmd => cmd.category).filter((category): category is string => category !== undefined));
+  const embed: EmbedOptions = {
+    thumbnail: { url: harmonix.client.user.dynamicAvatarURL("png", 2048) },
+    color: 0x7289DA,
+    author: { name: "Command List" },
+    fields: []
+  };
+
+  for (const category of categories) {
+    const commands = Array.from(harmonix.commands.values()).filter(cmd => cmd.category === category);
+    embed.fields!.push({
+      name: `❯ ${category.toUpperCase()} [${commands.length}]`,
+      value: commands.map(cmd => `\`${cmd.name}\``).join(', ')
+    });
+  }
+
+  embed.footer = { text: `Total Commands: ${harmonix.commands.size}` };
+
+  return msg.channel.createMessage({ embed });
+}
