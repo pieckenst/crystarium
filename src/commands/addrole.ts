@@ -4,6 +4,7 @@
     export default {
       name: "addrole",
       description: "Adds the specified role to the provided user.",
+      category: "moderation",
       usage: '<@user/ID> <@role/ID>',
       permissions: ["manageRoles"],
       execute: async (harmonix: Harmonix, msg: Message, args: string[]) => {

@@ -4,6 +4,7 @@ module.exports = {
   name: 'skip',
   aliases: ['sk'],
   description: 'Skips the current playing music',
+  category: "music",
   async execute(message, args, client) {
       const player = client.manager.get(message.guildID);
       if (!player) {

@@ -5,6 +5,7 @@ import * as math from 'mathjs';
 export default {
   name: "calculator",
   description: "Bring up a calculator using Buttons!",
+  category: "miscellaneous",
   execute: async (harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) => {
     const buttons = [
       ["Exit", "(", ")", "/"],

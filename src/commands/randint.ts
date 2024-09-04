@@ -5,6 +5,7 @@ export default {
     name: "randint",
     aliases: [''],
     description: "Random number from range between two entered numbers",
+    category: "miscellaneous",
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
         if (args.length !== 2 || isNaN(Number(args[0])) || isNaN(Number(args[1]))) {
             return harmonix.client.createMessage(msg.channel.id, "Please provide two valid numbers.");

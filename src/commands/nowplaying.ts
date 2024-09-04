@@ -5,6 +5,7 @@ export default {
   name: 'nowplaying',
   aliases: ['np'],
   description: "Show now playing music info",
+  category: "music",
   async execute(harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) {
       try {
           if (!message.guildID) {

@@ -4,6 +4,7 @@ import { Harmonix } from '../core';
 export default {
     name: 'serverinfo',
     description: 'Information about the Discord server where the bot is on',
+    category: "infornation",
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
         if (!(msg.channel instanceof GuildChannel)) {
             await harmonix.client.createMessage(msg.channel.id, "This command can only be used in a server.");

@@ -5,6 +5,7 @@ export default {
     name: "shutdown",
     description: "A Command To Shutdown The Bot!",
     usage: "shutdown",
+    category: "owner",
     accessableby: "Owner",
     aliases: [""],
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {

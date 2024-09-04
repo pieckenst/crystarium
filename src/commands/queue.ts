@@ -5,6 +5,7 @@ export default {
   name: "queue",
   aliases: ['q'],
   description: "Displays the queue",
+  category: "music",
   execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
       const player = harmonix.manager.get(msg.guildID!);
       if (!player) return msg.channel.createMessage("There is no player for this guild.");

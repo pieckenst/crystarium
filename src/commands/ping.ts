@@ -4,6 +4,7 @@ import { Harmonix } from '../core'
 export default {
     name: 'ping',
     description: 'Performs a ping test on Discord',
+    category: "information",
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
         const startTime = Date.now()
         const pingMsg = await harmonix.client.createMessage(msg.channel.id, 'Pinging...')

@@ -6,6 +6,7 @@ import prettyMs from 'pretty-ms';
 export default {
     name: 'mute',
     description: 'Mute a user for a certain amount of time.',
+    category: "moderation",
     aliases: ["tmute"],
     usage: '<@user/ID> <time> [reason]',
     permissions: ["moderateMembers"],

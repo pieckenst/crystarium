@@ -5,6 +5,7 @@ export default {
     name: "seek",
     aliases: [''],
     description: "seek the current playing music",
+    category: "music",
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
         try {
             if (!(msg.channel instanceof GuildChannel)) {

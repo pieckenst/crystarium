@@ -4,6 +4,7 @@ const config = require('../config.json');
 module.exports = {
     name: 'unmute',
     description: 'Unmute a person.',
+    category: "moderation",
     aliases: ["unmmute"],
     usage: '<@user/ID> [Reason]',
     permissions: ["moderateMembers"],

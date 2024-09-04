@@ -5,6 +5,7 @@ export default {
     name: "repeat",
     aliases: ['loop', 'lp'],
     description: "Toggles repeat modes",
+    category: "music",
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
         if (!(msg.channel instanceof GuildChannel)) {
             return harmonix.client.createMessage(msg.channel.id, "This command can only be used in a guild.");

@@ -4,6 +4,7 @@ import { Harmonix } from '../core';
 export default {
   name: "setstatus",
   description: "A Command To Set bot activity!",
+  category: "owner",
   usage: "setstatus [your status]",
   accessableby: "Owner",
   aliases: [""],

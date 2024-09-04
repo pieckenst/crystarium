@@ -4,6 +4,7 @@ module.exports = {
     name: "uptime",
     aliases: [],
     description: "Bot uptime.",
+    category: "miscellaneous",
     async execute(client, message) {
         const uptime = client.uptime;
         const days = Math.floor(uptime / 86400000);

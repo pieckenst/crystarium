@@ -4,6 +4,7 @@ import { Harmonix } from '../core';
 export default {
     name: "removerole",
     description: "Removes the specified role from the provided user.",
+    category: "moderation",
     aliases: [""],
     usage: '<@user/ID> <@role/ID>',
     permissions: ["manageRoles"],

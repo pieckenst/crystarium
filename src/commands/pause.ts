@@ -5,6 +5,7 @@ export default {
     name: 'pause',
     aliases: ['ps'],
     description: 'Pauses the current playing music',
+    category: "music",
     execute: async (harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) => {
       const voiceConnection = harmonix.client.voiceConnections.get(message.guildID ?? "default value");
       if (!voiceConnection) {

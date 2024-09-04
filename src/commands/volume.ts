@@ -4,6 +4,7 @@ module.exports = {
   name: 'volume',
   aliases: ['v'],
   description: 'Set volume level of the music',
+  category: "music",
   async execute(message, args, client) {
       const player = client.manager.get(message.guildID);
 

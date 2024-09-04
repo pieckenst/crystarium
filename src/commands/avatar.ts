@@ -4,6 +4,7 @@
     export default {
         name: 'avatar',
         description: 'Show user discord avatar by command',
+        category: "information",
         execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
             const targetUser = msg.mentions[0] || msg.author;
         
