@@ -13,6 +13,18 @@ import { Manager } from 'erela.js';
 import Spotify from 'erela.js-spotify';
 import { Effect, Console } from 'effect';
 
+//error handling stuff
+
+class ConfigError {
+  readonly _tag = 'ConfigError';
+  constructor(readonly message: string) {}
+}
+
+class TokenError {
+  readonly _tag = 'TokenError';
+  constructor(readonly message: string) {}
+}
+
 // Types
 type HarmonixOptions = {
   token: string;
@@ -54,27 +66,37 @@ export type Harmonix = {
 };
 
 // Load configuration
-function loadConfig(): HarmonixOptions {
-  const configPath = resolve(process.cwd(), 'config.json');
-  const configFile = readFileSync(configPath, 'utf-8');
-  return JSON.parse(configFile);
-}
+const loadConfig = Effect.tryPromise({
+  try: async (): Promise<HarmonixOptions> => {
+    const configPath = resolve(process.cwd(), 'config.json');
+    consola.info(colors.yellow(` Loading configuration from: ${configPath}`));
+    const configFile = readFileSync(configPath, 'utf-8');
+    return JSON.parse(configFile);
+  },  catch: (error: unknown) => new ConfigError(`Failed to load config: ${error instanceof Error ? error.message : String(error)}`)
+});
 
 // Load token from .env
-function loadToken(): string {
-  dotenv.config();
+const loadToken = Effect.gen(function* (_) {
+  yield* Effect.tryPromise({
+    try: async () => dotenv.config(),
+    catch: (error) => new TokenError(`Failed to load .env: ${error instanceof Error ? error.message : String(error)}`)
+  });
+
   const token = process.env.token;
   if (!token) {
-    consola.error(colors.red('[ERROR] Token not found in .env file. Please add your token to the .env file.'));
-    process.exit(1);
+    yield* Effect.fail(new TokenError('Token not found in .env file'));
   }
   return token;
-}
+});
 
 // Initialize Harmonix
 async function initHarmonix(): Promise<Harmonix> {
-  const config = loadConfig();
-  const token = loadToken();
+  const config = await Effect.runPromise(loadConfig);
+  const token = await Effect.runPromise(loadToken);
+
+  consola.info(colors.yellow(` Bot prefix: ${config.prefix}`));
+  consola.info(colors.yellow(` Platform: ${process.platform}`));
+  consola.info(colors.yellow(` Start time: ${new Date().toISOString()}`));
 
   const client = new Eris.Client(token, {
     intents: [
@@ -193,10 +215,10 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
             if (command.slash) {
               harmonix.client.createCommand(command);
-              consola.info(colors.blue(`Loaded slash command: ${command.name}`));
+              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
             } else {
               harmonix.commands.set(command.name, command);
-              consola.info(colors.blue(`Loaded regular command: ${command.name}`));
+              consola.info(colors.blue(` Loaded regular command: ${command.name}`));
             }
 
             // Handle interval limits
@@ -207,18 +229,18 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
               }
             }
           } else {
-            consola.warn(colors.yellow(`Skipping invalid command in file: ${file}`));
+            consola.warn(colors.yellow(` Skipping invalid command in file: ${file}`));
           }
         },
         catch: (error: Error) => {
-          consola.error(colors.red(`Error loading command from file: ${file}`));
-          consola.error(colors.red(`Error details: ${error.message}`));
+          consola.error(colors.red(` Error loading command from file: ${file}`));
+          consola.error(colors.red(` Error details: ${error.message}`));
         }
       })
     );
   }
 
-  consola.info(colors.green(`Loaded ${harmonix.commands.size} text commands.`));
+  consola.info(colors.green(` Loaded ${harmonix.commands.size} text commands.`));
 }
 
 // Load events with Effect-based error handling
@@ -232,12 +254,12 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
           harmonix.events.set(event.name, event);
           harmonix.client.on(event.name, (...args) => event.execute(...args));
           if (harmonix.options.debug) {
-            consola.info(colors.blue(`Loaded event: ${event.name}`));
+            consola.info(colors.blue(` Loaded event: ${event.name}`));
           }
         },
         catch: (error: Error) => {
-          consola.error(colors.red(`Error loading event from file: ${file}`));
-          consola.error(colors.red(`Error details: ${error.message}`));
+          consola.error(colors.red(` Error loading event from file: ${file}`));
+          consola.error(colors.red(` Error details: ${error.message}`));
         }
       })
     );
@@ -252,12 +274,12 @@ function watchAndReload(harmonix: Harmonix): void {
   ]);
 
   const reload = debounce(async () => {
-    consola.info(colors.yellow('Reloading commands and events...'));
+    consola.info(colors.yellow(' Reloading commands and events...'));
     harmonix.commands.clear();
     harmonix.events.clear();
     await loadCommands(harmonix);
     await loadEvents(harmonix);
-    consola.success(colors.green('Reload complete'));
+    consola.success(colors.green(' Reload complete'));
   }, 100);
 
   watcher.on('change', reload);
@@ -301,13 +323,13 @@ async function main() {
       try: async () => {
         const harmonix = await initHarmonix();
 
-        consola.info(colors.blue('Initializing Terra...'));
+        consola.info(colors.blue(' Initializing Terra...'));
 
         await loadCommands(harmonix);
         await loadEvents(harmonix);
 
         harmonix.client.on('ready', () => {
-          consola.success(colors.green(`Logged in as ${harmonix.client.user.username}`));
+          consola.success(colors.green(` Logged in as ${harmonix.client.user.username}`));
           harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
           harmonix.manager.init(harmonix.client.user.id);
         });
@@ -315,7 +337,7 @@ async function main() {
         harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
           if (!msg.content.startsWith(harmonix.options.prefix)) {
             if (msg.mentions.includes(harmonix.client.user)) {
-              consola.info(colors.yellow(`Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
+              consola.info(colors.yellow(` Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
               const embed = createBotInfoEmbed(harmonix);
               if (msg.channel.id) {
                 harmonix.client.createMessage(msg.channel.id, { embed });
@@ -347,7 +369,7 @@ async function main() {
                 }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
               }
             } else {
-              consola.warn(colors.yellow(`Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
+              consola.warn(colors.yellow(` Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
             }
           }
         });
@@ -369,13 +391,12 @@ async function main() {
         harmonix.client.connect();
       },
       catch: (error: Error) => {
-        consola.error(colors.red('An error occurred:'), error);
-        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+        consola.error(colors.red(' An error occurred:'), error);
+        consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
       }
     })
   );
 }
-
 // Run the bot
 Effect.runPromise(
   Effect.catchAll(
