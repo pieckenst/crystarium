@@ -1,9 +1,5 @@
-<p align="center">
-<img align="center" src="https://raw.githubusercontent.com/pieckenst/crystarium/crystarium-dev/crystariumcircle.png" height="140" width="140">
-</p>
-<p align="center">
-<img align="center" src="https://raw.githubusercontent.com/pieckenst/crystarium/crystarium-dev/crystarium-banner.png" height="100" width="448">
-</p>
+
+[![Harmonix banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-typescript.svg)](https://forthebadge.com)
 [![GitHub last commit](https://img.shields.io/github/last-commit/pieckenst/terra?style=for-the-badge)](https://github.com/pieckenst/terra/commits/indev)
@@ -19,4 +15,5 @@
 <h3 align="center"> Moderation </h3>
 <h3 align="center"> Information Commands </h3>
 </div>
+# Terra
 Discord bot written in typescript  and uses Eris library for discord bot functionality
