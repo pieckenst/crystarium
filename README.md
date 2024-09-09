@@ -1,4 +1,3 @@
-
 [![Harmonix placeholder banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-typescript.svg)](https://forthebadge.com)
@@ -18,4 +17,4 @@
 
 ## Terra
 
-Discord bot written in typescript  and uses Eris library for discord bot functionality
+Discord bot written in typescript and uses Eris library for discord bot functionality
