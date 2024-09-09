@@ -13,7 +13,7 @@
             ],
             "program": "${file}",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
+                "${workspaceFolder}/*.js"
             ]
         }
     ]
