@@ -11,6 +11,7 @@ import { globby } from 'globby';
 import path from 'path';
 import { Manager } from 'erela.js';
 import Spotify from 'erela.js-spotify';
+import { Effect, Console } from 'effect';
 
 // Types
 type HarmonixOptions = {
@@ -115,51 +116,58 @@ async function initHarmonix(): Promise<Harmonix> {
   return harmonix;
 }
 
+// Added Effect-based error handling
 function initializeManager(harmonix: Harmonix): void {
-  try {
-    harmonix.manager
-      .on("nodeConnect", node => consola.success(colors.green(`[UPSTART] Node "${node.options.identifier}" has connected.`)))
-      .on("nodeError", (node, error) => consola.error(colors.red(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`)))
-      .on("trackStart", (player, track) => {
-        let channel = harmonix.client.getChannel(player.textChannel as any);
-        if (channel && 'createMessage' in channel) {
-          channel.createMessage({
-            embeds: [{
-              color: Math.floor(Math.random() * 0xFFFFFF),
-              author: { name: "NOW PLAYING", icon_url: harmonix.client.user.avatarURL || undefined },
-              description: `[${track.title}](${track.uri})`,
-              fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
-            }]
-          }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStart message: ${error.message}`)));
-        }
-      })
-      .on("trackStuck", (player, track) => {
-        const channel = harmonix.client.getChannel(player.textChannel as any);
-        if (channel && 'createMessage' in channel) {
-          channel.createMessage({
-            embeds: [{
-              color: Math.floor(Math.random() * 0xFFFFFF),
-              author: { name: "Track Stuck", icon_url: harmonix.client.user.avatarURL || undefined },
-              description: track.title
-            }]
-          }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStuck message: ${error.message}`)));
-        }
-      })
-      .on("queueEnd", player => {
-        const channel = harmonix.client.getChannel(player.textChannel as any);
-        if (channel && 'createMessage' in channel) {
-          channel.createMessage({
-            embeds: [{
-              color: Math.floor(Math.random() * 0xFFFFFF),
-              author: { name: "Queue has ended", icon_url: harmonix.client.user.avatarURL || undefined }
-            }]
-          }).catch(error => consola.error(colors.red(`[ERROR] Error sending queueEnd message: ${error.message}`)));
-        }
-        player.destroy();
-      });
-  } catch (error: any) {
-    consola.error(colors.red(`[ERROR] Failed to initialize manager: ${error.message}`));
-  }
+  Effect.runPromise(
+    Effect.tryPromise({
+      try: async (signal: AbortSignal) => {
+        harmonix.manager
+          .on("nodeConnect", node => consola.success(colors.green(`[UPSTART] Node "${node.options.identifier}" has connected.`)))
+          .on("nodeError", (node, error) => consola.error(colors.red(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`)))
+          .on("trackStart", (player, track) => {
+            let channel = harmonix.client.getChannel(player.textChannel as any);
+            if (channel && 'createMessage' in channel) {
+              channel.createMessage({
+                embeds: [{
+                  color: Math.floor(Math.random() * 0xFFFFFF),
+                  author: { name: "NOW PLAYING", icon_url: harmonix.client.user.avatarURL || undefined },
+                  description: `[${track.title}](${track.uri})`,
+                  fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
+                }]
+              }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStart message: ${error.message}`)));
+            }
+          })
+          .on("trackStuck", (player, track) => {
+            const channel = harmonix.client.getChannel(player.textChannel as any);
+            if (channel && 'createMessage' in channel) {
+              channel.createMessage({
+                embeds: [{
+                  color: Math.floor(Math.random() * 0xFFFFFF),
+                  author: { name: "Track Stuck", icon_url: harmonix.client.user.avatarURL || undefined },
+                  description: track.title
+                }]
+              }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStuck message: ${error.message}`)));
+            }
+          })
+          .on("queueEnd", player => {
+            const channel = harmonix.client.getChannel(player.textChannel as any);
+            if (channel && 'createMessage' in channel) {
+              channel.createMessage({
+                embeds: [{
+                  color: Math.floor(Math.random() * 0xFFFFFF),
+                  author: { name: "Queue has ended", icon_url: harmonix.client.user.avatarURL || undefined }
+                }]
+              }).catch(error => consola.error(colors.red(`[ERROR] Error sending queueEnd message: ${error.message}`)));
+            }
+            player.destroy();
+          });
+        
+        // Return a promise to satisfy the PromiseLike<unknown> return type
+        return Promise.resolve();
+      },
+      catch: (error: Error) => Effect.sync(() => console.error(`Failed to initialize manager: ${error.message}`))
+    })
+  );
 }
 
 // Scan for command and event files
@@ -172,53 +180,67 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   return files;
 }
 
-// Load commands
+// Load commands with Effect-based error handling
 async function loadCommands(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'commands');
   for (const file of files) {
-    try {
-      const commandModule = require(file);
-      const command = commandModule.default || commandModule;
-      
-      if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
-        if (command.slash) {
-          harmonix.client.createCommand(command);
-          consola.info(colors.blue(`Loaded slash command: ${command.name}`));
-        } else {
-          harmonix.commands.set(command.name, command);
-          consola.info(colors.blue(`Loaded regular command: ${command.name}`));
-        }
+    await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const commandModule = require(file);
+          const command = commandModule.default || commandModule;
+          
+          if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+            if (command.slash) {
+              harmonix.client.createCommand(command);
+              consola.info(colors.blue(`Loaded slash command: ${command.name}`));
+            } else {
+              harmonix.commands.set(command.name, command);
+              consola.info(colors.blue(`Loaded regular command: ${command.name}`));
+            }
 
-        // Handle interval limits
-        if (command.intervalLimit) {
-          const list = command.intervalLimit;
-          if (list.minute > list.hour || list.hour > list.day) {
-            throw new Error('Impolitic Custom Interval style!');
+            // Handle interval limits
+            if (command.intervalLimit) {
+              const list = command.intervalLimit;
+              if (list.minute > list.hour || list.hour > list.day) {
+                throw new Error('Impolitic Custom Interval style!');
+              }
+            }
+          } else {
+            consola.warn(colors.yellow(`Skipping invalid command in file: ${file}`));
           }
+        },
+        catch: (error: Error) => {
+          consola.error(colors.red(`Error loading command from file: ${file}`));
+          consola.error(colors.red(`Error details: ${error.message}`));
         }
-      } else {
-        consola.warn(colors.yellow(`Skipping invalid command in file: ${file}`));
-      }
-    } catch (error) {
-      consola.error(colors.red(`Error loading command from file: ${file}`));
-      consola.error(colors.red(`Error details: ${error.message}`));
-      continue;
-    }
+      })
+    );
   }
 
   consola.info(colors.green(`Loaded ${harmonix.commands.size} text commands.`));
 }
 
-// Load events
+// Load events with Effect-based error handling
 async function loadEvents(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'events');
   for (const file of files) {
-    const event = require(file).default as HarmonixEvent;
-    harmonix.events.set(event.name, event);
-    harmonix.client.on(event.name, (...args) => event.execute(...args));
-    if (harmonix.options.debug) {
-      consola.info(colors.blue(`Loaded event: ${event.name}`));
-    }
+    await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const event = require(file).default as HarmonixEvent;
+          harmonix.events.set(event.name, event);
+          harmonix.client.on(event.name, (...args) => event.execute(...args));
+          if (harmonix.options.debug) {
+            consola.info(colors.blue(`Loaded event: ${event.name}`));
+          }
+        },
+        catch: (error: Error) => {
+          consola.error(colors.red(`Error loading event from file: ${file}`));
+          consola.error(colors.red(`Error details: ${error.message}`));
+        }
+      })
+    );
   }
 }
 
@@ -272,84 +294,98 @@ function createBotInfoEmbed(harmonix: Harmonix): EmbedOptions {
   };
 }
 
-// Main function
+// Main function with Effect-based error handling
 async function main() {
-  const harmonix = await initHarmonix();
+  await Effect.runPromise(
+    Effect.tryPromise({
+      try: async () => {
+        const harmonix = await initHarmonix();
 
-  consola.info(colors.blue('Initializing Terra...'));
+        consola.info(colors.blue('Initializing Terra...'));
 
-  await loadCommands(harmonix);
-  await loadEvents(harmonix);
+        await loadCommands(harmonix);
+        await loadEvents(harmonix);
 
-  harmonix.client.on('ready', () => {
-    consola.success(colors.green(`Logged in as ${harmonix.client.user.username}`));
-    harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
-    harmonix.manager.init(harmonix.client.user.id);
-  });
+        harmonix.client.on('ready', () => {
+          consola.success(colors.green(`Logged in as ${harmonix.client.user.username}`));
+          harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
+          harmonix.manager.init(harmonix.client.user.id);
+        });
 
-  harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
-    if (!msg.content.startsWith(harmonix.options.prefix)) {
-      if (msg.mentions.includes(harmonix.client.user)) {
-        consola.info(colors.yellow(`Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
-        const embed = createBotInfoEmbed(harmonix);
-        if (msg.channel.id) {
-          harmonix.client.createMessage(msg.channel.id, { embed });
-        }
-      }
-      return;
-    }
-    if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
-      const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
-      const commandName = args.shift()?.toLowerCase();
-
-      if (!commandName) return;
-
-      const command = harmonix.commands.get(commandName);
-      if (command && 'execute' in command) {
-        consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
-        try {
-          command.execute(harmonix, msg, args);
-        } catch (error) {
-          consola.error(colors.red(`Error executing command "${commandName}": "${error}"`));
-          // Send an error message to the channel
-          harmonix.client.createMessage(msg.channel.id, {
-            embed: {
-              title: "Oops!",
-              description: "An error occurred while executing the command",
-              color: 0xff0000,
-              fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
+        harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
+          if (!msg.content.startsWith(harmonix.options.prefix)) {
+            if (msg.mentions.includes(harmonix.client.user)) {
+              consola.info(colors.yellow(`Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
+              const embed = createBotInfoEmbed(harmonix);
+              if (msg.channel.id) {
+                harmonix.client.createMessage(msg.channel.id, { embed });
+              }
             }
-          }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
+            return;
+          }
+          if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
+            const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
+            const commandName = args.shift()?.toLowerCase();
+
+            if (!commandName) return;
+
+            const command = harmonix.commands.get(commandName);
+            if (command && 'execute' in command) {
+              consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
+              try {
+                command.execute(harmonix, msg, args);
+              } catch (error) {
+                consola.error(colors.red(`Error executing command "${commandName}": "${error}"`));
+                // Send an error message to the channel
+                harmonix.client.createMessage(msg.channel.id, {
+                  embed: {
+                    title: "Oops!",
+                    description: "An error occurred while executing the command",
+                    color: 0xff0000,
+                    fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
+                  }
+                }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
+              }
+            } else {
+              consola.warn(colors.yellow(`Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
+            }
+          }
+        });
+
+        harmonix.client.on("rawWS", (packet: any) => {
+          try {
+            if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
+              harmonix.manager.updateVoiceState(packet.d);
+            }
+          } catch (error: any) {
+            consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
+          }
+        });
+
+        if (harmonix.options.debug) {
+          watchAndReload(harmonix);
         }
-      } else {
-        consola.warn(colors.yellow(`Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
+
+        harmonix.client.connect();
+      },
+      catch: (error: Error) => {
+        consola.error(colors.red('An error occurred:'), error);
+        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
       }
-    }
-  });
-
-  harmonix.client.on("rawWS", (packet: any) => {
-    try {
-      if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
-        harmonix.manager.updateVoiceState(packet.d);
-      }
-    } catch (error: any) {
-      consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
-    }
-  });
-
-  if (harmonix.options.debug) {
-    watchAndReload(harmonix);
-  }
-
-  harmonix.client.connect();
+    })
+  );
 }
 
 // Run the bot
-main().catch((error) => {
-  consola.error(colors.red('An error occurred:'), error);
-  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-});
-
+Effect.runPromise(
+  Effect.catchAll(
+    Effect.tryPromise(() => main()),
+    (error) => Effect.sync(() => {
+      consola.error(colors.red('An error occurred:'), error);
+      consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+    })
+  )
+);
 // Global error handling
 process.on('uncaughtException', (error) => {
   consola.error(colors.red('Uncaught Exception:'), error);
