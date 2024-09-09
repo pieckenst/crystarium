@@ -315,18 +315,50 @@ function createBotInfoEmbed(harmonix: Harmonix): EmbedOptions {
     timestamp: new Date().toISOString()
   };
 }
-
 // Main function with Effect-based error handling
 async function main() {
   await Effect.runPromise(
     Effect.tryPromise({
       try: async () => {
-        const harmonix = await initHarmonix();
+        const harmonix = await Effect.runPromise(Effect.tryPromise(() => initHarmonix()));
 
-        consola.info(colors.blue(' Initializing Terra...'));
+        // Display ASCII art and initialization message side by side
+        const fs = require('fs');
+        const path = require('path');
+        const asciiArt = await Effect.runPromise(Effect.tryPromise(() =>
+          fs.promises.readFile(path.join(__dirname, 'ascii-art.txt'), 'utf8')
+        ));
 
-        await loadCommands(harmonix);
-        await loadEvents(harmonix);
+        const asciiLines = (asciiArt as string).split('\n');
+        const initMessage = ' Initializing Terra...';
+
+        const maxAsciiWidth = Math.max(...asciiLines.map(line => line.length));
+        const padding = ' '.repeat(10); // Space between ASCII art and text
+
+        // Create large font version of initMessage
+        const largeFont = [
+                "┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+                "│ I │ │ N │ │ I │ │ T │ │ I │ │ A │ │ L │ │ I │ │ Z │ │ I │ │ N │ │ G │",
+                "└───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘",
+                "                ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+                "                │ T │ │ E │ │ R │ │ R │ │ A │",
+                "                └───┘ └───┘ └───┘ └───┘ └───┘"
+        ];
+
+        console.log('\n');
+        const terminalWidth = process.stdout.columns;
+        const largeMessageWidth = Math.max(...largeFont.map(line => line.length));
+        const leftPadding = Math.floor((terminalWidth - maxAsciiWidth - largeMessageWidth - padding.length) / 2);
+
+        asciiLines.forEach((line, index) => {
+                const paddedLine = line.padEnd(maxAsciiWidth);
+                const largeFontLine = largeFont[index] || '';
+                console.log('\x1b[94m' + ' '.repeat(leftPadding) + paddedLine + '\x1b[0m' + padding + colors.blue(largeFontLine));
+        });
+
+        console.log('\n');
+        await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
+        await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
         harmonix.client.on('ready', () => {
           consola.success(colors.green(` Logged in as ${harmonix.client.user.username}`));
@@ -335,68 +367,79 @@ async function main() {
         });
 
         harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
-          if (!msg.content.startsWith(harmonix.options.prefix)) {
-            if (msg.mentions.includes(harmonix.client.user)) {
-              consola.info(colors.yellow(` Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
-              const embed = createBotInfoEmbed(harmonix);
-              if (msg.channel.id) {
-                harmonix.client.createMessage(msg.channel.id, { embed });
+          Effect.runPromise(Effect.tryPromise({
+            try: async () => {
+              if (!msg.content.startsWith(harmonix.options.prefix)) {
+                if (msg.mentions.includes(harmonix.client.user)) {
+                  consola.info(colors.yellow(` Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
+                  const embed = createBotInfoEmbed(harmonix);
+                  if (msg.channel.id) {
+                    await harmonix.client.createMessage(msg.channel.id, { embed });
+                  }
+                }
+                return;
               }
-            }
-            return;
-          }
-          if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
-            const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
-            const commandName = args.shift()?.toLowerCase();
+              if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
+                const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
+                const commandName = args.shift()?.toLowerCase();
 
-            if (!commandName) return;
+                if (!commandName) return;
 
-            const command = harmonix.commands.get(commandName);
-            if (command && 'execute' in command) {
-              consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
-              try {
-                command.execute(harmonix, msg, args);
-              } catch (error) {
-                consola.error(colors.red(`Error executing command "${commandName}": "${error}"`));
-                // Send an error message to the channel
+                const command = harmonix.commands.get(commandName);
+                if (command && 'execute' in command) {
+                  consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
+                  await command.execute(harmonix, msg, args);
+                } else {
+                  consola.warn(colors.yellow(` Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
+                }
+              }
+            },
+            catch: (error: Error) => {
+              consola.error(colors.red(`Error processing message: ${error.message}`));
+              if (msg.channel.id) {
                 harmonix.client.createMessage(msg.channel.id, {
                   embed: {
                     title: "Oops!",
-                    description: "An error occurred while executing the command",
+                    description: "An error occurred while processing the message",
                     color: 0xff0000,
                     fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
                   }
                 }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
               }
-            } else {
-              consola.warn(colors.yellow(` Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
             }
-          }
+          }));
         });
 
         harmonix.client.on("rawWS", (packet: any) => {
-          try {
-            if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
-              harmonix.manager.updateVoiceState(packet.d);
+          Effect.runPromise(Effect.tryPromise({
+            try: async () => {
+              if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
+                await harmonix.manager.updateVoiceState(packet.d);
+              }
+            },
+            catch: (error: Error) => {
+              consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
             }
-          } catch (error: any) {
-            consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
-          }
+          }));
         });
 
         if (harmonix.options.debug) {
           watchAndReload(harmonix);
         }
 
-        harmonix.client.connect();
-      },
-      catch: (error: Error) => {
-        consola.error(colors.red(' An error occurred:'), error);
+        await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
+      },      catch: (error: Error) => {        consola.error(colors.red(' An error occurred:'), error);
         consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
+        return Effect.fail(error);
       }
     })
-  );
+  ).catch((error: Error) => {
+    consola.error(colors.red(' A critical error occurred:'), error);
+    process.exit(1);
+  });
 }
+
+
 // Run the bot
 Effect.runPromise(
   Effect.catchAll(
