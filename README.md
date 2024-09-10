@@ -1,4 +1,4 @@
-[![Harmonix  banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
+[![Harmonix banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-typescript.svg)](https://forthebadge.com)
 [![GitHub last commit](https://img.shields.io/github/last-commit/pieckenst/terra?style=for-the-badge)](https://github.com/pieckenst/terra/commits/indev)
