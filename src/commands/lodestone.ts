@@ -4,10 +4,26 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import fetch from 'node-fetch';
 
+interface JobData {
+    categoryname?: string;
+    name: string;
+    level: number;
+    experience: { currentExp: number; expToNextLevel: number; } | null;
+  }
+  
+  
+
 enum ClassJob {
     GLADIATOR, PALADIN, MARAUDER, WARRIOR, DARK_KNIGHT, GUNBREAKER,
     CONJURER, WHITE_MAGE, SCHOLAR, ASTROLOGIAN, SAGE,
-    PUGILIST, MONK, LANCER, DRAGOON, ROGUE, NINJA, SAMURAI, REAPER,
+    PUGILIST, MONK, LANCER, DRAGOON, ROGUE, NINJA, SAMURAI, REAPER,PHYSICAL_RANGED_DPS_BARD,
+    PHYSICAL_RANGED_DPS_MACHINIST,
+    PHYSICAL_RANGED_DPS_DANCER,
+    MAGICAL_RANGED_DPS_BLACK_MAGE,
+    MAGICAL_RANGED_DPS_SUMMONER,
+    MAGICAL_RANGED_DPS_RED_MAGE,
+    MAGICAL_RANGED_DPS_BLUE_MAGE,
+    MAGICAL_RANGED_DPS_PICTOMANCER,
     ARCHER, BARD, MACHINIST, DANCER,
     THAUMATURGE, BLACK_MAGE, ARCANIST, SUMMONER, RED_MAGE, BLUE_MAGE,
     CARPENTER, BLACKSMITH, ARMORER, GOLDSMITH, LEATHERWORKER, WEAVER,
@@ -24,7 +40,9 @@ interface Experience {
 interface ClassJobLevel {
     level: number;
     experience: Experience | null;
-}
+    categoryname?: string;
+    jobname?: string;
+  }
   
 interface ClassLevel {
     unlockState: ClassJob;
@@ -95,7 +113,7 @@ interface CharacterInfo {
       cityState: string;
       linkshells: string[];
       crossWorldLinkshells: string[];
-      classLevels: Record<string, { level: string; exp: string; expMax: string }>;
+      classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>;
       bio: string;
       activeClassJob: string;
       activeClassJobLevel: string;
@@ -186,12 +204,19 @@ function parseRaceAndClan($: cheerio.CheerioAPI): { race: Race, clan: Clan } {
 }
 
 
-async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, ClassJobLevel>> {
+async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>> {
     const url = `https://na.finalfantasyxiv.com/lodestone/character/${id}/class_job/`;
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
 
-    const classLevels: Partial<Record<ClassJob, ClassJobLevel>> = {};
+    const classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>> = {};
+    const tankJobs: JobData[] = [];
+    const healerJobs: JobData[] = [];
+    const meleeDpsJobs: JobData[] = [];
+    const physicalRangedDpsJobs: JobData[] = [];
+    const magicalRangedDpsJobs: JobData[] = [];
+    const handJobs: JobData[] = [];
+    const landJobs: JobData[] = [];
 
     $('.character__content.selected .character__job__role').each((_, roleElement) => {
         const roleName = $(roleElement).find('.heading--lead').text().trim();
@@ -202,21 +227,82 @@ async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, Cla
             const expElement = $(jobElement).find('.character__job__exp');
             let currentExp = 0;
             let expToNextLevel = 0;
-
+    
             if (expElement.text().trim() !== '-- / --') {
                 [currentExp, expToNextLevel] = expElement.text().trim().split('/').map(exp => parseInt(exp.replace(/,/g, '').trim(), 10));
             }
+    
+            const jobData = {
+                name: jobName,
+                level,
+                experience: currentExp === 0 && expToNextLevel === 0 ? null : { currentExp, expToNextLevel }
+            };
+    
+            const physicalRangedJobs = ['Bard', 'Machinist', 'Dancer'];
+            const magicalRangedJobs = ['Black Mage', 'Arcanist', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage'];
 
-            const job = ClassJob[jobName.toUpperCase().replace(/\s+/g, '_') as keyof typeof ClassJob];
-            if (job !== undefined) {
-                classLevels[job] = {
-                    level,
-                    experience: currentExp === 0 && expToNextLevel === 0 ? null : { currentExp, expToNextLevel }
-                };
-                console.log(`${roleName} - ${jobName}: Level ${level}`);
+
+            if (physicalRangedJobs.includes(jobName)) {
+                physicalRangedDpsJobs.push(jobData);
+            } else if (magicalRangedJobs.includes(jobName)) {
+                magicalRangedDpsJobs.push(jobData);
+            } else {
+                switch(roleName) {
+                    case 'Tank':
+                        tankJobs.push(jobData);
+                        break;
+                    case 'Healer':
+                        healerJobs.push(jobData);
+                        break;
+                    case 'Melee DPS':
+                        meleeDpsJobs.push(jobData);
+                        break;
+                    case 'Physical Ranged DPS':
+                        physicalRangedDpsJobs.push(jobData);
+                        break;
+                    case 'Magical Ranged DPS':
+                        magicalRangedDpsJobs.push(jobData);
+                        break;
+                    case 'Disciples of the Hand':
+                        handJobs.push(jobData);
+                        break;
+                    case 'Disciples of the Land':
+                        landJobs.push(jobData);
+                        break;
+                }
             }
         });
-    });
+    });    
+    const processJobs = (jobs: JobData[], rolePrefix: string, classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>) => {
+        console.log(`\n--- ${rolePrefix} ---`);
+        jobs.forEach(job => {
+            const formattedJobName = job.name.toUpperCase().replace(/\s+/g, '_');
+            console.log(`${formattedJobName}: Level ${job.level}`);
+            
+            // Convert job name to ClassJob enum
+            const classJobKey = ClassJob[formattedJobName as keyof typeof ClassJob];
+            
+            if (classJobKey !== undefined) {
+                classLevels[classJobKey] = {
+                    level: job.level,
+                    experience: job.experience,
+                    categoryname: rolePrefix,
+                    jobname: job.name
+                };
+            }
+        });
+    };
+    
+    // Update the function calls
+    processJobs(tankJobs, 'TANK', classLevels);
+    processJobs(healerJobs, 'HEALER', classLevels);
+    processJobs(meleeDpsJobs, 'MELEE_DPS', classLevels);
+    processJobs(physicalRangedDpsJobs, 'PHYSICAL_RANGED_DPS', classLevels);
+    processJobs(magicalRangedDpsJobs, 'MAGICAL_RANGED_DPS', classLevels);
+    processJobs(handJobs, 'DISCIPLE_OF_THE_HAND', classLevels);
+    processJobs(landJobs, 'DISCIPLE_OF_THE_LAND', classLevels);
+
+    console.log('\n\n--- Special Jobs ---');
 
     // Handle Bozjan Southern Front
     const bozjaElement = $('.character__job__list:contains("Resistance Rank")');
@@ -229,9 +315,11 @@ async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, Cla
                 experience: {
                     currentExp: parseInt(bozjaExp[1].replace(/,/g, ''), 10),
                     expToNextLevel: parseInt(bozjaExp[2].replace(/,/g, ''), 10)
-                }
+                },
+                categoryname: 'SPECIAL',
+                jobname: 'Bozjan Southern Front'
             };
-            console.log(`Bozjan Southern Front - Resistance Rank: ${bozjaLevel}`);
+            console.log(`  Bozjan Southern Front - Resistance Rank: ${bozjaLevel}, Mettle: ${bozjaExp[1]}/${bozjaExp[2]}`);
         }
     }
 
@@ -245,19 +333,21 @@ async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, Cla
             experience: {
                 currentExp: eurekaExp[0],
                 expToNextLevel: eurekaExp[1]
-            }
+            },
+            categoryname: 'SPECIAL',
+            jobname: 'Eureka'
         };
-        console.log(`Eureka - Elemental Level: ${eurekaLevel}`);
+        console.log(`  Eureka - Elemental Level: ${eurekaLevel}, Exp: ${eurekaExp[0]}/${eurekaExp[1]}`);
     }
 
     if (Object.keys(classLevels).length === 0) {
-        console.log("No classes or jobs found for this character.");
+        console.log("\n\nNo classes or jobs found for this character.");
     }
 
-    return classLevels as Record<ClassJob, ClassJobLevel>;
+    return classLevels;
 }
-  
-async function getLodestoneCharacterClassJob(id: string): Promise<Record<ClassJob, ClassJobLevel>> {
+
+async function getLodestoneCharacterClassJob(id: string): Promise<Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>> {
     try {
       return await scrapeCharacterClassJob(id);
     } catch (error) {
@@ -339,26 +429,29 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
       const classJobResponse = await axios.get(classJobUrl);
       const classJobHtml = classJobResponse.data;
       const $classJob = cheerio.load(classJobHtml);
+      const rawClassLevels = await getLodestoneCharacterClassJob(id);
+      
+      const classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>> = {};
 
       console.log('Fetching class/job levels');
-      const rawClassLevels = await getLodestoneCharacterClassJob(id);
-      const classLevels: Record<string, { level: string; exp: string; expMax: string }> = {};
-      for (const [job, data] of Object.entries(rawClassLevels)) {
-        if (data.experience) {
-          classLevels[job] = {
-            level: data.level.toString(),
-            exp: data.experience.currentExp.toString(),
-            expMax: data.experience.expToNextLevel.toString()
-          };
-        } else {
-          classLevels[job] = {
-            level: data.level.toString(),
-            exp: '0',
-            expMax: '0'
-          };
-        }
+      try {
+          
+          for (const [job, data] of Object.entries(rawClassLevels)) {
+            console.log(`Processing job: ${job}`);
+            console.log('Raw class levels fetched:', JSON.stringify(rawClassLevels));
+            classLevels[job as unknown as ClassJob] = {
+                level: data.level,
+                experience: data.experience || { currentExp: 0, expToNextLevel: 0 },
+                categoryname: data.categoryname,
+                jobname: data.jobname
+            };
+            console.log(`Processed job ${job}:`, JSON.stringify(classLevels[job as unknown as ClassJob]));
+          }
+          console.log('All class levels processed:', JSON.stringify(classLevels));
+      } catch (error) {
+          console.error('Error fetching or processing class/job levels:', error);
+          throw error;
       }
-      console.log('Class/job levels fetched successfully');
 
       console.log('Parsing linkshells');
       const linkshells: string[] = [];
@@ -456,8 +549,7 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
       };
 }
 
-async function searchCharacter(server: string, name: string): Promise<string | null> {
-      const url = `https://na.finalfantasyxiv.com/lodestone/character/?q=${encodeURIComponent(name)}&worldname=${encodeURIComponent(server)}`;
+async function searchCharacter(server: string, name: string): Promise<string | null> {      const url = `https://na.finalfantasyxiv.com/lodestone/character/?q=${encodeURIComponent(name)}&worldname=${encodeURIComponent(server)}`;
       console.log(`Searching character with URL: ${url}`);
       const response = await axios.get(url);
       const html = response.data;
@@ -590,7 +682,7 @@ export default {
                 color: number;
                 timestamp: string;
                 footer: { text: string };
-            } = {
+              } = {
                 title: `${info.name} - Class Levels`,
                 fields: [],
                 color: Math.floor(Math.random() * 0xFFFFFF),
@@ -599,52 +691,32 @@ export default {
                     text: 'FFXIV Lodestone - Class Levels'
                 },
             };
-    
-            const categories = ['Tank', 'Healer', 'Melee DPS', 'Physical Ranged DPS', 'Magical Ranged DPS', 'Disciples of the Hand', 'Disciples of the Land', 'Other'];
-    
+            
+            const categories = ['TANK', 'HEALER', 'MELEE_DPS', 'PHYSICAL_RANGED_DPS', 'MAGICAL_RANGED_DPS', 'DISCIPLE_OF_THE_HAND', 'DISCIPLE_OF_THE_LAND', 'SPECIAL'];
+
             let foundAnyJobs = false;
             for (const category of categories) {
-                try {
-                    console.debug(`Processing category: ${category}`);
-                    const categoryJobs = Object.entries(info.classLevels)
-                        .filter(([key]) => key.startsWith(category))
-                        .sort(([, a], [, b]) => {
-                            if (typeof a === 'object' && a !== null && 'level' in a &&
-                                typeof b === 'object' && b !== null && 'level' in b) {
-                                return Number(b.level) - Number(a.level);
-                            }
-                            console.warn(`Invalid job data for sorting in category ${category}`);
-                            return 0;
-                        });
-    
-                    if (categoryJobs.length > 0) {
-                        foundAnyJobs = true;
-                        console.debug(`Found ${categoryJobs.length} jobs for category: ${category}`);
-                        classLevelEmbed.fields.push({
-                            name: category,
-                            value: categoryJobs.map(([key, data]) => {
-                                const jobName = key.split(' - ')[1];
-                                console.debug(`Processing job: ${jobName}`);
-                                if (typeof data === 'object' && data !== null) {
-                                    if ('exp' in data && 'expMax' in data && 'level' in data) {
-                                        return `${jobName}: ${data.level} (${data.exp}/${data.expMax})`;
-                                    } else if ('level' in data) {
-                                        return `${jobName}: ${data.level}`;
-                                    }
-                                }
-                                console.warn(`Invalid data for job: ${jobName}`);
-                                return `${jobName}: Unknown`;
-                            }).join('\n'),
-                            inline: false                    
-                        });
-                    } else {
-                        console.debug(`No jobs found for category: ${category}`);
-                    }
-                } catch (error) {
-                    console.error(`Error processing category ${category}:`, error);
+                console.debug(`Processing category: ${category}`);
+                const categoryJobs = Object.entries(info.classLevels)
+                    .filter(([, data]) => data.categoryname === category)
+                    .sort(([, a], [, b]) => Number(b.level) - Number(a.level));
+
+                if (categoryJobs.length > 0) {
+                foundAnyJobs = true;
+                console.debug(`Found ${categoryJobs.length} jobs for category: ${category}`);
+                    classLevelEmbed.fields.push({
+                        name: category.replace(/_/g, ' '),
+                        value: categoryJobs.map(([, data]) => {
+                        console.debug(`Processing job: ${data.jobname}`);
+                        return `${data.jobname}: Level ${data.level}`;
+                        }).join('\n'),
+                        inline: false
+                    });
+                } else {
+                    console.debug(`No jobs found for category: ${category}`);
                 }
             }
-    
+            
             if (!foundAnyJobs) {
                 console.debug('No jobs found in any category. Outputting raw class level data.');
                 classLevelEmbed.fields.push({
@@ -652,7 +724,7 @@ export default {
                     value: Object.entries(info.classLevels)
                         .map(([key, data]) => {
                             if (typeof data === 'object' && data !== null && 'level' in data) {
-                                return `${key}: ${data.level}`;
+                                return `${key}: Level ${data.level}`;
                             }
                             return `${key}: Unknown`;
                         })
@@ -660,14 +732,33 @@ export default {
                     inline: false
                 });
             }
-            // Send the class level embed
+            
+            // Add Bozjan Southern Front information
+            if (info.bozja && info.bozja.level) {
+                classLevelEmbed.fields.push({
+                    name: 'Bozjan Southern Front',
+                    value: `Resistance Rank: ${info.bozja.level}`,
+                    inline: false
+                });
+            }
+            
+            // Add Eureka information if available
+            if (info.eureka && info.eureka.level) {
+                classLevelEmbed.fields.push({
+                    name: 'Eureka',
+                    value: `Elemental Level: ${info.eureka.level}`,
+                    inline: false
+                });
+            }
+            
             await harmonix.client.createMessage(msg.channel.id, { embed: classLevelEmbed });
           } catch (error) {
               console.error('Error fetching character info:', error);
               await harmonix.client.createMessage(msg.channel.id, 'An error occurred while fetching character information. Please try again later.');
           }
-      },};
-
+      },
+    };
+      
 function convertRace(raceEnum: number): string {
     const races = ['Hyur', 'Elezen', 'Lalafell', 'Miqo\'te', 'Roegadyn', 'Au Ra', 'Hrothgar', 'Viera'];
     return races[raceEnum] || 'Unknown';
