@@ -21,7 +21,6 @@ interface LogOptions {
 
 const centralLogger = ({ level, message, command, error, context, data }: LogOptions) => {
     return Effect.runPromise(Effect.tryPromise(async () => {
-        const timestamp = new Date().toISOString();
         const commandInfo = command ? `[${command}] ` : '';
         const contextInfo = context ? `[${context}] ` : '';
 
@@ -34,16 +33,16 @@ const centralLogger = ({ level, message, command, error, context, data }: LogOpt
 
         switch (level) {
             case LogLevel.INFO:
-                consola.info(colors.blue(`${timestamp} ${contextInfo}${commandInfo}${formattedMessage}`));
+                consola.info(colors.blue(`${contextInfo}${commandInfo}${formattedMessage}`));
                 break;
             case LogLevel.SUCCESS:
-                consola.success(colors.green(`${timestamp} ${contextInfo}${commandInfo}${formattedMessage}`));
+                consola.success(colors.green(`${contextInfo}${commandInfo}${formattedMessage}`));
                 break;
             case LogLevel.WARN:
-                consola.warn(colors.yellow(`${timestamp} ${contextInfo}${commandInfo}${formattedMessage}`));
+                consola.warn(colors.yellow(`${contextInfo}${commandInfo}${formattedMessage}`));
                 break;
             case LogLevel.ERROR:
-                consola.error(colors.red(`${timestamp} ${contextInfo}${commandInfo}${formattedMessage}`));
+                consola.error(colors.red(`${contextInfo}${commandInfo}${formattedMessage}`));
                 if (error) {
                     consola.error(colors.red(`Error details: ${error.message}`));
                     if (error.stack) {
@@ -52,7 +51,7 @@ const centralLogger = ({ level, message, command, error, context, data }: LogOpt
                 }
                 break;
             case LogLevel.DEBUG:
-                consola.debug(colors.magenta(`${timestamp} ${contextInfo}${commandInfo}${formattedMessage}`));
+                consola.debug(colors.magenta(`${contextInfo}${commandInfo}${formattedMessage}`));
                 if (data) {
                     consola.debug(colors.magenta('Debug data:'), JSON.stringify(data, null, 2));
                 }
