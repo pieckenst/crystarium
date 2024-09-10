@@ -51,7 +51,7 @@ interface Experience {
 }
   
 interface ClassJobLevel {
-    level: number;
+    level: number | string;
     experience: Experience | null;
     categoryname?: string;
     jobname?: string;
@@ -59,7 +59,7 @@ interface ClassJobLevel {
   
 interface ClassLevel {
     unlockState: ClassJob;
-    level: number;
+    level: number | string;
     experience: Experience | null;
 }
 
@@ -448,23 +448,32 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
 
       console.log('Fetching class/job levels');
       try {
-          
-          for (const [job, data] of Object.entries(rawClassLevels)) {
-            console.log(`Processing job: ${job}`);
-            console.log('Raw class levels fetched:', JSON.stringify(rawClassLevels));
-            classLevels[job as unknown as ClassJob] = {
-                level: data.level,
-                experience: data.experience || { currentExp: 0, expToNextLevel: 0 },
-                categoryname: data.categoryname,
-                jobname: data.jobname
-            };
-            console.log(`Processed job ${job}:`, JSON.stringify(classLevels[job as unknown as ClassJob]));
-          }
-          console.log('All class levels processed:', JSON.stringify(classLevels));
-      } catch (error) {
-          console.error('Error fetching or processing class/job levels:', error);
-          throw error;
-      }
+            for (const [job, data] of Object.entries(rawClassLevels)) {
+                console.log(`Processing job: ${job}`);
+                console.log('Raw class levels fetched:');
+                for (const [job, data] of Object.entries(rawClassLevels)) {
+                    for (const [key, value] of Object.entries(data)) {
+                        console.log(`  ${key}: ${value}`);
+                    }
+                    console.log('');
+                }
+                let levelValue = data.level;
+                if (levelValue === 'Level NaN' || levelValue === 'NaN' || Number.isNaN(levelValue)) {
+                    levelValue = 'Class not unlocked';
+                }
+                classLevels[job as unknown as ClassJob] = {
+                    level: levelValue,
+                    experience: data.experience || { currentExp: 0, expToNextLevel: 0 },
+                    categoryname: data.categoryname,
+                    jobname: data.jobname
+                };
+                console.log(`Processed job ${job}:`, JSON.stringify(classLevels[job as unknown as ClassJob]));
+            }
+            console.log('All class levels processed:', JSON.stringify(classLevels));
+        } catch (error) {
+            console.error('Error fetching or processing class/job levels:', error);
+            throw error;
+        }
 
       console.log('Parsing linkshells');
       const linkshells: string[] = [];
@@ -720,8 +729,9 @@ export default {
                     classLevelEmbed.fields.push({
                         name: category.replace(/_/g, ' '),
                         value: categoryJobs.map(([, data]) => {
-                        console.debug(`Processing job: ${data.jobname}`);
-                        return `${data.jobname}: Level ${data.level}`;
+                            console.debug(`Processing job: ${data.jobname}`);
+                            const levelDisplay = data.level === 'Class not unlocked' ? 'Class not unlocked' : `Level ${data.level}`;
+                            return `${data.jobname}: ${levelDisplay}`;
                         }).join('\n'),
                         inline: false
                     });
