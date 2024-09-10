@@ -96,8 +96,8 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
               experience: currentExp === 0 && expToNextLevel === 0 ? null : { currentExp, expToNextLevel }
           };
   
-          const physicalRangedJobs = ['Bard', 'Machinist', 'Dancer'];
-          const magicalRangedJobs = ['Black Mage', 'Arcanist', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage'];
+          const physicalRangedJobs = ['Archer','Bard', 'Machinist', 'Dancer'];
+          const magicalRangedJobs = ['Thaumaturge','Black Mage', 'Arcanist', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage'];
 
 
           if (physicalRangedJobs.includes(jobName)) {
