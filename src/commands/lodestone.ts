@@ -12,7 +12,8 @@ enum ClassJob {
     THAUMATURGE, BLACK_MAGE, ARCANIST, SUMMONER, RED_MAGE, BLUE_MAGE,
     CARPENTER, BLACKSMITH, ARMORER, GOLDSMITH, LEATHERWORKER, WEAVER,
     ALCHEMIST, CULINARIAN,
-    MINER, BOTANIST, FISHER
+    MINER, BOTANIST, FISHER, BOZJAN,
+    EUREKA
 }
   
 interface Experience {
@@ -128,6 +129,7 @@ type JobIconMapping = {
 function getJobNameFromIcon(iconUrl: string): string {
       const jobIconMapping: JobIconMapping = {
           'HW6tKOg4SOJbL8Z20GnsAWNjjM': 'Monk',
+          'A3UhbjZvDeN3tf_6nJ85VP0RY0': 'Warrior',
           // Add more mappings here as needed
       };
 
@@ -191,23 +193,62 @@ async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, Cla
 
     const classLevels: Partial<Record<ClassJob, ClassJobLevel>> = {};
 
-    $('.character__job__list').each((_, element) => {
-        $(element).find('li').each((_, jobElement) => {
+    $('.character__content.selected .character__job__role').each((_, roleElement) => {
+        const roleName = $(roleElement).find('.heading--lead').text().trim();
+        
+        $(roleElement).find('.character__job li').each((_, jobElement) => {
             const jobName = $(jobElement).find('.character__job__name').text().trim();
             const level = parseInt($(jobElement).find('.character__job__level').text().trim(), 10);
             const expElement = $(jobElement).find('.character__job__exp');
-            const [currentExp, expToNextLevel] = expElement.text().trim().split('/').map(exp => parseInt(exp.trim().replace(',', ''), 10));
+            let currentExp = 0;
+            let expToNextLevel = 0;
 
-            const job = ClassJob[jobName.toUpperCase().replace(' ', '_') as keyof typeof ClassJob];
+            if (expElement.text().trim() !== '-- / --') {
+                [currentExp, expToNextLevel] = expElement.text().trim().split('/').map(exp => parseInt(exp.replace(/,/g, '').trim(), 10));
+            }
+
+            const job = ClassJob[jobName.toUpperCase().replace(/\s+/g, '_') as keyof typeof ClassJob];
             if (job !== undefined) {
                 classLevels[job] = {
                     level,
-                    experience: { currentExp, expToNextLevel }
+                    experience: currentExp === 0 && expToNextLevel === 0 ? null : { currentExp, expToNextLevel }
                 };
-                console.log(`${jobName}: Level ${level}`);
+                console.log(`${roleName} - ${jobName}: Level ${level}`);
             }
         });
     });
+
+    // Handle Bozjan Southern Front
+    const bozjaElement = $('.character__job__list:contains("Resistance Rank")');
+    if (bozjaElement.length) {
+        const bozjaLevel = parseInt(bozjaElement.find('.character__job__level').text().trim(), 10);
+        const bozjaExp = bozjaElement.find('.character__job__exp').text().trim().match(/Current Mettle: ([\d,]+) \/ Mettle to Next Rank: ([\d,]+)/);
+        if (bozjaExp) {
+            classLevels[ClassJob.BOZJAN] = {
+                level: bozjaLevel,
+                experience: {
+                    currentExp: parseInt(bozjaExp[1].replace(/,/g, ''), 10),
+                    expToNextLevel: parseInt(bozjaExp[2].replace(/,/g, ''), 10)
+                }
+            };
+            console.log(`Bozjan Southern Front - Resistance Rank: ${bozjaLevel}`);
+        }
+    }
+
+    // Handle Eureka
+    const eurekaElement = $('.character__job__list:contains("Elemental Level")');
+    if (eurekaElement.length) {
+        const eurekaLevel = parseInt(eurekaElement.find('.character__job__level').text().trim(), 10);
+        const eurekaExp = eurekaElement.find('.character__job__exp').text().trim().split('/').map(exp => parseInt(exp.replace(/,/g, '').trim(), 10));
+        classLevels[ClassJob.EUREKA] = {
+            level: eurekaLevel,
+            experience: {
+                currentExp: eurekaExp[0],
+                expToNextLevel: eurekaExp[1]
+            }
+        };
+        console.log(`Eureka - Elemental Level: ${eurekaLevel}`);
+    }
 
     if (Object.keys(classLevels).length === 0) {
         console.log("No classes or jobs found for this character.");
@@ -485,7 +526,11 @@ export default {
                           });
                           console.log(`Emoji created successfully. Emoji ID: ${emoji.id}`);
                       } catch (error) {
-                          console.error(`Failed to create emoji: ${error.message}`);
+                          if (error.message.includes('Invalid Form Body') && error.message.includes('image: Invalid image data')) {
+                              console.log('Skipping emoji creation due to invalid image data');
+                          } else {
+                              console.error(`Failed to create emoji: ${error.message}`);
+                          }
                       }
                   } else {
                       console.log('Channel does not have a guild, skipping emoji creation');
@@ -539,47 +584,84 @@ export default {
 
               await harmonix.client.createMessage(msg.channel.id, { embed: mainEmbed });
 
-              // Create a separate embed for class levels
               const classLevelEmbed: {
-                  title: string;
-                  fields: { name: string; value: string; inline?: boolean }[];
-                  color: number;
-                  timestamp: string;
-                  footer: { text: string };
-              } = {
-                  title: `${info.name} - Class Levels`,
-                  fields: [],
-                  color: Math.floor(Math.random() * 0xFFFFFF),
-                  timestamp: new Date().toISOString(),
-                  footer: {
-                      text: 'FFXIV Lodestone - Class Levels'
-                  },
-              };
-              const categories = ['Tank', 'Healer', 'Melee DPS', 'Physical Ranged DPS', 'Magical Ranged DPS', 'Disciples of the Hand', 'Disciples of the Land'];
-
-              const characterInfo = await fetchCharacterInfo(characterId);
-              const classLevels = characterInfo.classLevels;
-
-              for (const category of categories) {
-                  const categoryJobs = Object.entries(classLevels)
-                      .filter(([key]) => key.startsWith(category))
-                      .sort(([, a], [, b]) => Number(b.level) - Number(a.level));
-
-                  if (categoryJobs.length > 0) {
-                      classLevelEmbed.fields.push({
-                          name: category,
-                          value: categoryJobs.map(([key, data]) => {
-                              const jobName = key.split(' - ')[1];
-                              console.log(`Debug: Found class ${jobName} with level ${data.level}`);
-                              return `${jobName}: ${data.level} (${data.exp}/${data.expMax})`;
-                          }).join('\n'),
-                          inline: false
-                      });
-                  }
-              }
-
-              // Send the class level embed
-              await harmonix.client.createMessage(msg.channel.id, { embed: classLevelEmbed });
+                title: string;
+                fields: { name: string; value: string; inline?: boolean }[];
+                color: number;
+                timestamp: string;
+                footer: { text: string };
+            } = {
+                title: `${info.name} - Class Levels`,
+                fields: [],
+                color: Math.floor(Math.random() * 0xFFFFFF),
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: 'FFXIV Lodestone - Class Levels'
+                },
+            };
+    
+            const categories = ['Tank', 'Healer', 'Melee DPS', 'Physical Ranged DPS', 'Magical Ranged DPS', 'Disciples of the Hand', 'Disciples of the Land', 'Other'];
+    
+            let foundAnyJobs = false;
+            for (const category of categories) {
+                try {
+                    console.debug(`Processing category: ${category}`);
+                    const categoryJobs = Object.entries(info.classLevels)
+                        .filter(([key]) => key.startsWith(category))
+                        .sort(([, a], [, b]) => {
+                            if (typeof a === 'object' && a !== null && 'level' in a &&
+                                typeof b === 'object' && b !== null && 'level' in b) {
+                                return Number(b.level) - Number(a.level);
+                            }
+                            console.warn(`Invalid job data for sorting in category ${category}`);
+                            return 0;
+                        });
+    
+                    if (categoryJobs.length > 0) {
+                        foundAnyJobs = true;
+                        console.debug(`Found ${categoryJobs.length} jobs for category: ${category}`);
+                        classLevelEmbed.fields.push({
+                            name: category,
+                            value: categoryJobs.map(([key, data]) => {
+                                const jobName = key.split(' - ')[1];
+                                console.debug(`Processing job: ${jobName}`);
+                                if (typeof data === 'object' && data !== null) {
+                                    if ('exp' in data && 'expMax' in data && 'level' in data) {
+                                        return `${jobName}: ${data.level} (${data.exp}/${data.expMax})`;
+                                    } else if ('level' in data) {
+                                        return `${jobName}: ${data.level}`;
+                                    }
+                                }
+                                console.warn(`Invalid data for job: ${jobName}`);
+                                return `${jobName}: Unknown`;
+                            }).join('\n'),
+                            inline: false                    
+                        });
+                    } else {
+                        console.debug(`No jobs found for category: ${category}`);
+                    }
+                } catch (error) {
+                    console.error(`Error processing category ${category}:`, error);
+                }
+            }
+    
+            if (!foundAnyJobs) {
+                console.debug('No jobs found in any category. Outputting raw class level data.');
+                classLevelEmbed.fields.push({
+                    name: 'Class Levels',
+                    value: Object.entries(info.classLevels)
+                        .map(([key, data]) => {
+                            if (typeof data === 'object' && data !== null && 'level' in data) {
+                                return `${key}: ${data.level}`;
+                            }
+                            return `${key}: Unknown`;
+                        })
+                        .join('\n'),
+                    inline: false
+                });
+            }
+            // Send the class level embed
+            await harmonix.client.createMessage(msg.channel.id, { embed: classLevelEmbed });
           } catch (error) {
               console.error('Error fetching character info:', error);
               await harmonix.client.createMessage(msg.channel.id, 'An error occurred while fetching character information. Please try again later.');
