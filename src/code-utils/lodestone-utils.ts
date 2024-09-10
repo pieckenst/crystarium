@@ -2,6 +2,11 @@ import { JobData, ClassJob, Experience, ClassJobLevel, ClassLevel, Race, Clan, C
 import axios from 'axios';
 import cheerio from 'cheerio';
 import fetch from 'node-fetch';
+import { LogLevel, centralLogger } from '../code-utils/centralloggingfactory';
+import { logInfo, logSuccess, logWarn, logError, logDebug } from '../code-utils/centralloggingfactory';
+
+
+
 function getJobNameFromIcon(iconUrl: string): string {
     const jobIconMapping: JobIconMapping = {
         'HW6tKOg4SOJbL8Z20GnsAWNjjM': 'Monk',
@@ -132,10 +137,10 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
       });
   });    
   const processJobs = (jobs: JobData[], rolePrefix: string, classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>) => {
-      console.log(`\n--- ${rolePrefix} ---`);
+      logInfo(`--- ${rolePrefix} ---`, 'lodestone-utils');
       jobs.forEach(job => {
           const formattedJobName = job.name.toUpperCase().replace(/\s+/g, '_');
-          console.log(`${formattedJobName}: Level ${job.level}`);
+          logInfo(`${formattedJobName}: Level ${job.level}`, 'lodestone-utils');
           
           // Convert job name to ClassJob enum
           const classJobKey = ClassJob[formattedJobName as keyof typeof ClassJob];
@@ -160,7 +165,7 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
   processJobs(handJobs, 'DISCIPLE_OF_THE_HAND', classLevels);
   processJobs(landJobs, 'DISCIPLE_OF_THE_LAND', classLevels);
 
-  console.log('\n\n--- Special Jobs ---');
+  logInfo('--- Special Jobs ---', 'lodestone-utils');
 
   // Handle Bozjan Southern Front
   const bozjaElement = $('.character__job__list:contains("Resistance Rank")');
@@ -177,7 +182,7 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
               categoryname: 'SPECIAL',
               jobname: 'Bozjan Southern Front'
           };
-          console.log(`  Bozjan Southern Front - Resistance Rank: ${bozjaLevel}, Mettle: ${bozjaExp[1]}/${bozjaExp[2]}`);
+          logInfo(`  Bozjan Southern Front - Resistance Rank: ${bozjaLevel}, Mettle: ${bozjaExp[1]}/${bozjaExp[2]}`, 'lodestone-utils');
       }
   }
 
@@ -195,11 +200,11 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
           categoryname: 'SPECIAL',
           jobname: 'Eureka'
       };
-      console.log(`  Eureka - Elemental Level: ${eurekaLevel}, Exp: ${eurekaExp[0]}/${eurekaExp[1]}`);
+      logInfo(`  Eureka - Elemental Level: ${eurekaLevel}, Exp: ${eurekaExp[0]}/${eurekaExp[1]}`, 'lodestone-utils');
   }
 
   if (Object.keys(classLevels).length === 0) {
-      console.log("\n\nNo classes or jobs found for this character.");
+      logInfo("No classes or jobs found for this character.", 'lodestone-utils');
   }
 
   return classLevels;
@@ -218,60 +223,60 @@ async function getLodestoneCharacterClassJob(id: string): Promise<Partial<Record
 
 async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     const url = `https://na.finalfantasyxiv.com/lodestone/character/${id}/`;
-    console.log(`Fetching character info from URL: ${url}`);
+    logInfo(`Fetching character info from URL: ${url}`, 'lodestone-utils');
     const response = await axios.get(url);
     const html = response.data;
     const $ = cheerio.load(html);
 
-    console.log('Parsing character name');
+    logInfo('Parsing character name', 'lodestone-utils');
     const name = $('.frame__chara__name').text().trim();
-    console.log(`Character name: ${name}`);
+    logInfo(`Character name: ${name}`, 'lodestone-utils');
 
-    console.log('Parsing server information');
+    logInfo('Parsing server information', 'lodestone-utils');
     const server = $('.frame__chara__world').text().trim().match(/(?<World>\w*)\s+\[(?<DC>\w*)\]/)?.groups || {};
-    console.log(`Server: ${JSON.stringify(server)}`);
+    logInfo(`Server: ${JSON.stringify(server)}`, 'lodestone-utils');
 
-    console.log('Parsing title');
+    logInfo('Parsing title', 'lodestone-utils');
     const title = $('.frame__chara__title').text().trim() || undefined;
-    console.log(`Title: ${title}`);
+    logInfo(`Title: ${title}`, 'lodestone-utils');
 
-    console.log('Parsing race, clan, and gender');
+    logInfo('Parsing race, clan, and gender', 'lodestone-utils');
     const { race, clan } = parseRaceAndClan($);
     const gender = $('.character-block__name').first().text().trim().split(' / ')[2];
-    console.log(`Race: ${Race[race]}, Clan: ${Clan[clan]}, Gender: ${gender}`);
-    console.log('Parsing job and level information');
+    logInfo(`Race: ${Race[race]}, Clan: ${Clan[clan]}, Gender: ${gender}`, 'lodestone-utils');
+    logInfo('Parsing job and level information', 'lodestone-utils');
     const jobLevelElement = $('.character__class__data p:first-child');
     const level = jobLevelElement.text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
     const jobName = jobLevelElement.prev().text().trim();
     const jobIcon = jobLevelElement.prev().find('img').attr('src') || '';
-    console.log(`Job: ${jobName}, Level: ${level}, Job Icon: ${jobIcon}`);
+    logInfo(`Job: ${jobName}, Level: ${level}, Job Icon: ${jobIcon}`, 'lodestone-utils');
 
-    console.log('Parsing portrait URL');
+    logInfo('Parsing portrait URL', 'lodestone-utils');
     const portrait = $('.js__image_popup > img:first-child').attr('src') || '';
-    console.log(`Portrait URL: ${portrait}`);
+    logInfo(`Portrait URL: ${portrait}`, 'lodestone-utils');
 
-    console.log('Parsing nameday');
+    logInfo('Parsing nameday', 'lodestone-utils');
     const nameday = $('.character-block__birth').text().trim();
-    console.log(`Nameday: ${nameday}`);
+    logInfo(`Nameday: ${nameday}`, 'lodestone-utils');
 
-    console.log('Parsing guardian');
+    logInfo('Parsing guardian', 'lodestone-utils');
     const guardian = $('p.character-block__name:nth-child(4)').text().trim();
-    console.log(`Guardian: ${guardian}`);
+    logInfo(`Guardian: ${guardian}`, 'lodestone-utils');
 
-    console.log('Parsing city-state');
+    logInfo('Parsing city-state', 'lodestone-utils');
     const cityState = $('div.character-block:nth-child(3) > div:nth-child(2) > p:nth-child(2)').text().trim();
-    console.log(`City-state: ${cityState}`);
+    logInfo(`City-state: ${cityState}`, 'lodestone-utils');
 
-    console.log('Parsing grand company information');
+    logInfo('Parsing grand company information', 'lodestone-utils');
     const grandCompanyElement = $('div.character-block:nth-child(4) > div:nth-child(2) > p:nth-child(2)');
     const grandCompanyMatch = grandCompanyElement.text().trim().match(/(?<Name>\S*) \/ (?<Rank>.*)/);
     const grandCompany = grandCompanyMatch ? {
         name: grandCompanyMatch.groups?.Name || '',
         rank: grandCompanyMatch.groups?.Rank || '',
     } : undefined;
-    console.log(`Grand Company: ${JSON.stringify(grandCompany)}`);
+    logInfo(`Grand Company: ${JSON.stringify(grandCompany)}`, 'lodestone-utils');
 
-    console.log('Parsing free company information');
+    logInfo('Parsing free company information', 'lodestone-utils');
     const freeCompanyElement = $('.character__freecompany__name > h4:nth-child(2) > a:nth-child(1)');
     const freeCompany = freeCompanyElement.length
         ? {
@@ -279,11 +284,11 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
               id: freeCompanyElement.attr('href')?.split('/')[3] || '',
           }
         : undefined;
-    console.log(`Free Company: ${JSON.stringify(freeCompany)}`);
+    logInfo(`Free Company: ${JSON.stringify(freeCompany)}`, 'lodestone-utils');
 
-    console.log('Fetching class/job levels');
+    logInfo('Fetching class/job levels', 'lodestone-utils');
     const classJobUrl = `https://na.finalfantasyxiv.com/lodestone/character/${id}/class_job/`;
-    console.log(`Fetching class/job info from URL: ${classJobUrl}`);
+    logInfo(`Fetching class/job info from URL: ${classJobUrl}`, 'lodestone-utils');
     const classJobResponse = await axios.get(classJobUrl);
     const classJobHtml = classJobResponse.data;
     const $classJob = cheerio.load(classJobHtml);
@@ -291,16 +296,16 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     
     const classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>> = {};
 
-    console.log('Fetching class/job levels');
+    logInfo('Fetching class/job levels', 'lodestone-utils');
     try {
           for (const [job, data] of Object.entries(rawClassLevels)) {
-              console.log(`Processing job: ${job}`);
-              console.log('Raw class levels fetched:');
+              logInfo(`Processing job: ${job}`, 'lodestone-utils');
+              logInfo('Raw class levels fetched:', 'lodestone-utils');
               for (const [job, data] of Object.entries(rawClassLevels)) {
                   for (const [key, value] of Object.entries(data)) {
-                      console.log(`  ${key}: ${value}`);
+                      logInfo(`  ${key}: ${value}`, 'lodestone-utils');
                   }
-                  console.log('');
+                  logInfo('', 'lodestone-utils');
               }
               let levelValue = data.level;
               if (levelValue === 'Level NaN' || levelValue === 'NaN' || Number.isNaN(levelValue)) {
@@ -312,53 +317,53 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
                   categoryname: data.categoryname,
                   jobname: data.jobname
               };
-              console.log(`Processed job ${job}:`, JSON.stringify(classLevels[job as unknown as ClassJob]));
+              logInfo(JSON.stringify({ data: { job, data: classLevels[job as unknown as ClassJob] }, context: 'lodestone-utils' }), 'lodestone-utils');
           }
-          console.log('All class levels processed:', JSON.stringify(classLevels));
+          logInfo('All class levels processed', JSON.stringify({ data: classLevels, context: 'lodestone-utils' }));
       } catch (error) {
           console.error('Error fetching or processing class/job levels:', error);
           throw error;
       }
 
-    console.log('Parsing linkshells');
+    logInfo('Parsing linkshells', 'lodestone-utils');
     const linkshells: string[] = [];
-    console.log(`Linkshells: ${linkshells.join(', ')}`);
+    logInfo(`Linkshells: ${linkshells.join(', ')}`, 'lodestone-utils');
 
-    console.log('Parsing cross-world linkshells');
+    logInfo('Parsing cross-world linkshells', 'lodestone-utils');
     const crossWorldLinkshells: string[] = [];
-    console.log(`Cross-world Linkshells: ${crossWorldLinkshells.join(', ')}`);
+    logInfo(`Cross-world Linkshells: ${crossWorldLinkshells.join(', ')}`, 'lodestone-utils');
 
-    console.log('Parsing bio');
+    logInfo('Parsing bio', 'lodestone-utils');
     const bio = $('.character__selfintroduction').text().trim();
-    console.log(`Bio: ${bio}`);
+    logInfo(`Bio: ${bio}`, 'lodestone-utils');
 
     const activeClassJob = $('.character__class_icon > img:first-child').attr('src') || '';
     const parsedClassJobIcon = activeClassJob.split('/').pop()?.split('.')[0] || '';
 
-    console.log(`Active Class/Job Icon: ${activeClassJob}`);
-    console.log(`Parsed Active Class/Job: ${parsedClassJobIcon}`);
+    logInfo(`Active Class/Job Icon: ${activeClassJob}`, 'lodestone-utils');
+    logInfo(`Parsed Active Class/Job: ${parsedClassJobIcon}`, 'lodestone-utils');
 
     const jobIconUrl = `https://lds-img.finalfantasyxiv.com/h/K/${parsedClassJobIcon}.png`;
-    console.log(`Job Icon URL: ${jobIconUrl}`);
+    logInfo(`Job Icon URL: ${jobIconUrl}`, 'lodestone-utils');
 
     const activeJobName = getJobNameFromIcon(activeClassJob);
-    console.log(`Job Name: ${activeJobName}`);
+    logInfo(`Job Name: ${activeJobName}`, 'lodestone-utils');
 
-    console.log('Parsing active class/job level');
+    logInfo('Parsing active class/job level', 'lodestone-utils');
     const activeClassJobLevel = $('.character__class__data > p:first-child').text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
-    console.log(`Active Class/Job Level: ${activeClassJobLevel}`);
+    logInfo(`Active Class/Job Level: ${activeClassJobLevel}`, 'lodestone-utils');
 
-    console.log('Parsing avatar URL');
+    logInfo('Parsing avatar URL', 'lodestone-utils');
     const avatar = $('.frame__chara__face > img:first-child').attr('src') || '';
-    console.log(`Avatar URL: ${avatar}`);
-    console.log('Parsing guardian deity');
+    logInfo(`Avatar URL: ${avatar}`, 'lodestone-utils');
+    logInfo('Parsing guardian deity', 'lodestone-utils');
     const guardianDeity = {
           name: $('p.character-block__name:nth-child(4)').text().trim(),
           icon: $('#character > div.character__content.selected > div.character__profile.clearfix > div.character__profile__data > div:nth-child(1) > div > div:nth-child(2) > img').attr('src') || '',
     };
-    console.log(`Guardian Deity: ${JSON.stringify(guardianDeity)}`);
+    logInfo(`Guardian Deity: ${JSON.stringify(guardianDeity)}`, 'lodestone-utils');
 
-    console.log('Parsing PvP team information');
+    logInfo('Parsing PvP team information', 'lodestone-utils');
     const pvpTeamElement = $('.character__pvpteam__name > h4:nth-child(2) > a:nth-child(1)');
     const pvpTeam = pvpTeamElement.length
       ? {
@@ -366,25 +371,24 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
                 id: pvpTeamElement.attr('href')?.split('/')[3] || '',
       }
       : undefined;
-    console.log(`PvP Team: ${JSON.stringify(pvpTeam)}`);
+    logInfo(`PvP Team: ${JSON.stringify(pvpTeam)}`, 'lodestone-utils');
 
-    console.log('Parsing Bozja information');
+    logInfo('Parsing Bozja information', 'lodestone-utils');
     const bozja = {
           level: $('div.character__job__list:nth-child(7) > div:nth-child(2)').text().trim(),
           mettle: $('div.character__job__list:nth-child(7) > div:nth-child(4)').text().trim().match(/(?<Mettle>\S+) \//)?.groups?.Mettle || '',
           name: $('div.character__job__list:nth-child(7) > div:nth-child(3)').text().trim(),
     };
-    console.log(`Bozja: ${JSON.stringify(bozja)}`);
+    logInfo(`Bozja: ${JSON.stringify(bozja)}`, 'lodestone-utils');
 
-    console.log('Parsing Eureka information');
+    logInfo('Parsing Eureka information', 'lodestone-utils');
     const eureka = {
           level: $('div.character__job__list:nth-child(9) > div:nth-child(2)').text().trim(),
           exp: $('div.character__job__list:nth-child(9) > div:nth-child(4)').text().trim(),
           name: $('div.character__job__list:nth-child(9) > div:nth-child(3)').text().trim(),
     };
-    console.log(`Eureka: ${JSON.stringify(eureka)}`);
-
-    return {
+    logInfo(`Eureka: ${JSON.stringify(eureka)}`, 'lodestone-utils');   
+     return {
           name,
           server: `${server.World} [${server.DC}]`,
           title,
@@ -415,9 +419,8 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
           parsedClassJobIcon,
     };
 }
-
 async function searchCharacter(server: string, name: string): Promise<string | null> {      const url = `https://na.finalfantasyxiv.com/lodestone/character/?q=${encodeURIComponent(name)}&worldname=${encodeURIComponent(server)}`;
-    console.log(`Searching character with URL: ${url}`);
+    centralLogger({ level: LogLevel.INFO, message:`Searching character with URL: ${url}`, context: 'lodestone-utils' });
     const response = await axios.get(url);
     const html = response.data;
     const $ = cheerio.load(html);
@@ -426,10 +429,10 @@ async function searchCharacter(server: string, name: string): Promise<string | n
     if (characterLink) {
         const idMatch = characterLink.match(/(\d+)/);
         const characterId = idMatch ? idMatch[1] : null;
-        console.log(`Found character ID: ${characterId}`);
+        centralLogger({ level: LogLevel.INFO, message:`Found character ID: ${characterId}`, context: 'lodestone-utils' });
         return characterId;
     }
-    console.log('Character not found');
+    centralLogger({ level: LogLevel.INFO, message:'Character not found', context: 'lodestone-utils' });
     return null;
 }
 
