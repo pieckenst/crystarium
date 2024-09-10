@@ -48,7 +48,23 @@ export default {
 
           try {
               console.log(`Fetching character info for ID: ${characterId}`);
+
+              // Create and send the "Please wait" embed
+              const pleaseWaitEmbed = {
+                  title: 'Please wait',
+                  description: 'Fetching character information...',
+                  color: 0xFFFF00,
+                  footer: {
+                      text: 'FFXIV Lodestone'
+                  }
+              };
+              const waitMessage = await harmonix.client.createMessage(msg.channel.id, { embed: pleaseWaitEmbed });
+
+              const startTime = Date.now();
               const info = await fetchCharacterInfo(characterId);
+              const endTime = Date.now();
+              const fetchTime = (endTime - startTime) / 1000; // Convert to seconds
+
               console.log('Character info fetched successfully');
               console.log(`job icon URL: ${info.jobIconUrl}`);
 
@@ -113,7 +129,7 @@ export default {
                   color: Math.floor(Math.random() * 0xFFFFFF),
                   timestamp: new Date().toISOString(),
                   footer: {
-                      text: 'FFXIV Lodestone'
+                      text: `FFXIV Lodestone | Fetch time: ${fetchTime.toFixed(2)}s`
                   },
               };
 
@@ -124,8 +140,6 @@ export default {
               if (info.eureka && info.eureka.level) {
                   mainEmbed.fields.push({ name: 'Eureka', value: `${info.eureka.name} (Level ${info.eureka.level}, EXP: ${info.eureka.exp})`, inline: true });
               }
-
-              await harmonix.client.createMessage(msg.channel.id, { embed: mainEmbed });
 
               const classLevelEmbed: {
                 title: string;
@@ -203,6 +217,13 @@ export default {
                 });
             }
             
+            // Wait for 2 seconds before editing the message
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Edit the original "Please wait" message with the fetched data
+            await harmonix.client.editMessage(msg.channel.id, waitMessage.id, { embed: mainEmbed });
+
+            // Send the class level embed as a new message
             await harmonix.client.createMessage(msg.channel.id, { embed: classLevelEmbed });
           } catch (error) {
               console.error('Error fetching character info:', error);
