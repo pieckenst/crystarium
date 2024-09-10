@@ -256,32 +256,52 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     const html = response.data;
     const $ = cheerio.load(html);
 
+    const basicInfo = parseBasicInfo($);
+    const serverInfo = parseServerInfo($);
+    const characterDetails = parseCharacterDetails($);
+    const jobInfo = parseJobInfo($);
+    const companyInfo = parseCompanyInfo($);
+    const classJobLevels = await fetchClassJobLevels(id);
+    const socialInfo = parseSocialInfo($);
+    const additionalInfo = parseAdditionalInfo($);
+
+    return {
+        ...basicInfo,
+        ...serverInfo,
+        ...characterDetails,
+        ...jobInfo,
+        ...companyInfo,
+        classLevels: classJobLevels,
+        ...socialInfo,
+        ...additionalInfo
+    };
+}
+
+function parseBasicInfo($: cheerio.CheerioAPI) {
     logInfo('Parsing character name', 'lodestone-utils');
     const name = $('.frame__chara__name').text().trim();
     logInfo(`Character name: ${name}`, 'lodestone-utils');
-
-    logInfo('Parsing server information', 'lodestone-utils');
-    const server = $('.frame__chara__world').text().trim().match(/(?<World>\w*)\s+\[(?<DC>\w*)\]/)?.groups || {};
-    logInfo(`Server: ${JSON.stringify(server)}`, 'lodestone-utils');
 
     logInfo('Parsing title', 'lodestone-utils');
     const title = $('.frame__chara__title').text().trim() || undefined;
     logInfo(`Title: ${title}`, 'lodestone-utils');
 
+    return { name, title };
+}
+
+function parseServerInfo($: cheerio.CheerioAPI) {
+    logInfo('Parsing server information', 'lodestone-utils');
+    const server = $('.frame__chara__world').text().trim().match(/(?<World>\w*)\s+\[(?<DC>\w*)\]/)?.groups || {};
+    logInfo(`Server: ${JSON.stringify(server)}`, 'lodestone-utils');
+
+    return { server: `${server.World} [${server.DC}]` };
+}
+
+function parseCharacterDetails($: cheerio.CheerioAPI) {
     logInfo('Parsing race, clan, and gender', 'lodestone-utils');
     const { race, clan } = parseRaceAndClan($);
     const gender = $('.character-block__name').first().text().trim().split(' / ')[2];
     logInfo(`Race: ${Race[race]}, Clan: ${Clan[clan]}, Gender: ${gender}`, 'lodestone-utils');
-    logInfo('Parsing job and level information', 'lodestone-utils');
-    const jobLevelElement = $('.character__class__data p:first-child');
-    const level = jobLevelElement.text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
-    const jobName = jobLevelElement.prev().text().trim();
-    const jobIcon = jobLevelElement.prev().find('img').attr('src') || '';
-    logInfo(`Job: ${jobName}, Level: ${level}, Job Icon: ${jobIcon}`, 'lodestone-utils');
-
-    logInfo('Parsing portrait URL', 'lodestone-utils');
-    const portrait = $('.js__image_popup > img:first-child').attr('src') || '';
-    logInfo(`Portrait URL: ${portrait}`, 'lodestone-utils');
 
     logInfo('Parsing nameday', 'lodestone-utils');
     const nameday = $('.character-block__birth').text().trim();
@@ -295,6 +315,36 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     const cityState = $('div.character-block:nth-child(3) > div:nth-child(2) > p:nth-child(2)').text().trim();
     logInfo(`City-state: ${cityState}`, 'lodestone-utils');
 
+    return { race, clan, gender, nameday, guardian, cityState };
+}
+
+function parseJobInfo($: cheerio.CheerioAPI) {
+    logInfo('Parsing job and level information', 'lodestone-utils');
+    const jobLevelElement = $('.character__class__data p:first-child');
+    const level = jobLevelElement.text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
+    const jobName = jobLevelElement.prev().text().trim();
+    const jobIcon = jobLevelElement.prev().find('img').attr('src') || '';
+    logInfo(`Job: ${jobName}, Level: ${level}, Job Icon: ${jobIcon}`, 'lodestone-utils');
+
+    const activeClassJob = $('.character__class_icon > img:first-child').attr('src') || '';
+    const parsedClassJobIcon = activeClassJob.split('/').pop()?.split('.')[0] || '';
+    logInfo(`Active Class/Job Icon: ${activeClassJob}`, 'lodestone-utils');
+    logInfo(`Parsed Active Class/Job: ${parsedClassJobIcon}`, 'lodestone-utils');
+
+    const jobIconUrl = `https://lds-img.finalfantasyxiv.com/h/K/${parsedClassJobIcon}.png`;
+    logInfo(`Job Icon URL: ${jobIconUrl}`, 'lodestone-utils');
+
+    const activeJobName = getJobNameFromIcon(activeClassJob);
+    logInfo(`Job Name: ${activeJobName}`, 'lodestone-utils');
+
+    logInfo('Parsing active class/job level', 'lodestone-utils');
+    const activeClassJobLevel = $('.character__class__data > p:first-child').text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
+    logInfo(`Active Class/Job Level: ${activeClassJobLevel}`, 'lodestone-utils');
+
+    return { level, jobName, jobIcon, activeClassJob: activeJobName, activeClassJobLevel, jobIconUrl, parsedClassJobIcon };
+}
+
+function parseCompanyInfo($: cheerio.CheerioAPI) {
     logInfo('Parsing grand company information', 'lodestone-utils');
     const grandCompanyElement = $('div.character-block:nth-child(4) > div:nth-child(2) > p:nth-child(2)');
     const grandCompanyMatch = grandCompanyElement.text().trim().match(/(?<Name>\S*) \/ (?<Rank>.*)/);
@@ -314,6 +364,10 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
         : undefined;
     logInfo(`Free Company: ${JSON.stringify(freeCompany)}`, 'lodestone-utils');
 
+    return { grandCompany, freeCompany };
+}
+
+async function fetchClassJobLevels(id: string) {
     logInfo('Fetching class/job levels', 'lodestone-utils');
     const classJobUrl = `https://na.finalfantasyxiv.com/lodestone/character/${id}/class_job/`;
     logInfo(`Fetching class/job info from URL: ${classJobUrl}`, 'lodestone-utils');
@@ -324,35 +378,31 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     
     const classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>> = {};
 
-    logInfo('Fetching class/job levels', 'lodestone-utils');
     try {
-          for (const [job, data] of Object.entries(rawClassLevels)) {
-              logInfo(`Processing job: ${job}`, 'lodestone-utils');
-              logInfo('Raw class levels fetched:', 'lodestone-utils');
-              for (const [job, data] of Object.entries(rawClassLevels)) {
-                  for (const [key, value] of Object.entries(data)) {
-                      logInfo(`  ${key}: ${value}`, 'lodestone-utils');
-                  }
-                  logInfo('', 'lodestone-utils');
-              }
-              let levelValue = data.level;
-              if (levelValue === 'Level NaN' || levelValue === 'NaN' || Number.isNaN(levelValue)) {
-                  levelValue = 'Class not unlocked';
-              }
-              classLevels[job as unknown as ClassJob] = {
-                  level: levelValue,
-                  experience: data.experience || { currentExp: 0, expToNextLevel: 0 },
-                  categoryname: data.categoryname,
-                  jobname: data.jobname
-              };
-              logInfo(JSON.stringify({ data: { job, data: classLevels[job as unknown as ClassJob] }, context: 'lodestone-utils' }), 'lodestone-utils');
-          }
-          logInfo('All class levels processed', JSON.stringify({ data: classLevels, context: 'lodestone-utils' }));
-      } catch (error) {
-          console.error('Error fetching or processing class/job levels:', error);
-          throw error;
-      }
+        for (const [job, data] of Object.entries(rawClassLevels)) {
+            logInfo(`Processing job: ${job}`, 'lodestone-utils');
+            let levelValue = data.level;
+            if (levelValue === 'Level NaN' || levelValue === 'NaN' || Number.isNaN(levelValue)) {
+                levelValue = 'Class not unlocked';
+            }
+            classLevels[job as unknown as ClassJob] = {
+                level: levelValue,
+                experience: data.experience || { currentExp: 0, expToNextLevel: 0 },
+                categoryname: data.categoryname,
+                jobname: data.jobname
+            };
+            logInfo(JSON.stringify({ data: { job, data: classLevels[job as unknown as ClassJob] }, context: 'lodestone-utils' }), 'lodestone-utils');
+        }
+        logInfo('All class levels processed', JSON.stringify({ data: classLevels, context: 'lodestone-utils' }));
+    } catch (error) {
+        console.error('Error fetching or processing class/job levels:', error);
+        throw error;
+    }
 
+    return classLevels;
+}
+
+function parseSocialInfo($: cheerio.CheerioAPI) {
     logInfo('Parsing linkshells', 'lodestone-utils');
     const linkshells: string[] = [];
     logInfo(`Linkshells: ${linkshells.join(', ')}`, 'lodestone-utils');
@@ -365,87 +415,52 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     const bio = $('.character__selfintroduction').text().trim();
     logInfo(`Bio: ${bio}`, 'lodestone-utils');
 
-    const activeClassJob = $('.character__class_icon > img:first-child').attr('src') || '';
-    const parsedClassJobIcon = activeClassJob.split('/').pop()?.split('.')[0] || '';
+    return { linkshells, crossWorldLinkshells, bio };
+}
 
-    logInfo(`Active Class/Job Icon: ${activeClassJob}`, 'lodestone-utils');
-    logInfo(`Parsed Active Class/Job: ${parsedClassJobIcon}`, 'lodestone-utils');
-
-    const jobIconUrl = `https://lds-img.finalfantasyxiv.com/h/K/${parsedClassJobIcon}.png`;
-    logInfo(`Job Icon URL: ${jobIconUrl}`, 'lodestone-utils');
-
-    const activeJobName = getJobNameFromIcon(activeClassJob);
-    logInfo(`Job Name: ${activeJobName}`, 'lodestone-utils');
-
-    logInfo('Parsing active class/job level', 'lodestone-utils');
-    const activeClassJobLevel = $('.character__class__data > p:first-child').text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
-    logInfo(`Active Class/Job Level: ${activeClassJobLevel}`, 'lodestone-utils');
+function parseAdditionalInfo($: cheerio.CheerioAPI) {
+    logInfo('Parsing portrait URL', 'lodestone-utils');
+    const portrait = $('.js__image_popup > img:first-child').attr('src') || '';
+    logInfo(`Portrait URL: ${portrait}`, 'lodestone-utils');
 
     logInfo('Parsing avatar URL', 'lodestone-utils');
     const avatar = $('.frame__chara__face > img:first-child').attr('src') || '';
     logInfo(`Avatar URL: ${avatar}`, 'lodestone-utils');
+
     logInfo('Parsing guardian deity', 'lodestone-utils');
     const guardianDeity = {
-          name: $('p.character-block__name:nth-child(4)').text().trim(),
-          icon: $('#character > div.character__content.selected > div.character__profile.clearfix > div.character__profile__data > div:nth-child(1) > div > div:nth-child(2) > img').attr('src') || '',
+        name: $('p.character-block__name:nth-child(4)').text().trim(),
+        icon: $('#character > div.character__content.selected > div.character__profile.clearfix > div.character__profile__data > div:nth-child(1) > div > div:nth-child(2) > img').attr('src') || '',
     };
     logInfo(`Guardian Deity: ${JSON.stringify(guardianDeity)}`, 'lodestone-utils');
 
     logInfo('Parsing PvP team information', 'lodestone-utils');
     const pvpTeamElement = $('.character__pvpteam__name > h4:nth-child(2) > a:nth-child(1)');
     const pvpTeam = pvpTeamElement.length
-      ? {
-                name: pvpTeamElement.text().trim(),
-                id: pvpTeamElement.attr('href')?.split('/')[3] || '',
-      }
-      : undefined;
+        ? {
+            name: pvpTeamElement.text().trim(),
+            id: pvpTeamElement.attr('href')?.split('/')[3] || '',
+        }
+        : undefined;
     logInfo(`PvP Team: ${JSON.stringify(pvpTeam)}`, 'lodestone-utils');
 
     logInfo('Parsing Bozja information', 'lodestone-utils');
     const bozja = {
-          level: $('div.character__job__list:nth-child(7) > div:nth-child(2)').text().trim(),
-          mettle: $('div.character__job__list:nth-child(7) > div:nth-child(4)').text().trim().match(/(?<Mettle>\S+) \//)?.groups?.Mettle || '',
-          name: $('div.character__job__list:nth-child(7) > div:nth-child(3)').text().trim(),
+        level: $('div.character__job__list:nth-child(7) > div:nth-child(2)').text().trim(),
+        mettle: $('div.character__job__list:nth-child(7) > div:nth-child(4)').text().trim().match(/(?<Mettle>\S+) \//)?.groups?.Mettle || '',
+        name: $('div.character__job__list:nth-child(7) > div:nth-child(3)').text().trim(),
     };
     logInfo(`Bozja: ${JSON.stringify(bozja)}`, 'lodestone-utils');
 
     logInfo('Parsing Eureka information', 'lodestone-utils');
     const eureka = {
-          level: $('div.character__job__list:nth-child(9) > div:nth-child(2)').text().trim(),
-          exp: $('div.character__job__list:nth-child(9) > div:nth-child(4)').text().trim(),
-          name: $('div.character__job__list:nth-child(9) > div:nth-child(3)').text().trim(),
+        level: $('div.character__job__list:nth-child(9) > div:nth-child(2)').text().trim(),
+        exp: $('div.character__job__list:nth-child(9) > div:nth-child(4)').text().trim(),
+        name: $('div.character__job__list:nth-child(9) > div:nth-child(3)').text().trim(),
     };
-    logInfo(`Eureka: ${JSON.stringify(eureka)}`, 'lodestone-utils');   
-     return {
-          name,
-          server: `${server.World} [${server.DC}]`,
-          title,
-          race,
-          clan,
-          gender,
-          level,
-          jobName,
-          jobIcon,
-          portrait,
-          freeCompany,
-          grandCompany,
-          nameday,
-          guardian,
-          cityState,
-          classLevels,
-          linkshells,
-          crossWorldLinkshells,
-          bio,
-          activeClassJob: activeJobName,
-          activeClassJobLevel,
-          jobIconUrl,
-          avatar,
-          guardianDeity,
-          pvpTeam,
-          bozja,
-          eureka,
-          parsedClassJobIcon,
-    };
+    logInfo(`Eureka: ${JSON.stringify(eureka)}`, 'lodestone-utils');
+
+    return { portrait, avatar, guardianDeity, pvpTeam, bozja, eureka };
 }
 async function searchCharacter(server: string, name: string): Promise<string | null> {      const url = `https://na.finalfantasyxiv.com/lodestone/character/?q=${encodeURIComponent(name)}&worldname=${encodeURIComponent(server)}`;
     centralLogger({ level: LogLevel.INFO, message:`Searching character with URL: ${url}`, context: 'lodestone-utils' });
