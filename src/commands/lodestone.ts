@@ -13,30 +13,69 @@ enum ClassJob {
     CARPENTER, BLACKSMITH, ARMORER, GOLDSMITH, LEATHERWORKER, WEAVER,
     ALCHEMIST, CULINARIAN,
     MINER, BOTANIST, FISHER
-  }
+}
   
-  interface Experience {
+interface Experience {
     currentExp: number;
     expToNextLevel: number;
-  }
+}
   
-  interface ClassJobLevel {
+interface ClassJobLevel {
     level: number;
     experience: Experience | null;
-  }
+}
   
-  interface ClassLevel {
+interface ClassLevel {
     unlockState: ClassJob;
     level: number;
     experience: Experience | null;
-  }
+}
+
+enum Race {
+    Hyur,
+    Elezen,
+    Lalafell,
+    Miqote,
+    Roegadyn,
+    AuRa,
+    Viera,
+    Hrothgar
+}
+
+enum Clan {
+    // Hyur
+    Midlander,
+    Highlander,
+    // Elezen
+    Wildwood,
+    Duskwight,
+    // Lalafell
+    Plainsfolk,
+    Dunesfolk,
+    // Miqo'te
+    SeekerOfTheSun,
+    KeeperOfTheMoon,
+    // Roegadyn
+    SeaWolf,
+    Hellsguard,
+    // Au Ra
+    Raen,
+    Xaela,
+    // Viera
+    Rava,
+    Veena,
+    // Hrothgar
+    Helion,
+    Lost
+}
+
 
 interface CharacterInfo {
       name: string;
       server: string;
       title?: string;
-      race: string;
-      clan: string;
+      race: Race;
+      clan: Clan;
       gender: string;
       level: string;
       jobName: string;
@@ -96,35 +135,84 @@ function getJobNameFromIcon(iconUrl: string): string {
       return jobIconMapping[iconId || ''] || 'Unknown';
 }
 
+function parseRaceAndClan($: cheerio.CheerioAPI): { race: Race, clan: Clan } {
+    const charBlock = $('.character-block__name').first();
+    const [raceStr, clanAndGender] = charBlock.html()?.split('<br>') ?? [];
+    const [clanStr] = clanAndGender?.split(' / ') ?? [];
+
+    let race: Race;
+    let clan: Clan;
+
+    switch (raceStr?.trim().toLowerCase()) {
+        case 'hyur':
+            race = Race.Hyur;
+            clan = clanStr.toLowerCase() === 'midlander' ? Clan.Midlander : Clan.Highlander;
+            break;
+        case 'elezen':
+            race = Race.Elezen;
+            clan = clanStr.toLowerCase() === 'wildwood' ? Clan.Wildwood : Clan.Duskwight;
+            break;
+        case 'lalafell':
+            race = Race.Lalafell;
+            clan = clanStr.toLowerCase() === 'plainsfolk' ? Clan.Plainsfolk : Clan.Dunesfolk;
+            break;
+        case 'miqo\'te':
+            race = Race.Miqote;
+            clan = clanStr.toLowerCase() === 'seeker of the sun' ? Clan.SeekerOfTheSun : Clan.KeeperOfTheMoon;
+            break;
+        case 'roegadyn':
+            race = Race.Roegadyn;
+            clan = clanStr.toLowerCase() === 'sea wolf' ? Clan.SeaWolf : Clan.Hellsguard;
+            break;
+        case 'au ra':
+            race = Race.AuRa;
+            clan = clanStr.toLowerCase() === 'raen' ? Clan.Raen : Clan.Xaela;
+            break;
+        case 'viera':
+            race = Race.Viera;
+            clan = clanStr.toLowerCase() === 'rava' ? Clan.Rava : Clan.Veena;
+            break;
+        case 'hrothgar':
+            race = Race.Hrothgar;
+            clan = clanStr.toLowerCase() === 'helion' ? Clan.Helion : Clan.Lost;
+            break;
+        default:
+            throw new Error(`Unknown race: ${raceStr}`);
+    }
+
+    return { race, clan };
+}
+
+
 async function scrapeCharacterClassJob(id: string): Promise<Record<ClassJob, ClassJobLevel>> {
     const url = `https://na.finalfantasyxiv.com/lodestone/character/${id}/class_job/`;
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
-  
+
     const classLevels: Partial<Record<ClassJob, ClassJobLevel>> = {};
-  
+
     $('.character__job__list').each((_, element) => {
-      $(element).find('li').each((_, jobElement) => {
-        const jobName = $(jobElement).find('.character__job__name').text().trim();
-        const level = parseInt($(jobElement).find('.character__job__level').text().trim(), 10);
-        const expElement = $(jobElement).find('.character__job__exp');
-        const [currentExp, expToNextLevel] = expElement.text().trim().split('/').map(exp => parseInt(exp.trim().replace(',', ''), 10));
-  
-        const job = ClassJob[jobName.toUpperCase().replace(' ', '_') as keyof typeof ClassJob];
-        if (job !== undefined) {
-          classLevels[job] = {
-            level,
-            experience: { currentExp, expToNextLevel }
-          };
-          console.log(`${jobName}: Level ${level}`);
-        }
-      });
+        $(element).find('li').each((_, jobElement) => {
+            const jobName = $(jobElement).find('.character__job__name').text().trim();
+            const level = parseInt($(jobElement).find('.character__job__level').text().trim(), 10);
+            const expElement = $(jobElement).find('.character__job__exp');
+            const [currentExp, expToNextLevel] = expElement.text().trim().split('/').map(exp => parseInt(exp.trim().replace(',', ''), 10));
+
+            const job = ClassJob[jobName.toUpperCase().replace(' ', '_') as keyof typeof ClassJob];
+            if (job !== undefined) {
+                classLevels[job] = {
+                    level,
+                    experience: { currentExp, expToNextLevel }
+                };
+                console.log(`${jobName}: Level ${level}`);
+            }
+        });
     });
-  
+
     if (Object.keys(classLevels).length === 0) {
-      console.log("No classes or jobs found for this character.");
+        console.log("No classes or jobs found for this character.");
     }
-  
+
     return classLevels as Record<ClassJob, ClassJobLevel>;
 }
   
@@ -159,9 +247,9 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
       console.log(`Title: ${title}`);
 
       console.log('Parsing race, clan, and gender');
-      const [race, clan, gender] = $('.character-block__name').first().text().trim().split(' / ');
-      console.log(`Race: ${race}, Clan: ${clan}, Gender: ${gender}`);
-
+      const { race, clan } = parseRaceAndClan($);
+      const gender = $('.character-block__name').first().text().trim().split(' / ')[2];
+      console.log(`Race: ${Race[race]}, Clan: ${Clan[clan]}, Gender: ${gender}`);
       console.log('Parsing job and level information');
       const jobLevelElement = $('.character__class__data p:first-child');
       const level = jobLevelElement.text().trim().match(/LEVEL (?<Level>\d*)/)?.groups?.Level || '';
@@ -325,7 +413,9 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
             eureka,
             parsedClassJobIcon,
       };
-}async function searchCharacter(server: string, name: string): Promise<string | null> {
+}
+
+async function searchCharacter(server: string, name: string): Promise<string | null> {
       const url = `https://na.finalfantasyxiv.com/lodestone/character/?q=${encodeURIComponent(name)}&worldname=${encodeURIComponent(server)}`;
       console.log(`Searching character with URL: ${url}`);
       const response = await axios.get(url);
@@ -341,9 +431,9 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
       }
       console.log('Character not found');
       return null;
-  }
+}
 
-  export default {
+export default {
       name: 'lodestone',
       description: 'Get FFXIV character information from Lodestone',
       usage: '<server> <character name> or <lodestone id>',
@@ -376,12 +466,12 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
               console.log(`Fetching character info for ID: ${characterId}`);
               const info = await fetchCharacterInfo(characterId);
               console.log('Character info fetched successfully');
-              console.log(`job icon URL: ${info.jobIconUrl }`);
+              console.log(`job icon URL: ${info.jobIconUrl}`);
 
               // Fetch the image data using node-fetch
-              if (info.jobIconUrl  && info.jobIconUrl .trim() !== '') {
-                  console.log(`Fetching job icon from URL: ${info.jobIconUrl }`);
-                  const imageResponse = await fetch(info.jobIconUrl );
+              if (info.jobIconUrl && info.jobIconUrl.trim() !== '') {
+                  console.log(`Fetching job icon from URL: ${info.jobIconUrl}`);
+                  const imageResponse = await fetch(info.jobIconUrl);
                   const imageBuffer = await imageResponse.buffer();
                   const base64Image = imageBuffer.toString('base64');
                   
@@ -420,7 +510,7 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
                   url: `https://na.finalfantasyxiv.com/lodestone/character/${characterId}/`,
                   thumbnail: { url: info.avatar },
                   fields: [
-                      { name: 'Race/Clan/Gender', value: `${info.race} / ${info.clan} / ${info.gender}`, inline: true },
+                      { name: 'Race/Clan/Gender', value: `${convertRace(info.race)} / ${convertClan(info.clan)} / ${info.gender}`, inline: true },
                       { name: 'Nameday', value: info.nameday, inline: true },
                       { name: 'Guardian', value: info.guardian, inline: true },
                       { name: 'City-state', value: info.cityState, inline: true },
@@ -494,5 +584,15 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
               console.error('Error fetching character info:', error);
               await harmonix.client.createMessage(msg.channel.id, 'An error occurred while fetching character information. Please try again later.');
           }
-      },    
-    };
+      },};
+
+function convertRace(raceEnum: number): string {
+    const races = ['Hyur', 'Elezen', 'Lalafell', 'Miqo\'te', 'Roegadyn', 'Au Ra', 'Hrothgar', 'Viera'];
+    return races[raceEnum] || 'Unknown';
+}
+
+function convertClan(clanEnum: number): string {
+    const clans = ['Midlander', 'Highlander', 'Wildwood', 'Duskwight', 'Plainsfolk', 'Dunesfolk', 'Seeker of the Sun', 'Keeper of the Moon', 'Sea Wolf', 'Hellsguard', 'Raen', 'Xaela', 'Helions', 'The Lost', 'Rava', 'Veena'];
+    return clans[clanEnum] || 'Unknown';
+}
+
