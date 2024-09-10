@@ -42,21 +42,21 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
    token=YOUR_DISCORD_BOT_TOKEN
    ```
 4.  Create a config.json file in the root directory with the following structure: 
-  ```json
-   {
-   "prefix": "!",
-   "dirs": {
-    "commands": "./commands",
-    "events": "./events"
-   },
-   "debug": true,
-   "clientID": "YOUR_SPOTIFY_CLIENT_ID",
-   "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
-   "host": "localhost",
-   "port": 2333,
-   "password": "youshallnotpass"
+   ```json
+     {
+      "prefix": "!",
+      "dirs": {
+         "commands": "./commands",
+         "events": "./events"
+      },
+      "debug": true,
+      "clientID": "YOUR_SPOTIFY_CLIENT_ID",
+      "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
+      "host": "localhost",
+      "port": 2333,
+      "password": "youshallnotpass"
    }
-  ```
+   ```
 
 
 
