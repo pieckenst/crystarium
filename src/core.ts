@@ -12,59 +12,8 @@ import path from 'path';
 import { Manager } from 'erela.js';
 import Spotify from 'erela.js-spotify';
 import { Effect, Console } from 'effect';
-
-//error handling stuff
-
-class ConfigError {
-  readonly _tag = 'ConfigError';
-  constructor(readonly message: string) {}
-}
-
-class TokenError {
-  readonly _tag = 'TokenError';
-  constructor(readonly message: string) {}
-}
-
-// Types
-type HarmonixOptions = {
-  token: string;
-  prefix: string;
-  
-  dirs: {
-    commands: string;
-    events: string;
-  };
-  debug: boolean;
-  clientID: string;
-  clientSecret: string;
-  host: string;
-  port: number;
-  password: string;
-};
-
-type HarmonixCommand = {
-  name: string;
-  description: string;
-  aliases?: string[];
-  usage?: string;
-  category?: string;
-  execute: (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => void;
-};
-
-type HarmonixEvent = {
-  name: string;
-  execute: (...args: any[]) => void;
-};
-
-export type Harmonix = {
-    client: Eris.Client;
-    options: HarmonixOptions;
-    commands: Collection<any>;
-    events: Collection<any>;
-    startTime: Date;
-    manager: Manager;
-};
-
+import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from './typedefinitions/harmonixtypes';
+import type { Harmonix } from './typedefinitions/harmonixtypes';
 // Load configuration
 const loadConfig = Effect.tryPromise({
   try: async (): Promise<HarmonixOptions> => {
@@ -460,3 +409,5 @@ process.on('unhandledRejection', (reason, promise) => {
   consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
   consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
 });
+
+export { Harmonix };
