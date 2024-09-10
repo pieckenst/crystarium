@@ -76,15 +76,18 @@ export default {
                   const base64Image = imageBuffer.toString('base64');
                   
                   // Create emoji from jobIcon
-                  if ('guild' in msg.channel) {
-                      console.log(`Attempting to create emoji for job: ${info.jobName}`);
-                      try {
-                          emoji = await msg.channel.guild.createEmoji({
-                              name: `job_${info.jobName.toLowerCase().replace(/\s+/g, '_')}`,
-                              image: `data:image/png;base64,${base64Image}` // Use base64 data
-                          });
-                          console.log(`Emoji created successfully. Emoji ID: ${emoji.id}`);
-                      } catch (error) {
+                if ('guild' in msg.channel) {
+                    console.log(`Attempting to create emoji for job: ${info.jobName}`);
+                    try {
+                        const jobNameForEmoji = info.classLevels[info.activeClassJob]?.jobname || info.jobName; 
+                        console.log(`Attempting to get jobname : ${jobNameForEmoji}`);
+
+                        emoji = await msg.channel.guild.createEmoji({
+                            name: `job_${jobNameForEmoji.toLowerCase().replace(/\s+/g, '_')}`,
+                            image: `data:image/png;base64,${base64Image}` 
+                        });
+                        console.log(`Emoji created successfully. Emoji ID: ${emoji.id}`);
+                    } catch (error) {
                           if (error.message.includes('Invalid Form Body') && error.message.includes('image: Invalid image data')) {
                               console.log('Skipping emoji creation due to invalid image data');
                           } else {
