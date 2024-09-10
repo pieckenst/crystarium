@@ -10,19 +10,21 @@
 
 ## Features
 
-- **Music**: Play and manage music in your Discord server.
+- **Music**: Play and manage music in your Discord server using Erela.js.
 - **Moderation**: Tools for server moderation.
-- **Information Commands**: Access various information commands.
+- **Information Commands**: Access various information commands, including FFXIV Lodestone character data.
+- **Logging**: Centralized logging system for better debugging and monitoring.
 
 # Terra
 
-Discord bot written in TypeScript that uses the Eris library for Discord bot functionality.
+Terra is a Discord bot written in TypeScript using the Eris library for Discord bot functionality. It features a modular command system, event handling, and integration with external APIs like FFXIV Lodestone.
 
 ## Tech Stack
 
-
-
-**Server:** Node, Bun ,Eris 
+- **Server:** Node.js, Bun, Eris
+- **Music:** Erela.js with Spotify integration
+- **Logging:** Consola
+- **Error Handling:** Effect
 
 ## Installation
 
@@ -33,9 +35,30 @@ Discord bot written in TypeScript that uses the Eris library for Discord bot fun
    ```
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
-3. Set up your environment variables as specified in the .env.example file.
+3. Set up your environment variables in a .env file:
+   ```
+   token=YOUR_DISCORD_BOT_TOKEN
+   ```
+4  Create a config.json file in the root directory with the following structure: 
+  ```json
+  {
+  "prefix": "!",
+  "dirs": {
+    "commands": "./commands",
+    "events": "./events"
+  },
+  "debug": true,
+  "clientID": "YOUR_SPOTIFY_CLIENT_ID",
+  "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
+  "host": "localhost",
+  "port": 2333,
+  "password": "youshallnotpass"
+}
+  ```
+
+
 
 ## Hosting
 We recommend using bun package manager to launch this typescript project
@@ -45,8 +68,19 @@ bun run core.ts
 ```
 
 **Command examples:**
-- `!play [song name]`: Plays a song.
+- `!lodestone Cerberus Zenos yae Galvus`: This command fetches FFXIV character information from Lodestone..
 - `!ban [user]`: Bans a user from the server.
+
+## Code Structure
+The core file initializes the bot and sets up command and event handling:
+```
+async function main() {
+  const harmonix = await initHarmonix();
+  await loadCommands(harmonix);
+  await loadEvents(harmonix);
+  // ... (event listeners and error handling)
+}
+```   
 
 ## Contributing
 
@@ -59,7 +93,7 @@ We welcome contributions! Please follow these steps:
 
 To run this project, you will need to add the following environment variables to your .env file
 
-`token`
+`token` - Your Discord bot token
 
 
 
