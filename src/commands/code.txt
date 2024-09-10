@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<!-- saved from url=(0070)https://na.finalfantasyxiv.com/lodestone/character/29102848/class_job/ -->
+<html lang="en-us" class="en-us supports csstransforms3d no-touchevents" xmlns:og="http://ogp.me/ns#" xmlns:fb="http://www.facebook.com/2008/fbml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script type="text/javascript" async="" src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/q2KzMP6WKTHFIVwvFZXK6FMLqk.js"></script><link type="text/css" rel="stylesheet" href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/OFL-xCwfEyO8AEIVVsiBzFN1DY.css"><script type="text/javascript" id="www-widgetapi-script" src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/www-widgetapi.js" async=""></script><script type="text/javascript" async="" src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/uri.js"></script>
+
+<script async="" src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/gtm.js"></script><script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	(function() {
+		window.ldst_gtm_variable = {
+			'login': 'notloginuser',
+			'theme':  'white'
+		};
+		
+		
+	})();
+</script>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','digitalData','GTM-P37XSWJ');</script>
+<!-- End Google Tag Manager -->
+<title>Lumina Sato | FINAL FANTASY XIV, The Lodestone</title>
+<meta name="description" content="Character profile for Lumina Sato.">
+<meta name="keywords" content="FF14,FFXIV,Final Fantasy XIV,Final Fantasy 14,Lodestone,players&#39; site,community site,A Realm Reborn,Heavensward,Stormblood,Shadowbringers,Endwalker,Dawntrail,MMO">
+<meta name="author" content="SQUARE ENIX Inc.">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="format-detection" content="telephone=no">
+
+<link rel="alternate" type="application/atom+xml" href="https://na.finalfantasyxiv.com/lodestone/news/news.xml" title="News | FINAL FANTASY XIV, The Lodestone">
+<link rel="alternate" type="application/atom+xml" href="https://na.finalfantasyxiv.com/lodestone/news/topics.xml" title="Topics | FINAL FANTASY XIV, The Lodestone">
+
+<link rel="shortcut icon" type="image/vnd.microsoft.icon" href="https://lds-img.finalfantasyxiv.com/pc/global/images/favicon.ico?1720069015">
+<link rel="apple-touch-icon-precomposed" href="https://lds-img.finalfantasyxiv.com/h/0/U2uGfVX4GdZgU1jASO0m9h_xLg.png">
+<meta name="msapplication-TileImage" content="https://lds-img.finalfantasyxiv.com/h/0/U2uGfVX4GdZgU1jASO0m9h_xLg.png">
+
+<meta name="msapplication-TileColor" content="#000000">
+<link rel="alternate" hreflang="ja" href="https://jp.finalfantasyxiv.com/lodestone/character/29102848/class_job/">
+<link rel="alternate" hreflang="en-gb" href="https://eu.finalfantasyxiv.com/lodestone/character/29102848/class_job/">
+<link rel="alternate" hreflang="fr" href="https://fr.finalfantasyxiv.com/lodestone/character/29102848/class_job/">
+<link rel="alternate" hreflang="de" href="https://de.finalfantasyxiv.com/lodestone/character/29102848/class_job/">
+<!--[if lt IE 9]>
+	<script src="https://lds-img.finalfantasyxiv.com/h/I/SMlNRnAvuilc1lYKBpzKWpmADs.js"></script>
+
+<![endif]-->
+<!-- ** CSS ** -->
+
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/SH-Cx97jAOFzzwHOrikRLGJPHg.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/tUrZCLFtMgzaHil2OXxbmdw2a0.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/2rULTel6TJDoZC5dJimY1KLUZY.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/JgAulXN0McN_xRNcKLLbnNh4fs.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/8CXzMYRfNQUo0ynnZiUfpQl26c.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/teW6eaIqhVaNEZ3L8zf49YpF-g.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/xCguBoLHqlbTXA01sZmeB-qG8Y.css" rel="stylesheet">
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/wO6tEYoqzr48YFT-0KS4ub-r1Y.css" rel="stylesheet">
+
+<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/Bscq1lIEfao6cP1TMAGrA40TVM.css" rel="stylesheet">
+	
+	<link href="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/FYPDf006F-LCzICkHFNDScEYuI.css" rel="stylesheet" class="sys_theme_css" data-theme_white="https://lds-img.finalfantasyxiv.com/h/m/FYPDf006F-LCzICkHFNDScEYuI.css" data-theme_black="https://lds-img.finalfantasyxiv.com/h/x/mCtXIYAjpQKjM9GoDESwwDuQnI.css">
+<!-- ogp -->
+<meta property="fb:app_id" content="">
+<meta property="og:type" content="website">
+<meta property="og:description" content="Character profile for Lumina Sato.">
+<meta property="og:title" content="Lumina Sato | FINAL FANTASY XIV, The Lodestone">
+<meta property="og:url" content="https://na.finalfantasyxiv.com/lodestone/character/29102848/class_job/">
+<meta property="og:site_name" content="FINAL FANTASY XIV, The Lodestone">
+<meta property="og:locale" content="en_US">
+
+	<meta property="og:image" content="https://lds-img.finalfantasyxiv.com/h/F/nxpYJrU9cbhAORBcM9FbZgG2rs.png">
+	<meta property="fb:pages" content="116214575870">
+<meta name="twitter:card" content="summary_large_image">
+
+	<meta name="twitter:site" content="@ff_xiv_en">
+<script>
+	var base_domain = 'finalfantasyxiv.com';
+	var ldst_subdomain = 'na';
+	var ldst_subdomain_suffix = '';
+	var strftime_fmt = {
+		'dateHHMM_now': 'Today %H:%M',
+		'dateYMDHMS': '%m/%d/%Y %\u002dI:%M:%S %p',
+		'dateYMDHM': '%m/%d/%Y %\u002dI:%M %p',
+		'dateYMDHM_jp': '%Y/%m/%d %H:%M',
+		'dateHM': '%\u002dI:%M %p',
+		'dateYMDH': '%m/%d/%Y %\u002dI',
+		'dateYMD': '%m/%d/%Y',
+		'dateEternal': '%m.%d.%Y',
+		'dateYMDW': '%m/%d/%Y (%a)',
+		'dateHM': '%\u002dI:%M %p',
+		'week.0': 'Sun.',
+		'week.1': 'Mon.',
+		'week.2': 'Tue.',
+		'week.3': 'Wed.',
+		'week.4': 'Thu.',
+		'week.5': 'Fri.',
+		'week.6': 'Sat.'
+	};
+	var base_uri   = '/lodestone/';
+	var api_uri    = '/lodestone/api/';
+	var static_uri = 'https://lds\u002dimg.finalfantasyxiv.com/';
+	var subdomain  = 'na';
+	var csrf_token = '27f16f3543a3f0a033d881add2e1d546745c5a8c';
+	var cis_origin = 'https://secure.square\u002denix.com';
+	var ldst_max_image_size = 31457280;
+	var eorzeadb = {
+		cdn_prefix: 'https://lds\u002dimg.finalfantasyxiv.com/',
+		version: '1724739392',
+		version_js_uri:  'https://lds-img.finalfantasyxiv.com/pc/global/js/eorzeadb/version.js',
+		dynamic_tooltip: false
+	};
+	var cookie_suffix = '';
+	var ldst_is_loggedin = false;
+	var show_achievement = false;
+</script>
+<script src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/PknAmzDJUZCNhTGtSGGMIGi5k4.js"></script>
+<script src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/as_JV_jXpV9QkpR7VCqWjQTQDc.js"></script>
+
+</head>
+<body id="community" class=" lang_na">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P37XSWJ"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<div class="brand"><div class="brand__section">
+	<div class="brand__logo">
+		<a href="https://na.square-enix.com/us/home" target="_blank" rel=" noopener"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/cxcD5kjeM52JRVwrrzIF4dZNe0.png" width="130" height="14" alt="SQUARE ENIX">
+		</a>
+	</div>
+
+	
+		<div class="brand__search">
+			<form action="https://na.finalfantasyxiv.com/lodestone/community/search/" class="brand__search__form">
+				<div class="brand__search__focus_bg"></div>
+				<div class="brand__search__base_bg"></div>
+				<input type="text" id="txt_search" class="brand__search--text" name="q" placeholder="Search">
+				<input type="submit" id="bt_search" class="brand__search--btn" value="">
+			</form>
+		</div>
+	
+
+	
+		<div class="brand__theme sys_theme_switcher">
+			<a href="javascript:void(0);"><i class="brand__theme--white sys_theme active js__tooltip" data-tooltip="Theme (Black)" data-theme="white"></i></a>
+			<a href="javascript:void(0);"><i class="brand__theme--black sys_theme js__tooltip" data-tooltip="Theme (White)" data-theme="black"></i></a>
+		</div>
+	
+
+	<div class="brand__lang dropdown_trigger_box">
+		<a href="javascript:void(0);" class="brand__lang__btn brand__lang__en-us dropdown_trigger">English</a>
+		<ul class="brand__lang__select dropdown" style="opacity: 0;">
+		
+			<li><a href="https://jp.finalfantasyxiv.com/lodestone/character/29102848/class_job/" class="brand__lang__jp">日本語</a></li>
+		
+			<li><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/class_job/" class="brand__lang__na">English</a></li>
+		
+			<li><a href="https://eu.finalfantasyxiv.com/lodestone/character/29102848/class_job/" class="brand__lang__eu">English</a></li>
+		
+			<li><a href="https://fr.finalfantasyxiv.com/lodestone/character/29102848/class_job/" class="brand__lang__fr">Français</a></li>
+		
+			<li><a href="https://de.finalfantasyxiv.com/lodestone/character/29102848/class_job/" class="brand__lang__de">Deutsch</a></li>
+		
+		</ul>
+	</div>
+
+
+	
+		<div class="l__cross_menu na">
+			<a href="javascript:void(null)" class="ffxiv_pr_cross_menu_button_na"></a>
+			<script>
+				var ffxiv_pr_cross_menu = {
+					uri_js: '/cross_menu/uri.js'
+				};
+			</script>
+			<script src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/loader.js"></script>
+		</div>
+	
+</div></div>
+
+<header class="l__header">
+	<div class="l__header__inner l__header__bg_image" style="background-image: url(https://lds-img.finalfantasyxiv.com/banner/1384/headerImage_7_0_na.jpg);">
+		<a href="https://na.finalfantasyxiv.com/lodestone/" class="l__header__link_top"></a>
+
+		
+		<a href="https://na.finalfantasyxiv.com/lodestone/topics/detail/d7db61f938f9cea65e4c5cd261918edb036b3004/?utm_source=lodestone&amp;utm_medium=pc_header&amp;utm_campaign=na_7_0patch" class="l__header__link_management"></a>
+
+		<div class="l__header__login clearfix"><a href="https://na.finalfantasyxiv.com/lodestone/account/login/" class="l__header__login__btn">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/6PLTZ82M99GJ7tKOee1RSwvNrQ.png" width="40" height="40" alt="" class="l__header__login__chara_silhouette">
+			<div class="l__header__login__txt">
+				<p>View Your Character Profile</p>
+				<div>Log In</div>
+			</div>
+		</a></div>
+
+	</div>
+</header>
+<div class="frame__chara js__toggle_wrapper">
+	<a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/" class="frame__chara__link state_btn">
+		<div class="frame__chara__face">
+			
+
+			
+				<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/219b6b2769304e79c13f1dc40c4947bb_7ff236346f6151d8a2c08fd0b4a0b806fc0.jpg" width="40" height="40" alt="">
+			
+		</div>
+		<div class="frame__chara__box">
+			<p class="frame__chara__title">Sworn Protector</p>
+			<p class="frame__chara__name">Lumina Sato</p>
+			
+			<p class="frame__chara__world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Maduin [Dynamis]</p>
+		</div>
+	</a>
+</div>
+<ul class="character__profile_tab js__character_menu clearfix"><li><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/#profile">Profile</a></li><li class="character_menu__link"><a href="javascript:void(null)" class="selected">Class/Job</a></li><li class="character_menu__link"><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/minion/">Minions</a></li><li class="character_menu__link"><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/mount/">Mounts</a></li><li class="disable faceaccessory"><span class="disable">Facewear</span></li><li class="character_menu__link"><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/achievement/">Achievements</a></li><li class="character_menu__link"><a href="https://na.finalfantasyxiv.com/lodestone/character/29102848/friend/">Friends</a></li></ul>
+	<div class="character__content selected">
+	<h3 class="heading--md">DoW/DoM</h3>
+	<div class="clearfix">
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/e8-CIpHMk6D5Dau_tyTx0Kt9js.png" width="24" height="24" class="character__job__icon__title">Tank</h4>
+			<ul class="character__job clearfix">
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/d0Tx-vhnsMYfYpGe9MvslemEfg.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">36</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Paladin / Gladiator">Paladin</div>
+			<div class="character__job__exp">9,067 / 113,000</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/St9rjDJB3xNKGYg-vwooZ4j6CM.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">12</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Marauder">Marauder</div>
+			<div class="character__job__exp">5,708 / 8,620</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/5CZEvDOMYMyVn2td9LZigsgw9s.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">77</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Dark Knight">Dark Knight</div>
+			<div class="character__job__exp">1,593,849 / 4,377,000</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/hg8ofSSOKzqng290No55trV4mI.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Gunbreaker">Gunbreaker</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+			</ul>
+		</div>
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/iUDBiCamMS05753pYarJPvRBkg.png" width="24" height="24" class="character__job__icon__title">Healer</h4>
+			<ul class="character__job clearfix">
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/i20QvSPcSQTybykLZDbQCgPwMw.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="White Mage / Conjurer">White Mage</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/WdFey0jyHn9Nnt1Qnm-J3yTg5s.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Scholar">Scholar</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/erCgjnMSiab4LiHpWxVc-tXAqk.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">66</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Astrologian">Astrologian</div>
+			<div class="character__job__exp">494,997 / 1,968,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/_oYApASVVReLLmsokuCJGkEpk0.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Sage">Sage</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+	
+			</ul>
+		</div>
+	</div>
+	<div class="clearfix">
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/d9PjsFG2F8p1wwBkwcpOzoETRQ.png" width="24" height="24" class="character__job__icon__title">Melee DPS</h4>
+			<ul class="character__job clearfix">
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/HW6tKOg4SOJbL8Z20GnsAWNjjM.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Monk / Pugilist">Monk</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/gX4OgBIHw68UcMU79P7LYCpldA.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">73</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Dragoon / Lancer">Dragoon</div>
+			<div class="character__job__exp">2,400,516 / 3,324,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/Fso5hanZVEEAaZ7OGWJsXpf3jw.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">57</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Ninja / Rogue">Ninja</div>
+			<div class="character__job__exp">226,346 / 1,019,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/KndG72XtCFwaq1I1iqwcmO_0zc.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">86</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Samurai">Samurai</div>
+			<div class="character__job__exp">7,128,932 / 9,231,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/cLlXUaeMPJDM2nBhIeM-uDmPzM.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Reaper">Reaper</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/WojNTqMJ_Ye1twvkIhw825zc20.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Viper">Viper</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+	
+			</ul>
+		</div>
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/jkXOruroSp9ATWIA43ZiFGQB1Y.png" width="24" height="24" class="character__job__icon__title">Physical Ranged DPS</h4>
+			<ul class="character__job clearfix">
+
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/ZpqEJWYHj9SvHGuV9cIyRNnIkk.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">12</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Archer">Archer</div>
+			<div class="character__job__exp">862 / 8,620</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/vmtbIlf6Uv8rVp2YFCWA25X0dc.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">31</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Machinist">Machinist</div>
+			<div class="character__job__exp">6,480 / 74,000</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/HK0jQ1y7YV9qm30cxGOVev6Cck.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Dancer">Dancer</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+			</ul>
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/z3xeul_dFgcxt4E1MhigrzMDVE.png" width="24" height="24" class="character__job__icon__title">Magical Ranged DPS</h4>
+			<ul class="character__job clearfix">
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/IM3PoP6p06GqEyReygdhZNh7fU.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">10</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Thaumaturge">Thaumaturge</div>
+			<div class="character__job__exp">3,334 / 5,900</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/VYP1LKTDpt8uJVvUT7OKrXNL9E.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">4</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Arcanist">Arcanist</div>
+			<div class="character__job__exp">0 / 970</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/s3MlLUKmRAHy0pH57PnFStHmIw.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">90</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Red Mage">Red Mage</div>
+			<div class="character__job__exp">0 / 13,278,000</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/kLob-U-yh652LQPX1NHpLlUYQY.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Pictomancer">Pictomancer</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/jdV3RRKtWzgo226CC09vjen5sk.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">1</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Blue Mage (Limited Job)">Blue Mage</div>
+			<div class="character__job__exp">100 / 300</div>
+		</li>
+	
+			</ul>
+		</div>
+	</div>
+
+	<h3 class="heading--md">DoH/DoL</h3>
+	<div class="clearfix">
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/SX0lXLnrhyf1oQQ3aCra-PIjD8.png" width="24" height="24" class="character__job__icon__title">Disciples of the Hand</h4>
+			<ul class="character__job clearfix">
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/YCN6F-xiXf03Ts3pXoBihh2OBk.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Carpenter">Carpenter</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/EEHVV5cIPkOZ6v5ALaoN5XSVRU.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">30</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Blacksmith">Blacksmith</div>
+			<div class="character__job__exp">0 / 68,400</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/Rq5wcK3IPEaAB8N-T9l6tBPxCY.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">1</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Armorer">Armorer</div>
+			<div class="character__job__exp">0 / 300</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/LbEjgw0cwO_2gQSmhta9z03pjM.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Goldsmith">Goldsmith</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/ACAcQe3hWFxbWRVPqxKj_MzDiY.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Leatherworker">Leatherworker</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/E69jrsOMGFvFpCX87F5wqgT_Vo.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Weaver">Weaver</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/bBVQ9IFeXqjEdpuIxmKvSkqalE.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Alchemist">Alchemist</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/1kMI2v_KEVgo30RFvdFCyySkFo.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Culinarian">Culinarian</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+	
+			</ul>
+		</div>
+		<div class="character__job__role">
+			<h4 class="heading--lead"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/_pbf8dASjs-lT233ljqfamS52o.png" width="24" height="24" class="character__job__icon__title">Disciples of the Land</h4>
+			<ul class="character__job clearfix">
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/aM2Dd6Vo4HW_UGasK7tLuZ6fu4.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">10</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Miner">Miner</div>
+			<div class="character__job__exp">1,452 / 5,900</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/jGRnjIlwWridqM-mIPNew6bhHM.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Botanist">Botanist</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+		<li>
+			<i class="character__job__icon"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/B4Azydbn7Prubxt7OL9p1LZXZ0.png" width="24" height="24" alt=""></i>
+			<div class="character__job__level">-</div>
+			<div class="character__job__name js__tooltip" data-tooltip="Fisher">Fisher</div>
+			<div class="character__job__exp">- / -</div>
+		</li>
+	
+			</ul>
+		</div>
+	</div>
+		<h3 class="heading--md">Bozjan Southern Front</h3>
+		<div class="character__job__list">
+			<div class="character__job__webfont"><i class="xiv-lds xiv-lds-resistance-level"></i></div>
+			<div class="character__job__level">25</div>
+			<div class="character__job__name">Resistance Rank</div>
+			<div class="character__job__exp">Current Mettle: -- / Mettle to Next Rank: --</div>
+		</div>
+		<h3 class="heading--md">The Forbidden Land, Eureka</h3>
+		<div class="character__job__list">
+			<div class="character__job__webfont"><i class="xiv-lds xiv-lds-elemental-level"></i></div>
+			<div class="character__job__level">1</div>
+			<div class="character__job__name">Elemental Level</div>
+			<div class="character__job__exp">851 / 1,000</div>
+		</div>
+	</div>
+</div>
+		</div>
+
+		<div class="ldst__side">
+			<ul class="l__rside__bnr clearfix">
+	<li>
+		<a href="https://secure.square-enix.com/account/app/svc/mogstation/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_mogstation" target="_blank" class="l__rside__bnr--mog_station" rel=" noopener">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/71x9270TssyZ-BY15BGKLpQ3_U.png" width="150" height="48" alt="Mog Station">
+		</a>
+	</li>
+	<li>
+		<a href="https://store.finalfantasyxiv.com/ffxivstore/" target="_blank" class="l__rside__bnr--store" rel=" noopener">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/WT9jpRaUeWfj_sHl9O2DibFQFw.png" width="150" height="48" alt="">
+		</a>
+	</li>
+	<li>
+		<a href="https://forum.square-enix.com/ffxiv/forum.php?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_forum" target="_blank" class="l__rside__bnr--forums" rel=" noopener">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/ENqmaGOvDLAmv2rsXL-19Y22qs.png" width="150" height="48" alt="Forums">
+		</a>
+	</li>
+	<li>
+		<a href="https://na.finalfantasyxiv.com/pr/blog/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_officalblog" target="_blank" class="l__rside__bnr--blog" rel=" noopener">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/dzlIJG3KqRiEbORwH2d7LzyZaI.png" width="150" height="48" alt="Official Blog">
+		</a>
+	</li>
+</ul>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/dawntrail/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_dawntrail"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/v70_240326_na.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/lodestone/special/2024/The_Rising/kx9ry8yeix?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_the_rising"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/mnbn_新生祭2024_en.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/jobguide/battle/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_jobguide"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/jobguide_v70_na.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/crafting_gathering_guide/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_cgguide"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/CGguide_v60_na.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/uiguide/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_uiguide"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/uiguide_na.jpg"></a></div>
+			<div class="conducting_area">
+	
+		<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/UzTP8sFzvnaGOiIqs1jJLT0dKk.png" width="300" height="240" alt="">
+	
+	<div class="inr">
+		<a href="http://freetrial.finalfantasyxiv.com/" class="bt_conducting">
+			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/3KRua4vzZJvRXn0IMk8Da103bw.png" width="284" height="80" alt="Start Your Free Trial">
+		</a>
+		<a href="http://sqex.to/buyffxiv?utm_source=lodestone&amp;utm_medium=pc_buyarea&amp;utm_campaign=na_buynow" class="bt_conducting" target="_blank" rel=" noopener">
+				<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/to8CzK_gktAHpLuSGzCkNdLfWo.png" width="284" height="80" alt="BUY NOW!">
+		</a>			<a href="http://support.na.square-enix.com/faqarticle.php?id=5382&amp;la=1&amp;kid=70905" onmousedown="ga(&#39;send&#39;, &#39;event&#39;, &#39;lodestone_na&#39;, &#39;howtoupgrade_link&#39;, &#39;NA-lodestone-UG_20170620&#39;, true);" class="bt_ft_migration">			<img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/5rrJdYAcP3if6zX6d62dHV3t34.png" width="260" height="80" alt="Upgrade Your Free Trial&lt;br /&gt;to the Full Version">
+		</a>
+	</div>
+</div>
+		
+			<div class="mb10"><a href="https://starter-guide.finalfantasyxiv.com/na/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_starter-guide" target="_blank" rel=" noopener"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/FFXIV_StarterGuide_WebsitePlacement_300x120_NA.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/tales_of_adventure/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_tales_of_adventure"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/LDS_Tales_of_Adventure_v70_na.jpg"></a></div>
+			<div class="mb10"><a href="https://na.finalfantasyxiv.com/lodestone/special/friend_recruit/?utm_source=lodestone&amp;utm_medium=pc_banner&amp;utm_campaign=na_friendrecruit"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/bn_Recruit_a_Friend_na.png"></a></div>
+		
+<div class="ldst__side__box">
+
+
+
+<div class="heading--side">
+	<h3>Community Wall</h3>
+	<a href="https://na.finalfantasyxiv.com/lodestone/community/" class="heading--side__icon icon-list__side js__tooltip" data-tooltip="See More"></a>
+</div>
+<div class="heading__icon parts__space--reset js__toggle_wrapper">
+	<h4>Recent Activity</h4>
+	<i class="icon-btn__filter js__toggle_trigger js__tooltip" data-tooltip="Filter"></i>
+	<div class="parts__switch parts__switch--filter js__toggle_item">
+		<p class="parts__text">
+			Filter which items are to be displayed below.<br>
+			<span class="parts__text__notes">
+				* Notifications for standings updates are shared across all Worlds.<br>
+				* Notifications for PvP team formations are shared for all languages.<br>
+				* Notifications for free company formations are shared for all languages.
+			</span>
+		</p>
+		
+			
+<div class="form__horizontal js__communitywall_filter">
+	<input type="hidden" name="order" value=""><h5 class="heading--side--lead">Sort by</h5><ul class="form__row parts__spce--8"><li><input type="checkbox" name="community_type" value="blog" class="form__checkbox" id="community_type01"><label class="form__checkbox__label" for="community_type01">Blog</label></li><li><input type="checkbox" name="community_type" value="event" class="form__checkbox" id="community_type02"><label class="form__checkbox__label" for="community_type02">Event &amp; Party Recruitment</label></li><li><input type="checkbox" name="community_type" value="fc" class="form__checkbox" id="community_type03"><label class="form__checkbox__label" for="community_type03">Free Company</label></li><li><input type="checkbox" name="community_type" value="db" class="form__checkbox" id="community_type04"><label class="form__checkbox__label" for="community_type04">Eorzea Database</label></li><li><input type="checkbox" name="community_type" value="ranking" class="form__checkbox" id="community_type05"><label class="form__checkbox__label" for="community_type05">Standings</label></li><li><input type="checkbox" name="community_type" value="pvpteam" class="form__checkbox" id="community_type06"><label class="form__checkbox__label" for="community_type06">PvP Team</label></li><li><input type="checkbox" name="community_type" value="community_finder" class="form__checkbox" id="community_type07"><label class="form__checkbox__label" for="community_type07">Community Finder</label></li></ul><h5 class="heading--side--lead">Data Center / Home World</h5><div class="select-pulldown"><label class="control-label" for="world"></label><select name="community_worldname" class="select-pulldown__open"><option value="">Select All</option><optgroup label="Data Center"><option value="_dc_Aether">Aether</option><option value="_dc_Crystal">Crystal</option><option value="_dc_Dynamis">Dynamis</option><option value="_dc_Primal">Primal</option><option value="_dc_Chaos">Chaos</option><option value="_dc_Light">Light</option><option value="_dc_Materia">Materia</option><option value="_dc_Elemental">Elemental</option><option value="_dc_Gaia">Gaia</option><option value="_dc_Mana">Mana</option><option value="_dc_Meteor">Meteor</option></optgroup><optgroup label="Home World"><option value="Adamantoise">Adamantoise</option><option value="Aegis">Aegis</option><option value="Alexander">Alexander</option><option value="Alpha">Alpha</option><option value="Anima">Anima</option><option value="Asura">Asura</option><option value="Atomos">Atomos</option><option value="Bahamut">Bahamut</option><option value="Balmung">Balmung</option><option value="Behemoth">Behemoth</option><option value="Belias">Belias</option><option value="Bismarck">Bismarck</option><option value="Brynhildr">Brynhildr</option><option value="Cactuar">Cactuar</option><option value="Carbuncle">Carbuncle</option><option value="Cerberus">Cerberus</option><option value="Chocobo">Chocobo</option><option value="Coeurl">Coeurl</option><option value="Cuchulainn">Cuchulainn</option><option value="Diabolos">Diabolos</option><option value="Durandal">Durandal</option><option value="Excalibur">Excalibur</option><option value="Exodus">Exodus</option><option value="Faerie">Faerie</option><option value="Famfrit">Famfrit</option><option value="Fenrir">Fenrir</option><option value="Garuda">Garuda</option><option value="Gilgamesh">Gilgamesh</option><option value="Goblin">Goblin</option><option value="Golem">Golem</option><option value="Gungnir">Gungnir</option><option value="Hades">Hades</option><option value="Halicarnassus">Halicarnassus</option><option value="Hyperion">Hyperion</option><option value="Ifrit">Ifrit</option><option value="Ixion">Ixion</option><option value="Jenova">Jenova</option><option value="Kraken">Kraken</option><option value="Kujata">Kujata</option><option value="Lamia">Lamia</option><option value="Leviathan">Leviathan</option><option value="Lich">Lich</option><option value="Louisoix">Louisoix</option><option value="Maduin">Maduin</option><option value="Malboro">Malboro</option><option value="Mandragora">Mandragora</option><option value="Marilith">Marilith</option><option value="Masamune">Masamune</option><option value="Mateus">Mateus</option><option value="Midgardsormr">Midgardsormr</option><option value="Moogle">Moogle</option><option value="Odin">Odin</option><option value="Omega">Omega</option><option value="Pandaemonium">Pandaemonium</option><option value="Phantom">Phantom</option><option value="Phoenix">Phoenix</option><option value="Rafflesia">Rafflesia</option><option value="Ragnarok">Ragnarok</option><option value="Raiden">Raiden</option><option value="Ramuh">Ramuh</option><option value="Ravana">Ravana</option><option value="Ridill">Ridill</option><option value="Sagittarius">Sagittarius</option><option value="Sargatanas">Sargatanas</option><option value="Sephirot">Sephirot</option><option value="Seraph">Seraph</option><option value="Shinryu">Shinryu</option><option value="Shiva">Shiva</option><option value="Siren">Siren</option><option value="Sophia">Sophia</option><option value="Spriggan">Spriggan</option><option value="Tiamat">Tiamat</option><option value="Titan">Titan</option><option value="Tonberry">Tonberry</option><option value="Twintania">Twintania</option><option value="Typhon">Typhon</option><option value="Ultima">Ultima</option><option value="Ultros">Ultros</option><option value="Unicorn">Unicorn</option><option value="Valefor">Valefor</option><option value="Yojimbo">Yojimbo</option><option value="Zalera">Zalera</option><option value="Zeromus">Zeromus</option><option value="Zodiark">Zodiark</option><option value="Zurvan">Zurvan</option></optgroup></select></div><h5 class="heading--side--lead">Primary language</h5><div class="select-pulldown"><label class="control-label" for="lang"></label><select name="community_lang" class="select-pulldown__open"><option value="">Select All</option><option value="ja">Japanese</option><option value="en">English</option><option value="de">German</option><option value="fr">French</option></select></div><h5 class="heading--side--lead">Displaying</h5><div class="select-pulldown"><label class="control-label" for="limit"></label><select name="community_limit" class="select-pulldown__open"><option value="10">10</option><option value="20">20</option><option value="30">30</option></select></div><div class="form__submit form__submit--full"><input type="submit" value="Filter" class="js__bt_communitywall_filter"></div>
+</div>
+
+		
+	</div>
+</div>
+
+
+<ul class="side__list__box">
+	
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/10676502/blog/5454552/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-fb2dc448b20" class="datetime_dynamic_ymdhm" data-epoch="1725959923">Today 12:18</span><script>document.getElementById('datetime-fb2dc448b20').innerHTML = ldst_strftime_dynamic_ymdhm(1725959923);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Spica Nox</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Gilgamesh [Aether]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Spica Nox (<i class="xiv-lds xiv-lds-home-world"></i>Gilgamesh) posted a new blog entry, "Relocating is better from small to medium/large."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/10676502/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/571c1d2eb6db88bb0ce1337ffb9b79fc_b937560c841465f7c4bc8eb47ea7948afc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/3204963/blog/5454551/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-c81df42f15e" class="datetime_dynamic_ymdhm" data-epoch="1725959854">Today 12:17</span><script>document.getElementById('datetime-c81df42f15e').innerHTML = ldst_strftime_dynamic_ymdhm(1725959854);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Milk Cream</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Ixion [Mana]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Milk Cream (<i class="xiv-lds xiv-lds-home-world"></i>Ixion) posted a new blog entry, "お久しぶりです。."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/3204963/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/e03d09ab65339bee70dece36d7720b2d_7126768d768f6c6c7fed3eaee98c3a8afc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/26465937/blog/5454550/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-ebf585f49df" class="datetime_dynamic_ymdhm" data-epoch="1725959828">Today 12:17</span><script>document.getElementById('datetime-ebf585f49df').innerHTML = ldst_strftime_dynamic_ymdhm(1725959828);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Maho Minase</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Typhon [Elemental]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Maho Minase (<i class="xiv-lds xiv-lds-home-world"></i>Typhon) posted a new blog entry, "FFXIV Blue Mage Weekly Targets 09/10-09/17."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/26465937/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/c7b8c3bb0768d2f3db0180c3bc2aec14_32d8c9c7cd5f62d62da2d31b6750a680fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/community_finder/157cbd3085070c98eb468d8d5fcd9282d32735c3/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-ec256ead41f" class="datetime_dynamic_ymdhm" data-epoch="1725959495">Today 12:11</span><script>document.getElementById('datetime-ec256ead41f').innerHTML = ldst_strftime_dynamic_ymdhm(1725959495);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Laysalea Rin</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Kujata [Elemental]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__community_finder js__tooltip" data-tooltip="Community Finder"></span></div><div class="entry__activity__txt--message"><p>Laysalea Rin (<i class="xiv-lds xiv-lds-home-world"></i>Kujata) has started recruitment for the free company "WeWark (Kujata)."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/44483756/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/7d3d9e978f0dc0e73b526de8457666e7_72c48f093f2278ac3243962d3eb6a8d7fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/18021761/blog/5454549/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-bcb8c1a1dee" class="datetime_dynamic_ymdhm" data-epoch="1725959433">Today 12:10</span><script>document.getElementById('datetime-bcb8c1a1dee').innerHTML = ldst_strftime_dynamic_ymdhm(1725959433);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Light Star</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Alexander [Gaia]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Light Star (<i class="xiv-lds xiv-lds-home-world"></i>Alexander) posted a new blog entry, "強くてニューゲーム！フィナーレ！."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/18021761/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/485f5c3a74cced8eb33d71447941b25f_b7a71d8799cf6dd75b711a7f52de6675fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/community_finder/c0b30dab453addbf8402f0aa17e5ba45bd5c6c8c/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-2de92848239" class="datetime_dynamic_ymdhm" data-epoch="1725959135">Today 12:05</span><script>document.getElementById('datetime-2de92848239').innerHTML = ldst_strftime_dynamic_ymdhm(1725959135);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Wolf Farron</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Ramuh [Meteor]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__community_finder js__tooltip" data-tooltip="Community Finder"></span></div><div class="entry__activity__txt--message"><p>Wolf Farron (<i class="xiv-lds xiv-lds-home-world"></i>Ramuh) has started recruitment for the free company "Bliss Cafe (Ramuh)."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/52102544/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/d0de4e8f9cc2dc577fd926b91b481c67_410ddb5a66a2fcacf538bec5ea5d0291fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/21849489/blog/5454025/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-da26890cbba" class="datetime_dynamic_ymdhm" data-epoch="1725958749">Today 11:59</span><script>document.getElementById('datetime-da26890cbba').innerHTML = ldst_strftime_dynamic_ymdhm(1725958749);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Hana Aliapoh</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Asura [Mana]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Hana Aliapoh (<i class="xiv-lds xiv-lds-home-world"></i>Asura) posted a new blog entry, "黄金のレガシークリア！と喪失感."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/21849489/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/c7a9fe3d51ddf1991a986acf6558a9ba_53f1445a9f28799a32ea55f046319fc3fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/54312862/blog/5454546/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-b0e3d74699d" class="datetime_dynamic_ymdhm" data-epoch="1725958620">Today 11:57</span><script>document.getElementById('datetime-b0e3d74699d').innerHTML = ldst_strftime_dynamic_ymdhm(1725958620);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Aki Figaro</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Valefor [Meteor]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Aki Figaro (<i class="xiv-lds xiv-lds-home-world"></i>Valefor) posted a new blog entry, "その輝きはプライスレス."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/54312862/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/e8d478da66f7a71b63c284ee634858d3_485f4777c38002871591fb54f27edc65fc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div class="entry more_"><a href="https://na.finalfantasyxiv.com/lodestone/character/54464442/blog/5454545/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header clearfix"><time class="entry__activity__time"><span id="datetime-f3583c8e17d" class="datetime_dynamic_ymdhm" data-epoch="1725958469">Today 11:54</span><script>document.getElementById('datetime-f3583c8e17d').innerHTML = ldst_strftime_dynamic_ymdhm(1725958469);</script></time><div class="entry__activity__data"><p class="entry__activity__data--name">Cappy Happy</p><p class="entry__activity__data--world"><i class="xiv-lds xiv-lds-home-world js__tooltip" data-tooltip="Home World"></i>Unicorn [Meteor]</p></div></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__blog js__tooltip" data-tooltip="Blog"></span></div><div class="entry__activity__txt--message"><p>Cappy Happy (<i class="xiv-lds xiv-lds-home-world"></i>Unicorn) posted a new blog entry, "【FF初心者】フレンド募集！."</p></div></div></div></a><a href="https://na.finalfantasyxiv.com/lodestone/character/54464442/" class="entry__activity__link"><div class="entry__chara__face"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/1ef410cdacab70d8506f5e96dc9f3b51_393eb74047bb90c8d80dea54218430eefc0.jpg" width="40" height="40" alt=""></div></a></div>
+
+
+	<div data-min_id="7132028625" class="entry more_" data-has_next=""><a href="https://na.finalfantasyxiv.com/lodestone/freecompany/9229705223830923671/" class="entry__activity"><div class="entry__activity__box"><div class="entry__activity__box__header--common clearfix"><time class="entry__activity__time"><span id="datetime-48de307a336" class="datetime_dynamic_ymdhm" data-epoch="1725958255">Today 11:50</span><script>document.getElementById('datetime-48de307a336').innerHTML = ldst_strftime_dynamic_ymdhm(1725958255);</script></time></div><div class="entry__activity__txt"><div class="entry__activity__txt--icon"><span class="icon-activity__fc js__tooltip" data-tooltip="Free Company"></span></div><div class="entry__activity__txt--message"><p>mmrmrs (Carbuncle) has been formed.</p></div></div></div></a><div class="entry__activity__link"><img src="./Lumina Sato _ FINAL FANTASY XIV, The Lodestone_files/_Huf58epDlt9vXiO8IIfPXxtXI.png" width="50" height="50" alt=""></div></div>
+
+</ul>
+</div>
