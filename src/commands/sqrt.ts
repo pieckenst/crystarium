@@ -1,21 +1,24 @@
-import { Message, TextableChannel, GuildChannel } from 'eris';
+import { Message, TextableChannel, GuildChannel, CommandInteraction } from 'eris';
 import { Harmonix } from '../core';
-import { logInfo, logError } from '../code-utils/centralloggingfactory';
+import { logInfo } from '../code-utils/centralloggingfactory';
+import { defineCommand } from '../code-utils/definingcommand';
 
-export default {
+
+export default class extends defineCommand({
     name: "sqrt",
     description: "Calculates a square root",
     usage: "sqrt <number>",
     category: "miscellaneous",
-    accessableby: "Everyone",
     aliases: [],
-    execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
-        const input = parseFloat(args[0]);
+  }) {
+    static async execute(harmonix: Harmonix, message: Message<TextableChannel> | CommandInteraction, args: string[] | { number: number }) {
+        const input = typeof args === 'object' && 'number' in args ? args.number : parseFloat(args[0]);
 
         if (isNaN(input) || input > 5000 || input < 0) {
-            await logInfo(`Invalid input for sqrt command: ${args[0]}`, 'sqrt');
-            if (msg.channel.id) {
-                await harmonix.client.createMessage(msg.channel.id, {
+            await logInfo(`Invalid input for sqrt command: ${input}`, 'sqrt');
+            const channel = 'channel' in message ? message.channel : (message as CommandInteraction).channel;
+            if (channel?.id) {
+                await harmonix.client.createMessage(channel.id, {
                     embed: {
                         title: "Oops!",
                         description: "An error occurred while executing the command",
@@ -26,7 +29,7 @@ export default {
                                 value: "Value must be between 0 and 5000"
                             }
                         ],
-                        footer: { text: (msg.channel as GuildChannel).guild?.name || "Direct Message" },
+                        footer: { text: (channel as GuildChannel).guild?.name || "Direct Message" },
                         timestamp: new Date()
                     }
                 });
@@ -38,8 +41,9 @@ export default {
 
         await logInfo(`Sqrt command executed successfully for input: ${input}`, 'sqrt');
 
-        if (msg.channel.id) {
-            await harmonix.client.createMessage(msg.channel.id, {
+        const channel = 'channel' in message ? message.channel : (message as CommandInteraction).channel;
+        if (channel?.id) {
+            await harmonix.client.createMessage(channel.id, {
                 embed: {
                     title: "Mathematics",
                     description: "Square Root",
@@ -54,10 +58,9 @@ export default {
                             value: `${result}`
                         }
                     ],
-                    footer: { text: (msg.channel as GuildChannel).guild?.name || "Direct Message" },
+                    footer: { text: (channel as GuildChannel).guild?.name || "Direct Message" },
                     timestamp: new Date()
                 }
             });
         }
-    }
-};
+    }};

@@ -14,6 +14,9 @@ import Spotify from 'erela.js-spotify';
 import { Effect, Console } from 'effect';
 import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from './typedefinitions/harmonixtypes';
 import type { Harmonix } from './typedefinitions/harmonixtypes';
+import { ApplicationCommandStructure } from 'eris';
+
+
 // Load configuration
 const loadConfig = Effect.tryPromise({
   try: async (): Promise<HarmonixOptions> => {
@@ -151,46 +154,54 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   return files;
 }
 
-// Load commands with Effect-based error handling
 async function loadCommands(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'commands');
   for (const file of files) {
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
-          const commandModule = require(file);
-          const command = commandModule.default || commandModule;
-          
-          if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
-            if (command.slash) {
-              harmonix.client.createCommand(command);
-              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
-            } else {
-              harmonix.commands.set(command.name, command);
-              consola.info(colors.blue(` Loaded regular command: ${command.name}`));
-            }
+          const commandModule = await import(file);
+          let command: HarmonixCommand;
 
-            // Handle interval limits
-            if (command.intervalLimit) {
-              const list = command.intervalLimit;
-              if (list.minute > list.hour || list.hour > list.day) {
-                throw new Error('Impolitic Custom Interval style!');
-              }
+          if (typeof commandModule.default === 'function' && commandModule.default.build) {
+            command = commandModule.default.build();
+            consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
+          } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
+            command = commandModule.default;
+            consola.info(colors.cyan(` Command ${file} uses regular command structure`));
+          } else {
+            throw new Error(`Invalid command structure in file: ${file}`);
+          }
+
+          if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+            harmonix.commands.set(command.name, command);
+            consola.info(colors.blue(` Loaded command: ${command.name}`));
+
+            if (command.slashCommand) {
+              const slashCommandData: Eris.ApplicationCommandStructure = {
+                name: command.name,
+                description: command.description,
+                type: 1,
+                options: command.options
+              };
+              await harmonix.client.createCommand(slashCommandData);
+              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
             }
           } else {
-            consola.warn(colors.yellow(` Skipping invalid command in file: ${file}`));
+            throw new Error(`Invalid command structure in file: ${file}`);
           }
         },
-        catch: (error: Error) => {
+        catch: (error: Error) => Effect.sync(() => {
           consola.error(colors.red(` Error loading command from file: ${file}`));
           consola.error(colors.red(` Error details: ${error.message}`));
-        }
+        })
       })
     );
   }
 
-  consola.info(colors.green(` Loaded ${harmonix.commands.size} text commands.`));
+  consola.info(colors.green(` Loaded ${harmonix.commands.size} commands.`));
 }
+
 
 // Load events with Effect-based error handling
 async function loadEvents(harmonix: Harmonix): Promise<void> {
@@ -402,12 +413,33 @@ Effect.runPromise(
 // Global error handling
 process.on('uncaughtException', (error) => {
   consola.error(colors.red('Uncaught Exception:'), error);
-  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+  
+  if (error.message.includes('Connection reset by peer')) {
+    consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
+    
+    // Delay the reload to allow for any cleanup
+    setTimeout(() => {
+      consola.info(colors.blue('Restarting the bot...'));
+      process.exit(1); // Exit with a non-zero code to trigger a restart if you're using a process manager
+    }, 5000); // 5 seconds delay
+  } else {
+    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
-  consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+  
+  if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
+    consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));
+    
+    setTimeout(() => {
+      consola.info(colors.blue('Restarting the bot...'));
+      process.exit(1);
+    }, 5000);
+  } else {
+    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+  }
 });
 
 export { Harmonix };

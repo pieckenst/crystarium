@@ -13,6 +13,7 @@ class TokenError {
 }
 
 type HarmonixOptions = {
+  ownerId?: string | undefined;
   token: string;
   prefix: string;
   dirs: {
@@ -28,12 +29,18 @@ type HarmonixOptions = {
 };
 
 type HarmonixCommand = {
+  
   name: string;
   description: string;
   aliases?: string[];
   usage?: string;
   category?: string;
-  execute: (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => void;
+  slashCommand?: boolean;
+  type?: 1;
+  options?: Eris.ApplicationCommandOptions[];
+  permissions?: string[];
+  intervalLimit?: { minute: number; hour: number; day: number };
+  execute: (harmonix: Harmonix, msg: Message<TextableChannel> | Eris.CommandInteraction, args: string[] | Record<string, any>) => Promise<void>;
 };
 
 type HarmonixEvent = {
