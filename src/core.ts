@@ -1,4 +1,4 @@
-import Eris, { Message, TextableChannel, Constants, EmbedOptions } from 'eris';
+import Eris, { Message, TextableChannel, Constants, EmbedOptions, CommandInteraction } from 'eris';
 import { Collection } from 'eris';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
@@ -15,7 +15,7 @@ import { Effect, Console } from 'effect';
 import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from './typedefinitions/harmonixtypes';
 import type { Harmonix } from './typedefinitions/harmonixtypes';
 import { ApplicationCommandStructure } from 'eris';
-
+import { logError } from './code-utils/centralloggingfactory';
 
 // Load configuration
 const loadConfig = Effect.tryPromise({
@@ -65,6 +65,7 @@ async function initHarmonix(): Promise<Harmonix> {
     client,
     options: { ...config, token },
     commands: new Collection<string, HarmonixCommand>(),
+    slashCommands: new Collection<string, HarmonixCommand>(),
     events: new Collection<string, HarmonixEvent>(),
     startTime: new Date(),
     manager: new Manager({
@@ -153,55 +154,67 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   });
   return files;
 }
-
 async function loadCommands(harmonix: Harmonix): Promise<void> {
-  const files = await scanFiles(harmonix, 'commands');
-  for (const file of files) {
-    await Effect.runPromise(
-      Effect.tryPromise({
-        try: async () => {
-          const commandModule = await import(file);
-          let command: HarmonixCommand;
+    const files = await scanFiles(harmonix, 'commands');
+    for (const file of files) {
+      await Effect.runPromise(
+        Effect.tryPromise({
+          try: async () => {
+            try {
+              const commandModule = await import(file);
+              let command: HarmonixCommand;
 
-          if (typeof commandModule.default === 'function' && commandModule.default.build) {
-            command = commandModule.default.build();
-            consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
-          } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
-            command = commandModule.default;
-            consola.info(colors.cyan(` Command ${file} uses regular command structure`));
-          } else {
-            throw new Error(`Invalid command structure in file: ${file}`);
-          }
+              if (typeof commandModule.default === 'function' && commandModule.default.build) {
+                command = commandModule.default.build();
+                consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
+              } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
+                command = commandModule.default;
+                consola.info(colors.cyan(` Command ${file} uses regular command structure`));
+              } else {
+                throw new Error(`Invalid command structure in file: ${file}`);
+              }
 
-          if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
-            harmonix.commands.set(command.name, command);
-            consola.info(colors.blue(` Loaded command: ${command.name}`));
+              if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+                if (command.slashCommand) {
+                  harmonix.slashCommands.set(command.name, command);
+                  consola.info(colors.blue(` Loaded slash command: ${command.name}`));
+                } else {
+                  harmonix.commands.set(command.name, command);
+                  consola.info(colors.blue(` Loaded command: ${command.name}`));
+                }
 
-            if (command.slashCommand) {
-              const slashCommandData: Eris.ApplicationCommandStructure = {
-                name: command.name,
-                description: command.description,
-                type: 1,
-                options: command.options
-              };
-              await harmonix.client.createCommand(slashCommandData);
-              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
+                if (command.slashCommand) {
+                  const slashCommandData: Eris.ApplicationCommandStructure = {
+                    name: command.name,
+                    description: command.description,
+                    type: 1,
+                    options: command.options
+                  };
+                  await harmonix.client.createCommand(slashCommandData);
+                  consola.info(colors.blue(` Loaded slash command: ${command.name}`));
+                }
+              } else {
+                throw new Error(`Invalid command structure in file: ${file}`);
+              }
+            } catch (error) {
+              consola.error(colors.red(` Error loading command from file: ${file}`));
+              consola.error(colors.red(` Error details: ${error.message}`));
+              console.error(colors.red(' Stack trace:'));
+              console.error(colors.red(error.stack));
             }
-          } else {
-            throw new Error(`Invalid command structure in file: ${file}`);
-          }
-        },
-        catch: (error: Error) => Effect.sync(() => {
-          consola.error(colors.red(` Error loading command from file: ${file}`));
-          consola.error(colors.red(` Error details: ${error.message}`));
+          },
+          catch: (error: Error) => Effect.sync(() => {
+            consola.error(colors.red(` Error in Effect.tryPromise for file: ${file}`));
+            consola.error(colors.red(` Error details: ${error.message}`));
+            console.error(colors.red(' Stack trace:'));
+            console.error(colors.red(error.stack));
+          })
         })
-      })
-    );
-  }
+      );
+    }
 
-  consola.info(colors.green(` Loaded ${harmonix.commands.size} commands.`));
+    consola.info(colors.green(` Loaded ${harmonix.commands.size} regular commands and ${harmonix.slashCommands.size} slash commands.`));
 }
-
 
 // Load events with Effect-based error handling
 async function loadEvents(harmonix: Harmonix): Promise<void> {
@@ -324,8 +337,16 @@ async function main() {
           consola.success(colors.green(` Logged in as ${harmonix.client.user.username}`));
           harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
           harmonix.manager.init(harmonix.client.user.id);
+          
+          // Register slash commands
+          const commands = harmonix.slashCommands.map(cmd => ({
+            name: cmd.name,
+            description: cmd.description,
+            options: cmd.options,
+            type: 1 as const // ChatInput command type
+          }));
+          harmonix.client.bulkEditCommands(commands);
         });
-
         harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
           Effect.runPromise(Effect.tryPromise({
             try: async () => {
@@ -370,6 +391,47 @@ async function main() {
           }));
         });
 
+        const handleInteraction = async (harmonix: Harmonix, interaction: Eris.ComponentInteraction) => {
+          if (interaction.type !== 3 || !interaction.data.custom_id) return;
+        
+          const command = harmonix.commands.find(cmd => interaction.data.custom_id.startsWith(cmd.name));
+          if (!command) return;
+        
+          try {
+            await command.execute(harmonix, interaction, {});
+          } catch (error) {
+            logError(`Error handling interaction for command ${command.name}:`, error);
+            await interaction.createMessage({
+              content: 'An error occurred while processing the interaction.',
+              flags: 64
+            });
+          }
+        };        
+        harmonix.client.on('interactionCreate', (interaction: any) => {
+          Effect.runPromise(Effect.tryPromise({
+            try: async () => {
+              if (interaction instanceof CommandInteraction) {
+                const commandName = interaction.data.name;
+                const command = harmonix.commands.get(commandName);
+                
+                if (command && 'executeSlash' in command) {
+                  consola.info(colors.cyan(`Slash command "${commandName}" used by ${interaction.member?.username} in ${interaction.channel.id}`));
+                  await command.executeSlash(harmonix, interaction);
+                } else {
+                  consola.warn(colors.yellow(` Unknown slash command "${commandName}" attempted by ${interaction.member?.username} in ${interaction.channel.id}`));
+                  await interaction.createMessage({ content: 'Unknown command', flags: 64 });
+                }
+              }
+            },            catch: (error: Error) => {
+              consola.error(colors.red(`Error processing interaction: ${error.message}`));
+              interaction.createMessage({
+                content: 'An error occurred while processing the command',
+                flags: 64
+              }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
+            }
+          }));
+        });
+
         harmonix.client.on("rawWS", (packet: any) => {
           Effect.runPromise(Effect.tryPromise({
             try: async () => {
@@ -382,6 +444,7 @@ async function main() {
             }
           }));
         });
+
         // Global error handling for command errors
         harmonix.client.on('error', (error: Error, id: string) => {
           consola.error(colors.red('Command Error:'), error);
@@ -422,7 +485,6 @@ async function main() {
     process.exit(1);
   });
 }
-
   // Run the bot
   Effect.runPromise(
     Effect.catchAll(

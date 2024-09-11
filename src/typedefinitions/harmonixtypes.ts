@@ -52,6 +52,7 @@ type Harmonix = {
     client: Eris.Client;
     options: HarmonixOptions;
     commands: Collection<any>;
+    slashCommands: Collection<any>; // Add this line
     events: Collection<any>;
     startTime: Date;
     manager: Manager;
