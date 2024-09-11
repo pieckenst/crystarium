@@ -382,8 +382,29 @@ async function main() {
             }
           }));
         });
-
-        if (harmonix.options.debug) {
+        // Global error handling for command errors
+        harmonix.client.on('error', (error: Error, id: string) => {
+          consola.error(colors.red('Command Error:'), error);
+          if (id) {
+              harmonix.client.createMessage(id, {
+              embed: {
+                title: 'Command Error',
+                description: 'An error occurred while executing the command.',
+                color: 0xFF0000,
+                fields: [
+                {
+                  name: 'Error Details',
+                  value: `\`\`\`${error.message}\`\`\``
+                }
+                ]
+              }
+            }).catch(err => {
+            consola.error(colors.red('Failed to send error message:'), err);
+          });
+        }   
+        consola.warn(colors.yellow('Bot will continue running. The command error has been logged above.'));
+      });        
+      if (harmonix.options.debug) {
           watchAndReload(harmonix);
         }
 
@@ -399,47 +420,48 @@ async function main() {
   });
 }
 
+  // Run the bot
+  Effect.runPromise(
+    Effect.catchAll(
+      Effect.tryPromise(() => main()),
+      (error) => Effect.sync(() => {
+        consola.error(colors.red('An error occurred:'), error);
+        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+      })
+    )
+  );
 
-// Run the bot
-Effect.runPromise(
-  Effect.catchAll(
-    Effect.tryPromise(() => main()),
-    (error) => Effect.sync(() => {
-      consola.error(colors.red('An error occurred:'), error);
+  // Global error handling
+  process.on('uncaughtException', (error) => {
+    consola.error(colors.red('Uncaught Exception:'), error);
+  
+    if (error.message.includes('Connection reset by peer')) {
+      consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
+    
+      // Delay the reload to allow for any cleanup
+      setTimeout(() => {
+        consola.info(colors.blue('Restarting the bot...'));
+        process.exit(1); // Exit with a non-zero code to trigger a restart if you're using a process manager
+      }, 5000); // 5 seconds delay
+    } else {
       consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-    })
-  )
-);
-// Global error handling
-process.on('uncaughtException', (error) => {
-  consola.error(colors.red('Uncaught Exception:'), error);
-  
-  if (error.message.includes('Connection reset by peer')) {
-    consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
-    
-    // Delay the reload to allow for any cleanup
-    setTimeout(() => {
-      consola.info(colors.blue('Restarting the bot...'));
-      process.exit(1); // Exit with a non-zero code to trigger a restart if you're using a process manager
-    }, 5000); // 5 seconds delay
-  } else {
-    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-  }
-});
+    }
+  });
 
-process.on('unhandledRejection', (reason, promise) => {
-  consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
+  process.on('unhandledRejection', (reason, promise) => {
+    consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
   
-  if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
-    consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));
+    if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
+      consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));
     
-    setTimeout(() => {
-      consola.info(colors.blue('Restarting the bot...'));
-      process.exit(1);
-    }, 5000);
-  } else {
-    consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-  }
-});
+      setTimeout(() => {
+        consola.info(colors.blue('Restarting the bot...'));
+        process.exit(1);
+      }, 5000);
+    } else {
+      consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+    }
+  });
 
+  
 export { Harmonix };
