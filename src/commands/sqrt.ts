@@ -6,7 +6,7 @@ export default {
     name: "sqrt",
     description: "Calculates a square root",
     usage: "sqrt <number>",
-    category: "math",
+    category: "miscellaneous",
     accessableby: "Everyone",
     aliases: [],
     execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
