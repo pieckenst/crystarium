@@ -409,13 +409,16 @@ async function main() {
         }
 
         await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
-      },      catch: (error: Error) => {        consola.error(colors.red(' An error occurred:'), error);
+      },      
+      catch: (error: Error) => {        
+        consola.error(colors.red(' An error occurred:'), error);
         consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
         return Effect.fail(error);
       }
     })
   ).catch((error: Error) => {
     consola.error(colors.red(' A critical error occurred:'), error);
+    consola.error(colors.red('Stack trace:'), error.stack);
     process.exit(1);
   });
 }
