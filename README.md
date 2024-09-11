@@ -10,10 +10,12 @@
 
 ## Features
 
-- **Music**: Play and manage music in your Discord server using Erela.js.
+- **Music**: Play and manage music in your Discord server using Erela.js with Spotify integration.
 - **Moderation**: Tools for server moderation.
 - **Information Commands**: Access various information commands, including FFXIV Lodestone character data.
-- **Logging**: Centralized logging system for better debugging and monitoring.
+- **Logging**: Centralized logging system using Consola for better debugging and monitoring.
+- **Error Handling**: Robust error handling using Effect.
+- **Hot Reloading**: Automatic reloading of commands and events during development.
 
 # Terra
 
@@ -25,6 +27,8 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
 - **Music:** Erela.js with Spotify integration
 - **Logging:** Consola
 - **Error Handling:** Effect
+- **File Scanning:** Globby
+- **Hot Reloading:** Chokidar, perfect-debounce
 
 ## Installation
 
@@ -54,15 +58,15 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
       "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
       "host": "localhost",
       "port": 2333,
-      "password": "youshallnotpass"
-   }
+      "password": "youshallnotpass",
+      "ownerId": "YOUR_DISCORD_USER_ID"
+     }
    ```
 
 
 
 ## Hosting
-We recommend using bun package manager to launch this typescript project
-To start the bot, run:
+We recommend using bun package manager to launch this TypeScript project. To start the bot, run:
 ```bash
 bun run core.ts
 ```
@@ -80,6 +84,28 @@ async function main() {
   await loadEvents(harmonix);
   // ... (event listeners and error handling)
 }
+```   
+Terra uses a flexible command structure defined in src/code-utils/definingcommand.ts. Here's how to create a command:
+```
+import { defineCommand } from '../code-utils/definingcommand';
+
+export default class extends defineCommand({
+  name: "commandname",
+  description: "Command description",
+  usage: "commandname <arg>",
+  category: "Category",
+  aliases: [],
+  slashCommand: true,
+  options: [], // For slash command options
+  permissions: ['SEND_MESSAGES'],
+  ownerOnly: false,
+}) {
+  static async execute(harmonix, message, args) {
+    // Command logic here
+  }
+}
+
+This structure allows for easy creation of both regular and slash commands, with built-in permission checks and owner-only restrictions.
 ```   
 
 ## Contributing
