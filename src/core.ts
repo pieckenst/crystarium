@@ -155,65 +155,48 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   return files;
 }
 async function loadCommands(harmonix: Harmonix): Promise<void> {
-    const files = await scanFiles(harmonix, 'commands');
-    for (const file of files) {
-      await Effect.runPromise(
-        Effect.tryPromise({
-          try: async () => {
-            try {
-              const commandModule = await import(file);
-              let command: HarmonixCommand;
+  const files = await scanFiles(harmonix, 'commands');
 
-              if (typeof commandModule.default === 'function' && commandModule.default.build) {
-                command = commandModule.default.build();
-                consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
-              } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
-                command = commandModule.default;
-                consola.info(colors.cyan(` Command ${file} uses regular command structure`));
-              } else {
-                throw new Error(`Invalid command structure in file: ${file}`);
-              }
+  for (const file of files) {
+    await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const commandModule = await import(file);
+          let command: HarmonixCommand;
 
-              if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
-                if (command.slashCommand) {
-                  harmonix.slashCommands.set(command.name, command);
-                  consola.info(colors.blue(` Loaded slash command: ${command.name}`));
-                } else {
-                  harmonix.commands.set(command.name, command);
-                  consola.info(colors.blue(` Loaded command: ${command.name}`));
-                }
+          if (typeof commandModule.default === 'function' && commandModule.default.build) {
+            command = commandModule.default.build();
+            consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
+          } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
+            command = commandModule.default;
+            consola.info(colors.cyan(` Command ${file} uses regular command structure`));
+          } else {
+            throw new Error(`Invalid command structure in file: ${file}`);
+          }
 
-                if (command.slashCommand) {
-                  const slashCommandData: Eris.ApplicationCommandStructure = {
-                    name: command.name,
-                    description: command.description,
-                    type: 1,
-                    options: command.options
-                  };
-                  await harmonix.client.createCommand(slashCommandData);
-                  consola.info(colors.blue(` Loaded slash command: ${command.name}`));
-                }
-              } else {
-                throw new Error(`Invalid command structure in file: ${file}`);
-              }
-            } catch (error) {
-              consola.error(colors.red(` Error loading command from file: ${file}`));
-              consola.error(colors.red(` Error details: ${error.message}`));
-              console.error(colors.red(' Stack trace:'));
-              console.error(colors.red(error.stack));
+          if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+            if (command.slashCommand) {
+              harmonix.slashCommands.set(command.name, command);
+              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
+            } else {
+              harmonix.commands.set(command.name, command);
+              consola.info(colors.blue(` Loaded command: ${command.name}`));
             }
-          },
-          catch: (error: Error) => Effect.sync(() => {
-            consola.error(colors.red(` Error in Effect.tryPromise for file: ${file}`));
-            consola.error(colors.red(` Error details: ${error.message}`));
-            console.error(colors.red(' Stack trace:'));
-            console.error(colors.red(error.stack));
-          })
+          } else {
+            throw new Error(`Invalid command structure in file: ${file}`);
+          }
+        },
+        catch: (error: Error) => Effect.sync(() => {
+          consola.error(colors.red(` Error loading command from file: ${file}`));
+          consola.error(colors.red(` Error details: ${error.message}`));
+          console.error(colors.red(' Stack trace:'));
+          console.error(colors.red(error.stack));
         })
-      );
-    }
+      })
+    );
+  }
 
-    consola.info(colors.green(` Loaded ${harmonix.commands.size} regular commands and ${harmonix.slashCommands.size} slash commands.`));
+  consola.info(colors.green(` Loaded ${harmonix.commands.size} regular commands and ${harmonix.slashCommands.size} slash commands.`));
 }
 
 // Load events with Effect-based error handling
@@ -320,23 +303,7 @@ async function main() {
 
         
        
-        const handleInteraction = async (harmonix: Harmonix, interaction: Eris.ComponentInteraction) => {
-          if (interaction.type !== 3 || !interaction.data.custom_id) return;
-        
-          const command = harmonix.commands.find(cmd => interaction.data.custom_id.startsWith(cmd.name));
-          if (!command) return;
-        
-          try {
-            await command.execute(harmonix, interaction, {});
-          } catch (error) {
-            logError(`Error handling interaction for command ${command.name}:`, error);
-            await interaction.createMessage({
-              content: 'An error occurred while processing the interaction.',
-              flags: 64
-            });
-          }
-        };        
-        
+                
 
         harmonix.client.on("rawWS", (packet: any) => {
           Effect.runPromise(Effect.tryPromise({

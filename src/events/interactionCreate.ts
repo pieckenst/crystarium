@@ -1,6 +1,6 @@
 import { defineEvent } from '../code-utils/definingevent';
 import { Harmonix } from '../typedefinitions/harmonixtypes';
-import { Interaction, CommandInteraction } from 'eris';
+import { Interaction, CommandInteraction, ComponentInteraction } from 'eris';
 import { Effect } from 'effect';
 import { logError } from '../code-utils/centralloggingfactory';
 import { colors } from 'consola/utils';
@@ -16,15 +16,30 @@ export default class extends defineEvent({
         new Promise<void>(async (resolve, reject) => {
           try {
             if (interaction instanceof CommandInteraction) {
-              const commandName = interaction.data.name;
-              const command = harmonix.commands.get(commandName);
-              
-              if (command && 'executeSlash' in command) {
-                consola.info(colors.cyan(`Slash command "${commandName}" used by ${interaction.member?.username} in ${interaction.channel.id}`));
-                await command.executeSlash(harmonix, interaction);
-              } else {
-                consola.warn(colors.yellow(` Unknown slash command "${commandName}" attempted by ${interaction.member?.username} in ${interaction.channel.id}`));
-                await interaction.createMessage({ content: 'Unknown command', flags: 64 });
+              const command = harmonix.slashCommands.get(interaction.data.name);
+              if (!command) return;
+
+              try {
+                await command.execute(harmonix, interaction, interaction.data.options);
+              } catch (error) {
+                logError(`Error handling interaction for command ${interaction.data.name}:`, error);
+                await interaction.createMessage({
+                  content: 'An error occurred while processing the command.',
+                  flags: 64
+                });
+              }
+            } else if (interaction instanceof ComponentInteraction) {
+              const command = harmonix.commands.find(cmd => interaction.data.custom_id.startsWith(cmd.name));
+              if (!command) return;
+
+              try {
+                await command.execute(harmonix, interaction, {});
+              } catch (error) {
+                logError(`Error handling interaction for command ${command.name}:`, error);
+                await interaction.createMessage({
+                  content: 'An error occurred while processing the interaction.',
+                  flags: 64
+                });
               }
             }
             resolve();
@@ -35,12 +50,6 @@ export default class extends defineEvent({
       ).pipe(
         Effect.tapError((error) => Effect.sync(() => {
           consola.error(colors.red(`Error processing interaction: ${error.message}`));
-          if (interaction instanceof CommandInteraction) {
-            interaction.createMessage({
-              content: 'An error occurred while processing the command',
-              flags: 64
-            }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
-          }
         }))
       )
     );

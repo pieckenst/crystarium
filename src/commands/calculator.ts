@@ -1,9 +1,7 @@
-import { ActionRow, InteractionButton, Message, TextableChannel, CommandInteraction } from 'eris';
-import { Harmonix } from '../core';
+import { ActionRow, InteractionButton, Message, TextableChannel, CommandInteraction, ComponentInteraction } from 'eris';
+import { Harmonix } from '../typedefinitions/harmonixtypes';
 import * as math from 'mathjs';
 import { defineCommand } from '../code-utils/definingcommand';
-import { ComponentInteraction } from 'eris';
-
 
 export default class extends defineCommand({
   name: "calculator",
@@ -11,7 +9,7 @@ export default class extends defineCommand({
   category: "miscellaneous",
   slashCommand: true,
 }) {
-  static async execute(harmonix: Harmonix, message: Message<TextableChannel> | CommandInteraction) {
+  static async execute(harmonix: Harmonix, interaction: CommandInteraction | Message<TextableChannel>) {
     const buttons = [
       ["Exit", "(", ")", "/"],
       ["7", "8", "9", "*"],
@@ -31,30 +29,34 @@ export default class extends defineCommand({
       color: 0x0000FF
     };
 
-    const channel = 'channel' in message ? message.channel : (message as CommandInteraction).channel;
-    const msg = await harmonix.client.createMessage(channel.id, { embeds: [embed], components });
+    let msg: Message<TextableChannel>;
+    if (interaction instanceof CommandInteraction) {
+      await interaction.defer();
+      msg = await interaction.createFollowup({ embeds: [embed], components }) as Message<TextableChannel>;
+    } else {
+      msg = await harmonix.client.createMessage(interaction.channel.id, { embeds: [embed], components });
+    }
 
     let value = "";
     let isWrong = false;
     const time = 600000;
 
-    const collector = (interaction: ComponentInteraction<TextableChannel>) => {
-      if (!interaction.data.custom_id?.startsWith('cal')) return;
-      if (interaction.member?.id !== ('author' in message ? message.author.id : message.member?.id)) return;
-    
-      const val = interaction.data.custom_id.slice(3);
-    
+    const collector = (buttonInteraction: ComponentInteraction) => {
+      if (!buttonInteraction.data.custom_id?.startsWith('cal')) return;
+      if (buttonInteraction.member?.id !== (interaction instanceof Message ? interaction.author.id : interaction.member?.id)) return;
+
+      const val = buttonInteraction.data.custom_id.slice(3);
+
       if (val === "Exit") {
-        interaction.acknowledge().then(() => {
-          harmonix.client.editMessage(interaction.channel.id, msg.id, {
-            embeds: [{
-              title: "Exiting calculator",
-              description: "Calculator closed on request",
-              color: 0xD87093,
-              footer: { text: "Terra" }
-            }],
-            components: []
-          });
+        buttonInteraction.acknowledge();
+        harmonix.client.editMessage(buttonInteraction.channel.id, msg.id, {
+          embeds: [{
+            title: "Exiting calculator",
+            description: "Calculator closed on request",
+            color: 0xD87093,
+            footer: { text: "Terra" }
+          }],
+          components: []
         });
         harmonix.client.off('interactionCreate', collector);
         return;
@@ -71,8 +73,8 @@ export default class extends defineCommand({
         value += val;
       }
 
-      interaction.acknowledge();
-      harmonix.client.editMessage(channel.id, msg.id, {
+      buttonInteraction.acknowledge();
+      harmonix.client.editMessage(buttonInteraction.channel.id, msg.id, {
         embeds: [{ ...embed, description: "" + value + "" }],
         components
       });
@@ -81,7 +83,7 @@ export default class extends defineCommand({
     harmonix.client.on('interactionCreate', collector);
 
     setTimeout(async () => {
-      await harmonix.client.editMessage(channel.id, msg.id, {
+      await harmonix.client.editMessage(msg.channel.id, msg.id, {
         embeds: [{
           ...embed,
           description: "Your time to use the calculator is running out...",
