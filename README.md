@@ -1,7 +1,7 @@
 [![Harmonix banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
 
 <p align="center">
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/Made%20with-TypeScript-007ACC?style=for-the-badge&logo=typescript&labelColor=000000" alt="Made with TypeScript"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=FFF&style=for-the-badge" alt="Made with TypeScript"></a>
   <a href="https://github.com/pieckenst/terra/commits/indev"><img src="https://img.shields.io/github/last-commit/pieckenst/terra?style=for-the-badge&logo=github&labelColor=000000" alt="GitHub last commit"></a>
   <a href="https://github.com/pieckenst/terra/commits/release"><img src="https://img.shields.io/github/last-commit/pieckenst/terra/release?style=for-the-badge&logo=github&labelColor=000000&color=ff4500&label=Release%3A%20Last%20Commit" alt="GitHub last commit (release)"></a>
   <a href="https://github.com/pieckenst/terra/blob/indev/LICENSE"><img src="https://img.shields.io/github/license/pieckenst/terra?style=for-the-badge&logo=github&labelColor=000000" alt="License"></a>
