@@ -279,7 +279,6 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
   }
 }
 
-// Watch for file changes and reload
 function watchAndReload(harmonix: Harmonix): void {
   const watcher = watch([
     harmonix.options.dirs.commands,
@@ -287,11 +286,68 @@ function watchAndReload(harmonix: Harmonix): void {
   ]);
 
   const reload = debounce(async () => {
-    consola.info(colors.yellow(' Reloading commands and events...'));
+    consola.info(colors.yellow(' Preparing to reload bot...'));
+
+    // Send DM to bot owner
+    try {
+      const owner = harmonix.client.users.get(harmonix.options.ownerId);
+      if (owner) {
+        const dmChannel = await owner.getDMChannel();
+        const embed = {
+          title: "Bot Reload",
+          description: "The bot will reload in 10 seconds due to file changes.",
+          color: 0x7289DA,
+          fields: [
+            {
+              name: "Reload Time",
+              value: `<t:${Math.floor(Date.now() / 1000) + 10}:R>`
+            }
+          ],
+          timestamp: new Date().toISOString()
+        };
+        await dmChannel.createMessage({ embed });
+      }
+    } catch (error) {
+      consola.error(colors.red(`Failed to send DM to owner: ${error.message}`));
+    }
+
+    // Wait for 10 seconds
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
+    consola.info(colors.yellow(' Reloading bot...'));
+
+    // Fully disconnect the client
+    harmonix.client.removeAllListeners();
+    await harmonix.client.disconnect({ reconnect: false });
+    consola.info(colors.blue(' Client fully disconnected'));
+
+    // Clear commands and events
     harmonix.commands.clear();
+    harmonix.slashCommands.clear();
     harmonix.events.clear();
+    consola.info(colors.blue(' Commands and events cleared'));
+
+    // Reinitialize the client with the token
+    harmonix.client = new Eris.Client(harmonix.options.token, {
+      intents: [
+        Constants.Intents.guilds,
+        Constants.Intents.guildMessages,
+        Constants.Intents.guildMessageReactions,
+        Constants.Intents.directMessages,
+        Constants.Intents.directMessageReactions,
+        Constants.Intents.guildVoiceStates
+      ],
+    });
+
+    // Reload commands and events
     await loadCommands(harmonix);
     await loadEvents(harmonix);
+    consola.info(colors.blue(' Commands and events reloaded'));
+
+    // Reconnect the client
+    await harmonix.client.connect();
+    consola.info(colors.blue(' Client reconnected'));
+
     consola.success(colors.green(' Reload complete'));
   }, 100);
 

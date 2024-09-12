@@ -81,7 +81,7 @@ export default class extends defineCommand({
             };
       
             if (harmonix.options.debug) {
-                console.log(`Debug: Response: ${JSON.stringify(response)}`);
+                console.log(`Debug: Response : ${JSON.stringify(response)}`);
             }
 
             if (interaction instanceof CommandInteraction) {
@@ -94,7 +94,7 @@ export default class extends defineCommand({
             const errorResponse = {
                 embeds: [{
                     title: "Error",
-                    description: "An error occurred while setting the status.",
+                    description: "An error has occurred while setting the status.",
                     color: 0xff0000,
                     footer: { text: harmonix.client.user.username },
                     timestamp: new Date()
