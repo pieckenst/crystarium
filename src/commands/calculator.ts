@@ -25,8 +25,10 @@ export default class extends defineCommand({
 
     const embed = {
       type: "rich",
-      description: "0",
-      color: 0x0000FF
+      title: `${interaction.member?.username}'s calculator`,
+      description: "\nNone",
+      color: 0x7289DA, // Discord Blurple color
+      timestamp: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes from now
     };
 
     let msg: Message<TextableChannel>;
@@ -75,7 +77,7 @@ export default class extends defineCommand({
 
       buttonInteraction.acknowledge();
       harmonix.client.editMessage(buttonInteraction.channel.id, msg.id, {
-        embeds: [{ ...embed, description: "" + value + "" }],
+        embeds: [{ ...embed, description: `\n${value}` }],
         components
       });
     };
