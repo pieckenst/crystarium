@@ -155,8 +155,11 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
 
   // Debug logging to show folder names where matches were found
   const folderNames = new Set(files.map(file => path.dirname(file)));
-  //console.debug(`[DEBUG] Matches found in folders: ${Array.from(folderNames).join(', ')}`);
+  if (harmonix.options.debug) {
+    console.debug(`[DEBUG] Matches found in folders: ${Array.from(folderNames).join(', ')}`);
 
+  }
+  
   return files;
 }
 
@@ -164,7 +167,11 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'commands');
 
   for (const file of files) {
-    //console.debug(`[DEBUG] Attempting to load command from file: ${file}`);
+    if (harmonix.options.debug) {
+      console.debug(`[DEBUG] Attempting to load command from file: ${file}`);
+
+    }
+    
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
@@ -226,7 +233,11 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
 async function loadEvents(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'events');
   for (const file of files) {
-    //console.debug(`[DEBUG] Attempting to load event from file: ${file}`);
+    if (harmonix.options.debug) {
+      console.debug(`[DEBUG] Attempting to load event from file: ${file}`);
+
+    }
+    
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
@@ -322,6 +333,10 @@ async function main() {
         });
 
         console.log('\n');
+        if (harmonix.options.debug) {
+          console.debug(`The bot is running in debug mode.`);
+    
+        }
         await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
         await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
