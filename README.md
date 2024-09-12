@@ -34,20 +34,37 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
 
 ## Installation
 
-1. Clone the repository:
+1. Install Bun:
+
+   For macOS and Linux:
+   ```bash
+   curl -fsSL https://bun.sh/install | bash
+   ```
+   For Windows: 
+   ```
+   powershell -c "irm bun.sh/install.ps1|iex"
+   ```
+   Note: Bun requires a minimum of Windows 10 version 1809.
+
+2. Verify the installation:
+   ```bash
+   bun --version
+   ```
+
+3. Clone the repository:
    ```bash
    git clone https://github.com/pieckenst/terra.git
    cd terra
    ```
-2. Install dependencies:
+4. Install dependencies:
    ```bash
    bun install
    ```
-3. Set up your environment variables in a .env file:
+5. Set up your environment variables in a .env file:
    ```
    token=YOUR_DISCORD_BOT_TOKEN
    ```
-4.  Create a config.json file in the root directory with the following structure: 
+6.  Create a config.json file in the root directory with the following structure: 
    ```json
      {
       "prefix": "!",
@@ -107,8 +124,9 @@ export default class extends defineCommand({
   }
 }
 
-This structure allows for easy creation of both regular and slash commands, with built-in permission checks and owner-only restrictions.
 ```   
+This structure allows for easy creation of both regular and slash commands, with built-in permission checks and owner-only restrictions.
+
 
 ## Contributing
 
