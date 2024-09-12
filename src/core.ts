@@ -59,6 +59,7 @@ async function initHarmonix(): Promise<Harmonix> {
         Constants.Intents.directMessageReactions,
         Constants.Intents.guildVoiceStates
     ],
+    restMode: true
   });
 
   const harmonix: Harmonix = {
@@ -287,12 +288,15 @@ function watchAndReload(harmonix: Harmonix): void {
 
   const reload = debounce(async () => {
     consola.info(colors.yellow(' Preparing to reload bot...'));
+    const owner = await harmonix.client.getRESTUser(harmonix.options.ownerId);
+    consola.info(colors.yellow(` Owner: ${owner ? owner.username : 'Not found'}`));
 
+    let dmChannel;
     // Send DM to bot owner
     try {
-      const owner = harmonix.client.users.get(harmonix.options.ownerId);
       if (owner) {
-        const dmChannel = await owner.getDMChannel();
+        dmChannel = await harmonix.client.getDMChannel(owner.id);
+        consola.info(colors.yellow(` DM Channel: ${dmChannel ? dmChannel.id : 'Not created'}`));
         const embed = {
           title: "Bot Reload",
           description: "The bot will reload in 10 seconds due to file changes.",
@@ -328,6 +332,7 @@ function watchAndReload(harmonix: Harmonix): void {
     consola.info(colors.blue(' Commands and events cleared'));
 
     // Reinitialize the client with the token
+    
     harmonix.client = new Eris.Client(harmonix.options.token, {
       intents: [
         Constants.Intents.guilds,
@@ -337,6 +342,7 @@ function watchAndReload(harmonix: Harmonix): void {
         Constants.Intents.directMessageReactions,
         Constants.Intents.guildVoiceStates
       ],
+      restMode: true
     });
 
     // Reload commands and events
@@ -349,8 +355,18 @@ function watchAndReload(harmonix: Harmonix): void {
     consola.info(colors.blue(' Client reconnected'));
 
     consola.success(colors.green(' Reload complete'));
-  }, 100);
 
+    // Send reload completed message to owner
+    if (dmChannel) {
+      const reloadCompletedEmbed = {
+        title: "Bot Reload Completed",
+        description: "The bot has successfully reloaded and is now back online.",
+        color: 0x00FF00,
+        timestamp: new Date().toISOString()
+      };
+      await dmChannel.createMessage({ embed: reloadCompletedEmbed });
+    }
+  }, 100);
   watcher.on('change', reload);
 }
 
