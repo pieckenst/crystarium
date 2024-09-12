@@ -27,41 +27,77 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
       static build(): HarmonixCommand {
         return {
           ...config,
-          execute: async (harmonix: Harmonix, message: Message<TextableChannel> | CommandInteraction, args: string[] | Record<string, any>) => {
-            return Effect.runPromise(
+          execute: async (harmonix: Harmonix, message: Message<TextableChannel> | CommandInteraction, args: string[] | Record<string, any>): Promise<void> => {
+            await Effect.runPromise(
               Effect.tryPromise(async () => {
-                if (config.ownerOnly && ('author' in message ? message.author.id : message.user?.id) !== harmonix.options.ownerId) {
+                const userId = 'author' in message ? message.author.id : message.user?.id;
+                
+                if (config.ownerOnly && userId !== harmonix.options.ownerId) {
                   throw new Error("This command can only be used by the bot owner.");
                 }
-  
+
                 if (config.permissions && 'member' in message && message.member) {
                   const missingPermissions = config.permissions.filter(perm => !message.member!.permissions.has(BigInt(Constants.Permissions[perm as keyof typeof Constants.Permissions])));
                   if (missingPermissions.length > 0) {
                     throw new Error(`You're missing the following permissions: ${missingPermissions.join(", ")}`);
                   }
                 }
-  
+
                 if (config.slashCommand) {
                   await this.execute(harmonix, message as CommandInteraction, args as T);
                 } else {
                   await this.execute(harmonix, message as Message<TextableChannel>, args as string[]);
                 }
               }).pipe(
+                Effect.tapError((error) => Effect.sync(() => {
+                  console.error(`Detailed error in command ${config.name}:`, error);
+                  console.error('Stack trace:', error.stack);
+                })),
                 Effect.catchAll((error) => Effect.sync(() => {
-                  logError(`Error executing command ${config.name}:`, error);
+                  console.error(`Detailed error in command ${config.name}:`, error);
+                  console.error('Stack trace:', error.stack);
+
+                  let errorMessage: string;
+                  let stackTrace: string;
+                  if (error instanceof Error) {
+                    errorMessage = error.message;
+                    stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+                    if ('cause' in error && error.cause instanceof Error) {
+                      errorMessage = error.cause.message;
+                      stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+                    }
+                  } else {
+                    errorMessage = String(error);
+                    stackTrace = 'No stack trace available';
+                  }
+
+                  console.error(`Error in command ${config.name}:`, errorMessage);
+
                   if (config.slashCommand && 'createMessage' in message) {
-                    (message as CommandInteraction).createMessage({
+                    return (message as CommandInteraction).createMessage({
                       embeds: [{
                         color: 0xFF0000,
-                        description: error.message
+                        title: "Oops!",
+                        description: "An unexpected error has occurred!",
+                        fields: [
+                          { name: "Command", value: config.name },
+                          { name: "Error Details", value: `\`\`\`${errorMessage}\`\`\`` },
+                          { name: "Stack Trace", value: `\`\`\`${stackTrace}\`\`\`` }
+                        ]
                       }],
-                      flags: 64 // Ephemeral flag
+                      flags: 64
                     });
                   } else if ('channel' in message) {
-                    harmonix.client.createMessage(message.channel.id, {
+                    return harmonix.client.createMessage((message as Message<TextableChannel>).channel.id, {
                       embed: {
                         color: 0xFF0000,
-                        description: error.message
+                        title: "Oops!",
+                        description: "An unexpected error has occurred!",
+                        fields: [
+                          { name: "Command", value: config.name },
+                          { name: "Error Details", value: `\`\`\`${errorMessage}\`\`\`` },
+                          { name: "Stack Trace", value: `\`\`\`${stackTrace}\`\`\`` }
+                        ]
                       }
                     });
                   }

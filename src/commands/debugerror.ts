@@ -8,6 +8,7 @@ export default class extends defineCommand({
     description: "Debugging command for throwing errors",
     category: "debug",
     slashCommand: true,
+    ownerOnly: true,
 }) {
     static async execute(harmonix: Harmonix, interaction: CommandInteraction) {
         try {
