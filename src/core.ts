@@ -12,10 +12,14 @@ import path from 'path';
 import { Manager } from 'erela.js';
 import Spotify from 'erela.js-spotify';
 import { Effect, Console } from 'effect';
-import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from './typedefinitions/harmonixtypes';
-import type { Harmonix } from './typedefinitions/harmonixtypes';
+
+import * as Discord from 'discord.js';
+
+import {  BotActivityType } from './typedefinitions/harmonixtypes';
+import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent, Harmonix, UniversalCollection, UniversalClient } from './typedefinitions/harmonixtypes';
 import { ApplicationCommandStructure } from 'eris';
 import { logError } from './code-utils/centralloggingfactory';
+import { getClient } from './code-utils/libraryHelper';
 
 // Load configuration
 const loadConfig = Effect.tryPromise({
@@ -40,7 +44,19 @@ const loadToken = Effect.gen(function* (_) {
   }
   return token;
 });
-
+async function createUniversalCollection<K, V>(): Promise<UniversalCollection<K, V>> {
+  const config = await Effect.runPromise(loadConfig);
+  return {
+    [config.featureFlags.useDiscordJS ? 'discord' : 'eris']: new Collection(),
+    getCollection: (collection, harmonix) => collection[config.featureFlags.useDiscordJS ? 'discord' : 'eris'],
+    getCommand: (harmonix, name) => harmonix.commands[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].get(name),
+    set: function(key, value) { this[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].set(key, value); return this; },
+    clear: function() { this[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].clear(); },
+    get size() { return this[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].size; },
+    get: function(key) { return this[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].get(key); },
+    map: function(callbackfn) { return this[config.featureFlags.useDiscordJS ? 'discord' : 'eris'].map(callbackfn); },
+  };
+}
 // Initialize Harmonix
 async function initHarmonix(): Promise<Harmonix> {
   const config = await Effect.runPromise(loadConfig);
@@ -50,24 +66,51 @@ async function initHarmonix(): Promise<Harmonix> {
   consola.info(colors.yellow(` Platform: ${process.platform}`));
   consola.info(colors.yellow(` Start time: ${new Date().toISOString()}`));
 
-  const client = new Eris.Client(token, {
-    intents: [
+  const client = config.featureFlags.useDiscordJS
+  ? new Discord.Client({
+      intents: [
+        Discord.Intents.FLAGS.GUILDS,
+        Discord.Intents.FLAGS.GUILD_MESSAGES,
+        Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+        Discord.Intents.FLAGS.DIRECT_MESSAGES,
+        Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+        Discord.Intents.FLAGS.GUILD_VOICE_STATES
+      ]
+    })
+  : new Eris.Client(token, {
+      intents: [
         Constants.Intents.guilds,
         Constants.Intents.guildMessages,
         Constants.Intents.guildMessageReactions,
         Constants.Intents.directMessages,
         Constants.Intents.directMessageReactions,
         Constants.Intents.guildVoiceStates
-    ],
-    restMode: true
-  });
+      ],
+      restMode: true
+    });
 
   const harmonix: Harmonix = {
-    client,
+    client: {
+      ...client,
+      getClient: () => client,
+      createMessage: (harmonix, channelId, content) => client.createMessage(channelId, content),
+      editMessage: (harmonix, channelId, messageId, content) => client.editMessage(channelId, messageId, content),
+      on: (harmonix, event, listener) => client.on(event, listener),
+      off: (harmonix, event, listener) => client.off(event, listener),
+      getChannel: (harmonix, channelId) => client.getChannel(channelId),
+      getDMChannel: (harmonix, userId) => client.getDMChannel(userId),
+      getRESTUser: (harmonix, userId) => client.getRESTUser(userId),
+      removeAllListeners: (harmonix) => client.removeAllListeners(),
+      disconnect: async (harmonix, options) => await client.disconnect(options as any),
+      connect: async (harmonix) => await client.connect(),
+      get user() { return client.user; },
+      editStatus: (harmonix, status, activity) => client.editStatus(status as any, activity as any),
+      bulkEditCommands: (harmonix, commands) => client.bulkEditCommands(commands),
+    } as UniversalClient,
     options: { ...config, token },
-    commands: new Collection<string, HarmonixCommand>(),
-    slashCommands: new Collection<string, HarmonixCommand>(),
-    events: new Collection<string, HarmonixEvent>(),
+    commands: await createUniversalCollection<string, HarmonixCommand>(),
+    slashCommands: await createUniversalCollection<string, HarmonixCommand>(),
+    events: await createUniversalCollection<string, HarmonixEvent>(),
     startTime: new Date(),
     manager: new Manager({
       plugins: [
@@ -101,12 +144,13 @@ function initializeManager(harmonix: Harmonix): void {
           .on("nodeConnect", node => consola.success(colors.green(`[UPSTART] Node "${node.options.identifier}" has connected.`)))
           .on("nodeError", (node, error) => consola.error(colors.red(`[ERROR] Node "${node.options.identifier}" encountered an error: ${error.message}.`)))
           .on("trackStart", (player, track) => {
-            let channel = harmonix.client.getChannel(player.textChannel as any);
+            let channel = harmonix.client.getChannel(harmonix, player.textChannel as string);
             if (channel && 'createMessage' in channel) {
               channel.createMessage({
                 embeds: [{
                   color: Math.floor(Math.random() * 0xFFFFFF),
-                  author: { name: "NOW PLAYING", icon_url: harmonix.client.user.avatarURL || undefined },
+                  author: { name: "NOW PLAYING", icon_url: (harmonix.client.user.avatarURL as string) || undefined,
+                  },
                   description: `[${track.title}](${track.uri})`,
                   fields: [{ name: "Requested By", value: (track.requester as { username: string }).username, inline: true }]
                 }]
@@ -114,19 +158,21 @@ function initializeManager(harmonix: Harmonix): void {
             }
           })
           .on("trackStuck", (player, track) => {
-            const channel = harmonix.client.getChannel(player.textChannel as any);
+            const channel = harmonix.client.getChannel(harmonix, player.textChannel as string);
             if (channel && 'createMessage' in channel) {
               channel.createMessage({
                 embeds: [{
                   color: Math.floor(Math.random() * 0xFFFFFF),
-                  author: { name: "Track Stuck", icon_url: harmonix.client.user.avatarURL || undefined },
+                  author: { name: "Track Stuck", icon_url: (harmonix.client.user.avatarURL as string) || undefined,
+
+                  },
                   description: track.title
                 }]
               }).catch(error => consola.error(colors.red(`[ERROR] Error sending trackStuck message: ${error.message}`)));
             }
           })
           .on("queueEnd", player => {
-            const channel = harmonix.client.getChannel(player.textChannel as any);
+            const channel = harmonix.client.getChannel(harmonix, player.textChannel as string);
             if (channel && 'createMessage' in channel) {
               channel.createMessage({
                 embeds: [{
@@ -263,7 +309,7 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
           }
 
           harmonix.events.set(event.name, event);
-          harmonix.client.on(event.name as keyof ClientEvents, (...args: any[]) => 
+          harmonix.client.on(harmonix, event.name as keyof ClientEvents, (...args: any[]) => 
             event.execute(harmonix, ...args)
           );
 
@@ -288,14 +334,14 @@ function watchAndReload(harmonix: Harmonix): void {
 
   const reload = debounce(async () => {
     consola.info(colors.yellow(' Preparing to reload bot...'));
-    const owner = await harmonix.client.getRESTUser(harmonix.options.ownerId);
+    const owner = await harmonix.client.getRESTUser(harmonix, harmonix.options.ownerId);
     consola.info(colors.yellow(` Owner: ${owner ? owner.username : 'Not found'}`));
 
     let dmChannel;
     // Send DM to bot owner
     try {
       if (owner) {
-        dmChannel = await harmonix.client.getDMChannel(owner.id);
+        dmChannel = await harmonix.client.getDMChannel(harmonix, owner.id);
         consola.info(colors.yellow(` DM Channel: ${dmChannel ? dmChannel.id : 'Not created'}`));
         const embed = {
           title: "Bot Reload",
@@ -333,17 +379,28 @@ function watchAndReload(harmonix: Harmonix): void {
 
     // Reinitialize the client with the token
     
-    harmonix.client = new Eris.Client(harmonix.options.token, {
-      intents: [
-        Constants.Intents.guilds,
-        Constants.Intents.guildMessages,
-        Constants.Intents.guildMessageReactions,
-        Constants.Intents.directMessages,
-        Constants.Intents.directMessageReactions,
-        Constants.Intents.guildVoiceStates
-      ],
-      restMode: true
-    });
+    harmonix.client = config.featureFlags.useDiscordJS
+    ? new Discord.Client({
+        intents: [
+          Discord.Intents.FLAGS.GUILDS,
+          Discord.Intents.FLAGS.GUILD_MESSAGES,
+          Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+          Discord.Intents.FLAGS.DIRECT_MESSAGES,
+          Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+          Discord.Intents.FLAGS.GUILD_VOICE_STATES
+        ]
+      })
+    : new Eris.Client(token, {
+        intents: [
+          Constants.Intents.guilds,
+          Constants.Intents.guildMessages,
+          Constants.Intents.guildMessageReactions,
+          Constants.Intents.directMessages,
+          Constants.Intents.directMessageReactions,
+          Constants.Intents.guildVoiceStates
+        ],
+        restMode: true
+      });
 
     // Reload commands and events
     await loadCommands(harmonix);
@@ -369,197 +426,192 @@ function watchAndReload(harmonix: Harmonix): void {
   }, 100);
   watcher.on('change', reload);
 }
-
-// Main function with Effect-based error handling
+  // Main function with Effect-based error handling
 async function main() {
-  await Effect.runPromise(
-    Effect.tryPromise({
-      try: async () => {
-        const harmonix = await Effect.runPromise(Effect.tryPromise(() => initHarmonix()));
+    await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const harmonix = await Effect.runPromise(Effect.tryPromise(() => initHarmonix()));
 
-        // Display ASCII art and initialization message side by side
-        const fs = require('fs');
-        const path = require('path');
-        const asciiArt = await Effect.runPromise(Effect.tryPromise(() =>
-          fs.promises.readFile(path.join(__dirname, 'ascii-art.txt'), 'utf8')
-        ));
+          // Display ASCII art and initialization message side by side
+          const fs = require('fs');
+          const path = require('path');
+          const asciiArt = await Effect.runPromise(Effect.tryPromise(() =>
+            fs.promises.readFile(path.join(__dirname, 'ascii-art.txt'), 'utf8')
+          ));
 
-        const asciiLines = (asciiArt as string).split('\n');
-        const initMessage = ' Initializing Terra...';
+          const asciiLines = (asciiArt as string).split('\n');
+          const initMessage = ' Initializing Terra...';
 
-        const maxAsciiWidth = Math.max(...asciiLines.map(line => line.length));
-        const padding = ' '.repeat(10); // Space between ASCII art and text
+          const maxAsciiWidth = Math.max(...asciiLines.map(line => line.length));
+          const padding = ' '.repeat(10); // Space between ASCII art and text
 
-        // Create large font version of initMessage
-        const largeFont = [
-                "┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
-                "│ I │ │ N │ │ I │ │ T │ │ I │ │ A │ │ L │ │ I │ │ Z │ │ I │ │ N │ │ G │",
-                "└───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘",
-                "                ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
-                "                │ T │ │ E │ │ R │ │ R │ │ A │",
-                "                └───┘ └───┘ └───┘ └───┘ └───┘"
-        ];
+          // Create large font version of initMessage
+          const largeFont = [
+                  "┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+                  "│ I │ │ N │ │ I │ │ T │ │ I │ │ A │ │ L │ │ I │ │ Z │ │ I │ │ N │ │ G │",
+                  "└───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘",
+                  "                ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+                  "                │ T │ │ E │ │ R │ │ R │ │ A │",
+                  "                └───┘ └───┘ └───┘ └───┘ └───┘"
+          ];
 
-        console.log('\n');
-        const terminalWidth = process.stdout.columns;
-        const largeMessageWidth = Math.max(...largeFont.map(line => line.length));
-        const leftPadding = Math.floor((terminalWidth - maxAsciiWidth - largeMessageWidth - padding.length) / 2);
+          console.log('\n');
+          const terminalWidth = process.stdout.columns;
+          const largeMessageWidth = Math.max(...largeFont.map(line => line.length));
+          const leftPadding = Math.floor((terminalWidth - maxAsciiWidth - largeMessageWidth - padding.length) / 2);
 
-        asciiLines.forEach((line, index) => {
-                const paddedLine = line.padEnd(maxAsciiWidth);
-                const largeFontLine = largeFont[index] || '';
-                console.log('\x1b[94m' + ' '.repeat(leftPadding) + paddedLine + '\x1b[0m' + padding + colors.blue(largeFontLine));
-        });
-
-        console.log('\n');
-        if (harmonix.options.debug) {
-          console.debug(`The bot is running in debug mode.`);
-    
-        }
-        await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
-        await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
-
-        
-       
-                
-
-        harmonix.client.on("rawWS", (packet: any) => {
-          Effect.runPromise(Effect.tryPromise({
-            try: async () => {
-              if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
-                await harmonix.manager.updateVoiceState(packet.d);
-              }
-            },
-            catch: (error: Error) => {
-              consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
-            }
-          }));
-        });
-
-        // Global error handling for command errors
-        harmonix.client.on('error', (error: Error, id: string) => {
-          consola.error(colors.red('Command Error:'), error);
-          if (id) {
-              harmonix.client.createMessage(id, {
-              embed: {
-                title: 'Command Error',
-                description: 'An error occurred while executing the command.',
-                color: 0xFF0000,
-                fields: [
-                {
-                  name: 'Error Details',
-                  value: `\`\`\`${error.message}\`\`\``
-                }
-                ]
-              }
-            }).catch(err => {
-            consola.error(colors.red('Failed to send error message:'), err);
+          asciiLines.forEach((line, index) => {
+                  const paddedLine = line.padEnd(maxAsciiWidth);
+                  const largeFontLine = largeFont[index] || '';
+                  console.log('\x1b[94m' + ' '.repeat(leftPadding) + paddedLine + '\x1b[0m' + padding + colors.blue(largeFontLine));
           });
-        }   
-        consola.warn(colors.yellow('Bot will continue running. The command error has been logged above.'));
-      });        
-      if (harmonix.options.debug) {
-          watchAndReload(harmonix);
-        }
 
-        await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
-      },      
-      catch: (error: Error) => {
-        console.error(`An error has occurred in Harmonix core`);
-        
-
-        let errorMessage: string;
-        let stackTrace: string;
-        if (error instanceof Error) {
-          errorMessage = error.message;
-          stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
-          if ('cause' in error && error.cause instanceof Error) {
-            errorMessage = error.cause.message;
-            stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+          console.log('\n');
+          if (harmonix.options.debug) {
+            console.debug(`The bot is running in debug mode.`);
+    
           }
-        } else {
-          errorMessage = String(error);
-          stackTrace = 'No stack trace available';
-        }
+          await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
+          await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
-        consola.error(colors.red(' A critical error occurred:'), errorMessage);
-        consola.error(colors.red('Stack trace:'));
-        error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
-        consola.error(colors.red('Error occurred at:'), new Date().toISOString());
-        consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
+          harmonix.client.on(harmonix, "rawWS", (packet: any) => {
+            Effect.runPromise(Effect.tryPromise({
+              try: async () => {
+                if (packet.t === "VOICE_SERVER_UPDATE" || packet.t === "VOICE_STATE_UPDATE") {
+                  await harmonix.manager.updateVoiceState(packet.d);
+                }
+              },
+              catch: (error: Error) => {
+                consola.error(colors.red(`[ERROR] Failed to process rawWS event: ${error.message}`));
+              }
+            }));
+          });
+
+          // Global error handling for command errors
+          harmonix.client.on(harmonix, 'error', (error: Error, id: string) => {
+            consola.error(colors.red('Command Error:'), error);
+            if (id) {
+                harmonix.client.createMessage(harmonix, id, {
+                embed: {
+                  title: 'Command Error',
+                  description: 'An error occurred while executing the command.',
+                  color: 0xFF0000,
+                  fields: [
+                  {
+                    name: 'Error Details',
+                    value: `\`\`\`${error.message}\`\`\``
+                  }
+                  ]
+                }
+              }).catch(err => {
+              consola.error(colors.red('Failed to send error message:'), err);
+            });
+          }   
+          consola.warn(colors.yellow('Bot will continue running. The command error has been logged above.'));
+        });        
+        if (harmonix.options.debug) {
+            watchAndReload(harmonix);
+          }
+
+          await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect(harmonix)));
+        },      
+        catch: (error: Error) => {
+          console.error(`An error has occurred in Harmonix core`);
         
-      }
-    })
-  ).catch((error: Error) => {
-    console.error(`A critical error has occurred in Harmonix core`);
+
+          let errorMessage: string;
+          let stackTrace: string;
+          if (error instanceof Error) {
+            errorMessage = error.message;
+            stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+            if ('cause' in error && error.cause instanceof Error) {
+              errorMessage = error.cause.message;
+              stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+            }
+          } else {
+            errorMessage = String(error);
+            stackTrace = 'No stack trace available';
+          }
+
+          consola.error(colors.red(' A critical error occurred:'), errorMessage);
+          consola.error(colors.red('Stack trace:'));
+          error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+          consola.error(colors.red('Error occurred at:'), new Date().toISOString());
+          consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
+        
+        }
+      })
+    ).catch((error: Error) => {
+      console.error(`A critical error has occurred in Harmonix core`);
     
 
-    let errorMessage: string;
-    let stackTrace: string;
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
-      if ('cause' in error && error.cause instanceof Error) {
-        errorMessage = error.cause.message;
-        stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+      let errorMessage: string;
+      let stackTrace: string;
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+        if ('cause' in error && error.cause instanceof Error) {
+          errorMessage = error.cause.message;
+          stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+        }
+      } else {
+        errorMessage = String(error);
+        stackTrace = 'No stack trace available';
       }
-    } else {
-      errorMessage = String(error);
-      stackTrace = 'No stack trace available';
-    }
 
-    consola.error(colors.red(' A critical error occurred:'), errorMessage);
-    consola.error(colors.red('Stack trace:'));
-    error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
-    consola.error(colors.red('Error occurred at:'), new Date().toISOString());
-    consola.error(colors.red('Bot is shutting down due to critical error.'));
-    process.exit(1);
+      consola.error(colors.red(' A critical error occurred:'), errorMessage);
+      consola.error(colors.red('Stack trace:'));
+      error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+      consola.error(colors.red('Error occurred at:'), new Date().toISOString());
+      consola.error(colors.red('Bot is shutting down due to critical error.'));
+      process.exit(1);
     
-  });
+    });
 }
 
-  // Run the bot
+    // Run the bot
 Effect.runPromise(
-    Effect.catchAll(
-      Effect.tryPromise(() => main()),
-      (error) => Effect.sync(() => {
-        consola.error(colors.red('An error occurred:'), error);
-        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-      })
-    )
+      Effect.catchAll(
+        Effect.tryPromise(() => main()),
+        (error) => Effect.sync(() => {
+          consola.error(colors.red('An error occurred:'), error);
+          consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+        })
+      )
 );
 
-// Global error handling
+  // Global error handling
 process.on('uncaughtException', (error) => {
-    consola.error(colors.red('Uncaught Exception:'), error);
+      consola.error(colors.red('Uncaught Exception:'), error);
   
-    if (error.message.includes('Connection reset by peer')) {
-      consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
+      if (error.message.includes('Connection reset by peer')) {
+        consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
     
-      // Delay the reload to allow for any cleanup
-      setTimeout(() => {
-        consola.info(colors.blue('Restarting the bot...'));
-        process.exit(1); // Exit with a non-zero code to trigger a restart if you're using a process manager
-      }, 5000); // 5 seconds delay
-    } else {
-      consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-    }
+        // Delay the reload to allow for any cleanup
+        setTimeout(() => {
+          consola.info(colors.blue('Restarting the bot...'));
+          process.exit(1); // Exit with a non-zero code to trigger a restart if you're using a process manager
+        }, 5000); // 5 seconds delay
+      } else {
+        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+      }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
+      consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
   
-    if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
-      consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));
+      if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
+        consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));
     
-      setTimeout(() => {
-        consola.info(colors.blue('Restarting the bot...'));
-        process.exit(1);
-      }, 5000);
-    } else {
-      consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-    }
+        setTimeout(() => {
+          consola.info(colors.blue('Restarting the bot...'));
+          process.exit(1);
+        }, 5000);
+      } else {
+        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+      }
 });
 
   
-export { Harmonix };
+  export { Harmonix };
