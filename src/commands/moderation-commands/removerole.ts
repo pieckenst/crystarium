@@ -1,5 +1,5 @@
 import { Message, TextableChannel, GuildChannel, Member, Role } from 'eris';
-import { Harmonix } from '../core';
+import { Harmonix } from '../../core';
 
 export default {
     name: "removerole",

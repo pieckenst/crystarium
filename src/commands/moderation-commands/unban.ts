@@ -1,73 +1,77 @@
-const Eris = require("eris");
-const config = require("../config.json");
+import { Message, TextableChannel, GuildChannel } from 'eris';
+import { Harmonix } from '../../core';
+import { defineCommand } from '../../code-utils/definingcommand';
 
-module.exports = {
+export default class extends defineCommand({
   name: "unban",
   description: "Unban a user from the guild.",
   category: "moderation",
-  aliases: [""],
+  aliases: [],
   usage: "<ID>",
   permissions: ["banMembers"],
-  async execute(client, message, args) {
+}) {
+  static async execute(harmonix: Harmonix, message: Message<TextableChannel>, args: string[]) {
     const userID = args[0];
 
     if (!userID) {
-      return message.channel.createMessage({
-        embed: {
-          color: 0xFF0000,
-          title: "Missing arguments",
-          description: `**Command:** \`${this.name}\`\n**Description:** \`${
-            this.description || "None"
-          }\`\n**Aliases:** \`${
-            this.aliases.join(", ") || "None"
-          }\`\n**Usage:** \`${config.prefix}${this.name} ${
-            this.usage
-          }\`\n**Permissions:** \`${this.permissions.join(", ") || "None"}\``,
-          timestamp: new Date()
-        }
+      return this.sendErrorEmbed(harmonix, message);
+    }
+
+    if (!('guild' in message.channel)) {
+      return this.sendEmbed(harmonix, message, {
+        color: 0xFF0000,
+        description: "**This command can only be used in a guild!**"
       });
     }
 
+    const guild = message.channel.guild;
+
     try {
-      const bans = await message.channel.guild.getBans();
+      const bans = await guild.getBans();
       
       if (bans.length === 0) {
-        return message.channel.createMessage({
-          embed: {
-            color: 0xFF0000,
-            description: "**Nobody is banned from this server!**"
-          }
+        return this.sendEmbed(harmonix, message, {
+          color: 0xFF0000,
+          description: "**Nobody is banned from this server!**"
         });
       }
 
       const unbanUser = bans.find(ban => ban.user.id === userID);
       
       if (!unbanUser) {
-        return message.channel.createMessage({
-          embed: {
-            color: 0xFF0000,
-            description: "**This user is not banned!**"
-          }
+        return this.sendEmbed(harmonix, message, {
+          color: 0xFF0000,
+          description: "**This user is not banned!**"
         });
       }
 
-      await message.channel.guild.unbanMember(userID);
+      await guild.unbanMember(userID);
       
-      return message.channel.createMessage({
-        embed: {
-          color: 0x00FF00,
-          title: "Member Unbanned",
-          description: `**Unbanned:** \`${unbanUser.user.username}#${unbanUser.user.discriminator}\`\n**Moderator:** ${message.member.mention}`
-        }
+      return this.sendEmbed(harmonix, message, {
+        color: 0x00FF00,
+        title: "Member Unbanned",
+        description: `**Unbanned:** \`${unbanUser.user.username}#${unbanUser.user.discriminator}\`\n**Moderator:** ${message.author.mention}`
       });
     } catch (error) {
       console.error("Error in unban command:", error);
-      return message.channel.createMessage({
-        embed: {
-          color: 0xFF0000,
-          description: "**Something went wrong. Please check my permissions and try again!**"
-        }
+      return this.sendEmbed(harmonix, message, {
+        color: 0xFF0000,
+        description: "**Something went wrong. Please check my permissions and try again!**"
       });
     }
-  },
-};
+  }
+
+  static sendErrorEmbed(harmonix: Harmonix, message: Message<TextableChannel>) {
+    const embed = {
+      color: 0xFF0000,
+      title: "Missing arguments",
+      description: `**Command:** \`${this.name}\`\n**Description:** \`${(this.constructor as any).description || "None"}\`\n**Aliases:** \`${(this.constructor as any).aliases?.join(", ") || "None"}\`\n**Usage:** \`${harmonix.options.prefix}${this.name} ${(this.constructor as any).usage}\`\n**Permissions:** \`${(this.constructor as any).permissions?.join(", ") || "None"}\``,
+      timestamp: new Date()
+    };
+    return this.sendEmbed(harmonix, message, embed);
+  }
+
+  static async sendEmbed(harmonix: Harmonix, message: Message<TextableChannel>, embed: any) {
+    await harmonix.client.createMessage(message.channel.id, { embed });
+  }
+}

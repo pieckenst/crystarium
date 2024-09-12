@@ -1,5 +1,5 @@
 import { Message, Member, User, TextChannel } from 'eris';
-import { Harmonix } from '../core';
+import { Harmonix } from '../../core';
 import ms from 'ms';
 import prettyMs from 'pretty-ms';
 

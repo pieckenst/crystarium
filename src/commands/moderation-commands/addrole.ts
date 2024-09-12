@@ -1,6 +1,5 @@
     import { Message, Client, Member, Role } from 'eris';
-    import { Harmonix } from '../core';
-
+    import { Harmonix } from '../../core';
     export default {
       name: "addrole",
       description: "Adds the specified role to the provided user.",

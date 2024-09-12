@@ -1,5 +1,5 @@
 import { GuildChannel, Message, TextableChannel } from 'eris';
-import { Harmonix } from '../core';
+import { Harmonix } from '../../core';
 
 export default {
     name: 'channellock',

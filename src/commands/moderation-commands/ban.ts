@@ -1,5 +1,5 @@
 import { Message, Member, GuildChannel, TextableChannel } from 'eris';
-import { Harmonix } from '../core';
+import { Harmonix } from '../../core';
 
 export default {
   name: "ban",

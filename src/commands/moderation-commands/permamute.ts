@@ -1,5 +1,5 @@
 import { Message, TextableChannel, Constants, Guild, Member } from 'eris';
-import { Harmonix } from '../core';
+import { Harmonix } from '../../core';
 
 export default {
     name: 'pmute',
