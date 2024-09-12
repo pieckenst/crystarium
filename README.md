@@ -1,10 +1,12 @@
 [![Harmonix banner](./.github/assets/banner.svg)](https://github.com/pieckenst/terra)
 
-[![forthebadge](https://forthebadge.com/images/badges/made-with-typescript.svg)](https://forthebadge.com)
-[![GitHub last commit](https://img.shields.io/github/last-commit/pieckenst/terra?style=for-the-badge)](https://github.com/pieckenst/terra/commits/indev)
-[![GitHub last commit (branch)](https://img.shields.io/github/last-commit/pieckenst/terra/release?color=ff4500&label=RELEASE%3ALAST%20COMMIT&style=for-the-badge)](https://github.com/pieckenst/terra/commits/release)
-[![GitHub](https://img.shields.io/github/license/pieckenst/terra?style=for-the-badge)](https://github.com/pieckenst/terra/blob/indev/LICENSE)
-[![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
+<p align="center">
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/Made%20with-TypeScript-007ACC?style=for-the-badge&logo=typescript&labelColor=000000" alt="Made with TypeScript"></a>
+  <a href="https://github.com/pieckenst/terra/commits/indev"><img src="https://img.shields.io/github/last-commit/pieckenst/terra?style=for-the-badge&logo=github&labelColor=000000" alt="GitHub last commit"></a>
+  <a href="https://github.com/pieckenst/terra/commits/release"><img src="https://img.shields.io/github/last-commit/pieckenst/terra/release?style=for-the-badge&logo=github&labelColor=000000&color=ff4500&label=Release%3A%20Last%20Commit" alt="GitHub last commit (release)"></a>
+  <a href="https://github.com/pieckenst/terra/blob/indev/LICENSE"><img src="https://img.shields.io/github/license/pieckenst/terra?style=for-the-badge&logo=github&labelColor=000000" alt="License"></a>
+  <a href="https://github.com/pieckenst/terra"><img src="https://img.shields.io/badge/Built%20with-Love-ff69b4?style=for-the-badge&logo=heart&labelColor=000000" alt="Built with Love"></a>
+</p>
 
 <h6 align="center"> This bot is a work in progress project</h6>
 
