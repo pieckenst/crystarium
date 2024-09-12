@@ -382,12 +382,12 @@ function watchAndReload(harmonix: Harmonix): void {
     harmonix.client = config.featureFlags.useDiscordJS
     ? new Discord.Client({
         intents: [
-          Discord.Intents.FLAGS.GUILDS,
-          Discord.Intents.FLAGS.GUILD_MESSAGES,
-          Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-          Discord.Intents.FLAGS.DIRECT_MESSAGES,
-          Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
-          Discord.Intents.FLAGS.GUILD_VOICE_STATES
+          Discord.GatewayIntentBits.Guilds,
+          Discord.GatewayIntentBits.GuildVoiceStates,
+          Discord.GatewayIntentBits.GuildMessages,
+          Discord.GatewayIntentBits.GuildMessageReactions,
+          Discord.GatewayIntentBits.DirectMessages,
+          Discord.GatewayIntentBits.DirectMessageReactions
         ]
       })
     : new Eris.Client(token, {
