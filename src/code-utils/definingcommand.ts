@@ -3,6 +3,7 @@ import { Harmonix, HarmonixCommand, HarmonixOptions } from '../typedefinitions/h
 import { Message, TextableChannel, Constants } from 'eris';
 import { logError } from '../code-utils/centralloggingfactory';
 import { ApplicationCommandOptions, CommandInteraction } from 'eris';
+import { CustomApplicationCommandOptions } from '../typedefinitions/harmonixtypes';
 
 export function defineCommand<T extends Record<string, any> = Record<string, any>>(
     config: {
@@ -13,7 +14,7 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
       category?: string;
       slashCommand?: boolean;
       type?: 1;
-      options?: ApplicationCommandOptions[];
+      options?: CustomApplicationCommandOptions[];
       permissions?: string[];
       ownerOnly?: boolean;
       intervalLimit?: { minute: number; hour: number; day: number };
@@ -30,7 +31,10 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
           execute: async (harmonix: Harmonix, message: Message<TextableChannel> | CommandInteraction, args: string[] | Record<string, any>): Promise<void> => {
             await Effect.runPromise(
               Effect.tryPromise(async () => {
-                const userId = 'author' in message ? message.author.id : message.user?.id;
+                const userId = 'author' in message ? message.author.id : message.member?.id || message.user?.id;
+                if (harmonix.options.debug) {
+                  console.log(`Debug: User ID for command execution: ${userId}`);
+                }
                 
                 if (config.ownerOnly && userId !== harmonix.options.ownerId) {
                   throw new Error("This command can only be used by the bot owner.");
@@ -43,13 +47,23 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
                   }
                 }
 
-                if (config.slashCommand) {
-                  await this.execute(harmonix, message as CommandInteraction, args as T);
-                } else {
-                  await this.execute(harmonix, message as Message<TextableChannel>, args as string[]);
+                // Handle slash command options
+                let commandArgs: T = args as T;
+                if (message instanceof CommandInteraction && message.data.options) {
+                  commandArgs = message.data.options.reduce((acc, option) => {
+                    if ('value' in option) {
+                      return { ...acc, [option.name]: option.value };
+                    }
+                    return acc;
+                  }, {} as Record<string, unknown>) as T;
                 }
-              }).pipe(
-                Effect.tapError((error) => Effect.sync(() => {
+
+                if (config.slashCommand) {
+                  await this.execute(harmonix, message as CommandInteraction, commandArgs);
+                } else {
+                  await this.execute(harmonix, message as Message<TextableChannel>, commandArgs);
+                }
+              }).pipe(                Effect.tapError((error) => Effect.sync(() => {
                   console.error(`An error has occured in command ${config.name}`);
                   
                 })),
@@ -108,8 +122,7 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
         };
       }
     };
-  }
-
+  }  
 export const defineEvent = (
   name: string,
   execute: (...args: any[]) => Promise<void>
@@ -154,15 +167,13 @@ export const definePrecondition = (
 export const defineHarmonixConfig = (config: HarmonixOptions) => {
   return config;
 };
-
-// Utility function to create slash command options
 export const createSlashCommandOption = (
-  type: Constants['ApplicationCommandOptionTypes'],
+  type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10,
   name: string,
   description: string,
   required: boolean = false,
-  choices?: { name: string; value: string | number }[]
-) => {
+  choices?: { name: string; value: string | number }[] 
+): CustomApplicationCommandOptions => {
   return {
     type,
     name,

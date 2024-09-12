@@ -1,6 +1,7 @@
 
 import Eris, { Message, TextableChannel, Collection } from 'eris';
 import { Manager } from 'erela.js';
+import { ApplicationCommandOptions } from 'eris';
 
 class ConfigError {
   readonly _tag = 'ConfigError';
@@ -28,6 +29,11 @@ type HarmonixOptions = {
   password: string;
 };
 
+type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {
+  choices?: { name: string; value: string | number }[] | undefined;
+  required?: boolean;
+};
+
 type HarmonixCommand = {
   
   name: string;
@@ -37,7 +43,7 @@ type HarmonixCommand = {
   category?: string;
   slashCommand?: boolean;
   type?: 1;
-  options?: Eris.ApplicationCommandOptions[];
+  options?: CustomApplicationCommandOptions[];
   permissions?: string[];
   intervalLimit?: { minute: number; hour: number; day: number };
   execute: (harmonix: Harmonix, msg: Message<TextableChannel> | Eris.CommandInteraction, args: string[] | Record<string, any>) => Promise<void>;
@@ -58,10 +64,10 @@ type Harmonix = {
     manager: Manager;
 };
 export {
-    ConfigError,
-    TokenError,
-    HarmonixOptions,
-    HarmonixCommand,
-    HarmonixEvent,
-    Harmonix
+  ConfigError,
+  TokenError,
+  HarmonixOptions,
+  HarmonixCommand,
+  HarmonixEvent,
+  Harmonix, CustomApplicationCommandOptions
 };
