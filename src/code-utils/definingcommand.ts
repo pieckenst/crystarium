@@ -179,6 +179,6 @@ export const createSlashCommandOption = (
     name,
     description,
     required,
-    choices
+    choices: choices || undefined
   };
 }

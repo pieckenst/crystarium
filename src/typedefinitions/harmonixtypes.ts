@@ -2,6 +2,9 @@
 import Eris, { Message, TextableChannel, Collection } from 'eris';
 import { Manager } from 'erela.js';
 import { ApplicationCommandOptions } from 'eris';
+import { Constants } from 'eris';
+
+
 
 class ConfigError {
   readonly _tag = 'ConfigError';
@@ -12,6 +15,13 @@ class TokenError {
   readonly _tag = 'TokenError';
   constructor(readonly message: string) {}
 }
+
+type BotActivityType = Exclude<Constants['ActivityTypes'][keyof Constants['ActivityTypes']], 4>;
+
+
+
+
+
 
 type HarmonixOptions = {
   ownerId?: string | undefined;
@@ -69,5 +79,6 @@ export {
   HarmonixOptions,
   HarmonixCommand,
   HarmonixEvent,
+  BotActivityType,
   Harmonix, CustomApplicationCommandOptions
 };
