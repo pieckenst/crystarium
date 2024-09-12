@@ -1,4 +1,4 @@
-import Eris, { Message, TextableChannel, Constants, EmbedOptions, CommandInteraction } from 'eris';
+import Eris, { Message, TextableChannel, Constants, EmbedOptions, CommandInteraction, ClientEvents } from 'eris';
 import { Collection } from 'eris';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
@@ -223,9 +223,24 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
-          const event = require(file).default as HarmonixEvent;
+          const eventModule = await import(file);
+          let event: HarmonixEvent;
+
+          if (typeof eventModule.default === 'function' && eventModule.default.build) {
+            event = eventModule.default.build();
+            consola.info(colors.cyan(` Event ${file} uses defineEvent structure`));
+          } else if (typeof eventModule.default === 'object' && 'execute' in eventModule.default) {
+            event = eventModule.default;
+            consola.info(colors.cyan(` Event ${file} uses regular event structure`));
+          } else {
+            throw new Error(`Invalid event structure in file: ${file}`);
+          }
+
           harmonix.events.set(event.name, event);
-          harmonix.client.on(event.name, (...args) => event.execute(...args));
+          harmonix.client.on(event.name as keyof ClientEvents, (...args: any[]) => 
+            event.execute(harmonix, ...args)
+          );
+
           if (harmonix.options.debug) {
             consola.info(colors.blue(` Loaded event: ${event.name}`));
           }
@@ -258,36 +273,6 @@ function watchAndReload(harmonix: Harmonix): void {
   watcher.on('change', reload);
 }
 
-// Function to create an embed with bot start time and uptime
-function createBotInfoEmbed(harmonix: Harmonix): EmbedOptions {
-  const uptime = Date.now() - harmonix.startTime.getTime();
-  const days = Math.floor(uptime / 86400000);
-  const hours = Math.floor((uptime % 86400000) / 3600000);
-  const minutes = Math.floor((uptime % 3600000) / 60000);
-  const seconds = Math.floor((uptime % 60000) / 1000);
-
-  return {
-    title: 'Bot Information',
-    fields: [
-      {
-        name: 'Start Time',
-        value: harmonix.startTime.toUTCString(),
-        inline: true
-      },
-      {
-        name: 'Uptime',
-        value: `${days}d ${hours}h ${minutes}m ${seconds}s`,
-        inline: true
-      }
-    ],
-    color: 0x7289DA, // Discord blurple color
-    footer: {
-      text: `${harmonix.client.user.username}`,
-      icon_url: harmonix.client.user.avatarURL
-    },
-    timestamp: new Date().toISOString()
-  };
-}
 // Main function with Effect-based error handling
 async function main() {
   await Effect.runPromise(
@@ -333,64 +318,8 @@ async function main() {
         await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
         await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
-        harmonix.client.on('ready', () => {
-          consola.success(colors.green(` Logged in as ${harmonix.client.user.username}`));
-          harmonix.client.editStatus("online", { name: "In development : Using Eris", type: 3 });
-          harmonix.manager.init(harmonix.client.user.id);
-          
-          // Register slash commands
-          const commands = harmonix.slashCommands.map(cmd => ({
-            name: cmd.name,
-            description: cmd.description,
-            options: cmd.options,
-            type: 1 as const // ChatInput command type
-          }));
-          harmonix.client.bulkEditCommands(commands);
-        });
-        harmonix.client.on('messageCreate', (msg: Message<TextableChannel>) => {
-          Effect.runPromise(Effect.tryPromise({
-            try: async () => {
-              if (!msg.content.startsWith(harmonix.options.prefix)) {
-                if (msg.mentions.includes(harmonix.client.user)) {
-                  consola.info(colors.yellow(` Bot mentioned by ${msg.author.username} in ${msg.channel.id}`));
-                  const embed = createBotInfoEmbed(harmonix);
-                  if (msg.channel.id) {
-                    await harmonix.client.createMessage(msg.channel.id, { embed });
-                  }
-                }
-                return;
-              }
-              if ('type' in msg.channel && (msg.channel.type === 0 || msg.channel.type === 1 || msg.channel.type === 3 || msg.channel.type === 5)) {
-                const args = msg.content.slice(harmonix.options.prefix.length).trim().split(/ +/);
-                const commandName = args.shift()?.toLowerCase();
-
-                if (!commandName) return;
-
-                const command = harmonix.commands.get(commandName);
-                if (command && 'execute' in command) {
-                  consola.info(colors.cyan(`Command "${commandName}" used by ${msg.author.username} in ${msg.channel.id}`));
-                  await command.execute(harmonix, msg, args);
-                } else {
-                  consola.warn(colors.yellow(` Unknown command "${commandName}" attempted by ${msg.author.username} in ${msg.channel.id}`));
-                }
-              }
-            },
-            catch: (error: Error) => {
-              consola.error(colors.red(`Error processing message: ${error.message}`));
-              if (msg.channel.id) {
-                harmonix.client.createMessage(msg.channel.id, {
-                  embed: {
-                    title: "Oops!",
-                    description: "An error occurred while processing the message",
-                    color: 0xff0000,
-                    fields: [{ name: "Exception that occurred", value: `\`\`\`fix\n${error.message}\n\`\`\`` }]
-                  }
-                }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
-              }
-            }
-          }));
-        });
-
+        
+       
         const handleInteraction = async (harmonix: Harmonix, interaction: Eris.ComponentInteraction) => {
           if (interaction.type !== 3 || !interaction.data.custom_id) return;
         
@@ -407,30 +336,7 @@ async function main() {
             });
           }
         };        
-        harmonix.client.on('interactionCreate', (interaction: any) => {
-          Effect.runPromise(Effect.tryPromise({
-            try: async () => {
-              if (interaction instanceof CommandInteraction) {
-                const commandName = interaction.data.name;
-                const command = harmonix.commands.get(commandName);
-                
-                if (command && 'executeSlash' in command) {
-                  consola.info(colors.cyan(`Slash command "${commandName}" used by ${interaction.member?.username} in ${interaction.channel.id}`));
-                  await command.executeSlash(harmonix, interaction);
-                } else {
-                  consola.warn(colors.yellow(` Unknown slash command "${commandName}" attempted by ${interaction.member?.username} in ${interaction.channel.id}`));
-                  await interaction.createMessage({ content: 'Unknown command', flags: 64 });
-                }
-              }
-            },            catch: (error: Error) => {
-              consola.error(colors.red(`Error processing interaction: ${error.message}`));
-              interaction.createMessage({
-                content: 'An error occurred while processing the command',
-                flags: 64
-              }).catch((sendError: any) => console.error(colors.red("[ERROR] Error sending error message:"), colors.red(sendError.message)));
-            }
-          }));
-        });
+        
 
         harmonix.client.on("rawWS", (packet: any) => {
           Effect.runPromise(Effect.tryPromise({
@@ -485,8 +391,9 @@ async function main() {
     process.exit(1);
   });
 }
+
   // Run the bot
-  Effect.runPromise(
+Effect.runPromise(
     Effect.catchAll(
       Effect.tryPromise(() => main()),
       (error) => Effect.sync(() => {
@@ -494,10 +401,10 @@ async function main() {
         consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
       })
     )
-  );
+);
 
-  // Global error handling
-  process.on('uncaughtException', (error) => {
+// Global error handling
+process.on('uncaughtException', (error) => {
     consola.error(colors.red('Uncaught Exception:'), error);
   
     if (error.message.includes('Connection reset by peer')) {
@@ -511,9 +418,9 @@ async function main() {
     } else {
       consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
     }
-  });
+});
 
-  process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, promise) => {
     consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
   
     if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
@@ -526,7 +433,7 @@ async function main() {
     } else {
       consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
     }
-  });
+});
 
   
 export { Harmonix };
