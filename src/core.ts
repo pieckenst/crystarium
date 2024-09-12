@@ -189,12 +189,16 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           }
 
           if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+            const relativePath = path.relative(harmonix.options.dirs.commands, file);
+            const folderPath = path.dirname(relativePath);
+            const folderName = folderPath === '.' ? 'main' : folderPath;
+            
             if (command.slashCommand) {
               harmonix.slashCommands.set(command.name, command);
-              consola.info(colors.blue(` Loaded slash command: ${command.name}`));
+              consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded slash command: ${command.name}`));
             } else {
               harmonix.commands.set(command.name, command);
-              consola.info(colors.blue(` Loaded command: ${command.name}`));
+              consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded command: ${command.name}`));
             }
           } else {
             throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
