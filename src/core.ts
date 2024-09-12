@@ -185,7 +185,7 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
             command = commandModule.default;
             consola.info(colors.cyan(` Command ${file} uses regular command structure`));
           } else {
-            throw new Error(`Invalid command structure in file: ${file}`);
+            throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
           }
 
           if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
@@ -197,7 +197,7 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
               consola.info(colors.blue(` Loaded command: ${command.name}`));
             }
           } else {
-            throw new Error(`Invalid command structure in file: ${file}`);
+            throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
           }
         },
         catch: (error: Error) => Effect.sync(() => {
@@ -220,6 +220,9 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           consola.error(colors.red(`Error details: ${errorMessage}`));
           consola.error(colors.red('Stack trace:'));
           consola.error(colors.red(stackTrace));
+
+          // Log the error but continue execution
+          consola.warn(colors.yellow(`An error occured in : ${file} - Bot will continue running`));
         })
       })
     );
