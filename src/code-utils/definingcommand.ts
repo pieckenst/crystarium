@@ -49,7 +49,15 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
               }).pipe(
                 Effect.catchAll((error) => Effect.sync(() => {
                   logError(`Error executing command ${config.name}:`, error);
-                  if ('channel' in message) {
+                  if (config.slashCommand && 'createMessage' in message) {
+                    (message as CommandInteraction).createMessage({
+                      embeds: [{
+                        color: 0xFF0000,
+                        description: error.message
+                      }],
+                      flags: 64 // Ephemeral flag
+                    });
+                  } else if ('channel' in message) {
                     harmonix.client.createMessage(message.channel.id, {
                       embed: {
                         color: 0xFF0000,
