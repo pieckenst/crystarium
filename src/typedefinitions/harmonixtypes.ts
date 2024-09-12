@@ -19,9 +19,35 @@ class TokenError {
 type BotActivityType = Exclude<Constants['ActivityTypes'][keyof Constants['ActivityTypes']], 4>;
 
 
+export type FeatureFlags = {
+  useDiscordJS: boolean;
+  disabledCommands: string[];
+};
 
+export interface UniversalClient {
+  eris?: Eris.Client;
+  //discord?: Discord.Client;
+}
+/* DISABLE FOR NOW
+export interface UniversalCollection<K, V> {
+  eris?: Eris.Collection<K, V>;
+  //discord?: Discord.Collection<K, V>;
+}*/
 
+export interface UniversalMessage {
+  eris?: Eris.Message;
+  //discord?: Discord.Message;
+}
 
+export interface UniversalTextableChannel {
+  eris?: Eris.TextableChannel;
+  //discord?: Discord.TextBasedChannel;
+}
+
+export interface UniversalCommandInteraction {
+  eris?: Eris.CommandInteraction;
+  //discord?: Discord.CommandInteraction;
+}
 
 type HarmonixOptions = {
   ownerId?: string | undefined;
@@ -37,6 +63,7 @@ type HarmonixOptions = {
   host: string;
   port: number;
   password: string;
+  featureFlags?: FeatureFlags;
 };
 
 type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {
