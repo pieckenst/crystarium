@@ -30,8 +30,14 @@ export default class extends defineEvent({
       
       consola.debug(`Attempting to register ${commands.length} slash commands`);
       try {
+        const startTime = Date.now();
         await harmonix.client.bulkEditCommands(commands);
-        consola.success(colors.green(` Registered ${commands.length} slash commands`));
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        consola.success(colors.green(` Registered ${commands.length} slash commands in ${duration}ms`));
+        consola.info('Registered commands:');
+        commands.forEach(cmd => consola.info(` - ${cmd.name}`));
       } catch (error) {
         consola.error(colors.red(` Error registering slash commands: ${error.message}`));
       }
