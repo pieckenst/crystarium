@@ -145,19 +145,26 @@ function initializeManager(harmonix: Harmonix): void {
   );
 }
 
-// Scan for command and event files
 async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   const pattern = '**/*.{js,ts}';
   const files = await globby(pattern, {
     cwd: resolve(harmonix.options.dirs[dir]),
     absolute: true,
+    deep: Infinity,
   });
+
+  // Debug logging to show folder names where matches were found
+  const folderNames = new Set(files.map(file => path.dirname(file)));
+  //console.debug(`[DEBUG] Matches found in folders: ${Array.from(folderNames).join(', ')}`);
+
   return files;
 }
+
 async function loadCommands(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'commands');
 
   for (const file of files) {
+    //console.debug(`[DEBUG] Attempting to load command from file: ${file}`);
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
@@ -187,10 +194,25 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           }
         },
         catch: (error: Error) => Effect.sync(() => {
-          consola.error(colors.red(` Error loading command from file: ${file}`));
-          consola.error(colors.red(` Error details: ${error.message}`));
-          console.error(colors.red(' Stack trace:'));
-          console.error(colors.red(error.stack));
+          consola.error(colors.red(`An error has occurred while loading command from file: ${file}`));
+          
+          let errorMessage: string;
+          let stackTrace: string;
+          if (error instanceof Error) {
+            errorMessage = error.message;
+            stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+            if ('cause' in error && error.cause instanceof Error) {
+              errorMessage = error.cause.message;
+              stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+            }
+          } else {
+            errorMessage = String(error);
+            stackTrace = 'No stack trace available';
+          }
+
+          consola.error(colors.red(`Error details: ${errorMessage}`));
+          consola.error(colors.red('Stack trace:'));
+          consola.error(colors.red(stackTrace));
         })
       })
     );
@@ -199,10 +221,12 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
   consola.info(colors.green(` Loaded ${harmonix.commands.size} regular commands and ${harmonix.slashCommands.size} slash commands.`));
 }
 
+
 // Load events with Effect-based error handling
 async function loadEvents(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'events');
   for (const file of files) {
+    //console.debug(`[DEBUG] Attempting to load event from file: ${file}`);
     await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
@@ -346,16 +370,57 @@ async function main() {
 
         await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
       },      
-      catch: (error: Error) => {        
-        consola.error(colors.red(' An error occurred:'), error);
+      catch: (error: Error) => {
+        console.error(`An error has occurred in Harmonix core`);
+        
+
+        let errorMessage: string;
+        let stackTrace: string;
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+          if ('cause' in error && error.cause instanceof Error) {
+            errorMessage = error.cause.message;
+            stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+          }
+        } else {
+          errorMessage = String(error);
+          stackTrace = 'No stack trace available';
+        }
+
+        consola.error(colors.red(' A critical error occurred:'), errorMessage);
+        consola.error(colors.red('Stack trace:'));
+        error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+        consola.error(colors.red('Error occurred at:'), new Date().toISOString());
         consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
-        return Effect.fail(error);
+        
       }
     })
   ).catch((error: Error) => {
-    consola.error(colors.red(' A critical error occurred:'), error);
-    consola.error(colors.red('Stack trace:'), error.stack);
+    console.error(`A critical error has occurred in Harmonix core`);
+    
+
+    let errorMessage: string;
+    let stackTrace: string;
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+      if ('cause' in error && error.cause instanceof Error) {
+        errorMessage = error.cause.message;
+        stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+      }
+    } else {
+      errorMessage = String(error);
+      stackTrace = 'No stack trace available';
+    }
+
+    consola.error(colors.red(' A critical error occurred:'), errorMessage);
+    consola.error(colors.red('Stack trace:'));
+    error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+    consola.error(colors.red('Error occurred at:'), new Date().toISOString());
+    consola.error(colors.red('Bot is shutting down due to critical error.'));
     process.exit(1);
+    
   });
 }
 

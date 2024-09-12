@@ -1,6 +1,5 @@
 import { Message, TextableChannel } from 'eris';
-import { Harmonix } from '../core';
-
+import { Harmonix } from '../../core';
 export default {
   name: 'nowplaying',
   aliases: ['np'],

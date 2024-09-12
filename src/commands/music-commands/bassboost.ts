@@ -9,6 +9,7 @@ module.exports = {
     name: "bassboost",
     aliases: ['bb', 'bassboost'],
     description: "Set filter/bassboost level",
+    category: "music",
     async execute(client, message, args) {
       const player = client.manager.get(message.guildID);
       if (!player) {

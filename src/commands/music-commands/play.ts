@@ -5,6 +5,7 @@ export default {
   name: 'play',
   aliases: ['p'],
   description: "Plays your favourite music from youtube or spotify",
+  category: "music",
   execute: async (harmonix: Harmonix, msg: Message<TextableChannel>, args: string[]) => {
     if (!msg.member || !msg.guildID) return harmonix.client.createMessage(msg.channel.id, 'You need to be in a guild to use this command.');
     const voiceState = msg.member.voiceState;

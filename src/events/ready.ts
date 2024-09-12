@@ -39,13 +39,40 @@ export default class extends defineEvent({
         consola.info('Registered commands:');
         commands.forEach(cmd => consola.info(` - ${cmd.name}`));
       } catch (error) {
-        consola.error(colors.red(` Error registering slash commands: ${error.message}`));
+        consola.error(colors.red(` Error registering slash commands:`));
+        let errorMessage: string;
+        let stackTrace: string;
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+          if ('cause' in error && error.cause instanceof Error) {
+            errorMessage = error.cause.message;
+            stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+          }
+        } else {
+          errorMessage = String(error);
+          stackTrace = 'No stack trace available';
+        }
+        consola.error(`Error Details: ${errorMessage}`);
+        consola.error(`Stack Trace:\n${stackTrace}`);
       }
     } catch (error) {
-      consola.error(colors.red(` An error occurred during client ready process: ${error.message}`));
+      consola.error(colors.red(` An error occurred during client ready process:`));
+      let errorMessage: string;
+      let stackTrace: string;
       if (error instanceof Error) {
-        consola.debug('Error stack:', error.stack);
+        errorMessage = error.message;
+        stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+        if ('cause' in error && error.cause instanceof Error) {
+          errorMessage = error.cause.message;
+          stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
+        }
+      } else {
+        errorMessage = String(error);
+        stackTrace = 'No stack trace available';
       }
+      consola.error(`Error Details: ${errorMessage}`);
+      consola.error(`Stack Trace:\n${stackTrace}`);
       // Optionally, you might want to rethrow the error or handle it in a specific way
       // throw error;
     }

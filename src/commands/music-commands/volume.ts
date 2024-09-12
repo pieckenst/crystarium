@@ -1,6 +1,6 @@
 import { Message, TextableChannel, GuildChannel } from 'eris';
-import { Harmonix } from '../core';
-import { logInfo, logError } from '../code-utils/centralloggingfactory';
+import { Harmonix } from '../../core';
+import { logInfo,logError } from '../../code-utils/centralloggingfactory';
 
 export default {
     name: 'volume',
