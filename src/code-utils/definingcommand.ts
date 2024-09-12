@@ -50,11 +50,11 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
                 }
               }).pipe(
                 Effect.tapError((error) => Effect.sync(() => {
-                  console.error(`Detailed error in command ${config.name}:`, error);
-                  console.error('Stack trace:', error.stack);
+                  console.error(`An error has occured in command ${config.name}`);
+                  
                 })),
                 Effect.catchAll((error) => Effect.sync(() => {
-                  console.error(`Detailed error in command ${config.name}:`, error);
+                  console.error(`Detailed error log follows : \n`, error);
                   console.error('Stack trace:', error.stack);
 
                   let errorMessage: string;
