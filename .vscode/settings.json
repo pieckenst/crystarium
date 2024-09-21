@@ -1,3 +1,4 @@
 {
-    "openctx.enable": false
+    "openctx.enable": false,
+    "git.ignoreLimitWarning": true
 }

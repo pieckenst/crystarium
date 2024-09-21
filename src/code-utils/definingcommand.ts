@@ -18,6 +18,7 @@ export function defineCommand<T extends Record<string, any> = Record<string, any
       permissions?: string[];
       ownerOnly?: boolean;
       intervalLimit?: { minute: number; hour: number; day: number };
+      beta?: boolean;
     }
   ) {
     return class {

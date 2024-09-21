@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "ES2022",
-    
     "target": "es2022",
     "moduleResolution": "node",
     "sourceMap": true,
@@ -9,16 +8,29 @@
     "baseUrl": ".",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "strictNullChecks":false,
+    "strictNullChecks": false,
+    "jsx": "preserve",
+    "incremental": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": false,
+    "ignoreDeprecations": "5.0",
+    "noStrictGenericChecks": true,
+    "noImplicitAny": false,
+    "suppressImplicitAnyIndexErrors":true,
     "paths": {
       "*": [
         "node_modules/*",
         "src/types/*"
-      ]
+      ],
+      "@/*": ["./src/*"]
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "next-env.d.ts"
   ],
   "exclude": [
     "node_modules",

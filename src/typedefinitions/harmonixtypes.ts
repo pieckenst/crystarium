@@ -3,6 +3,7 @@ import Eris, { Message, TextableChannel, Collection } from 'eris';
 import { Manager } from 'erela.js';
 import { ApplicationCommandOptions } from 'eris';
 import { Constants } from 'eris';
+import { Knex } from 'knex';
 
 
 
@@ -19,10 +20,12 @@ class TokenError {
 type BotActivityType = Exclude<Constants['ActivityTypes'][keyof Constants['ActivityTypes']], 4>;
 
 
-export type FeatureFlags = {
-  useDiscordJS: boolean;
+export interface FeatureFlags {
+  useDiscordJS?: boolean;
   disabledCommands: string[];
-};
+  betaCommands: string[];
+  useDatabase: 'sqlite' | 'postgres' | 'none';
+}
 
 export interface UniversalClient {
   eris?: Eris.Client;
@@ -64,6 +67,7 @@ type HarmonixOptions = {
   port: number;
   password: string;
   featureFlags?: FeatureFlags;
+  database?: Knex | null;
 };
 
 type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {
@@ -83,6 +87,7 @@ type HarmonixCommand = {
   options?: CustomApplicationCommandOptions[];
   permissions?: string[];
   intervalLimit?: { minute: number; hour: number; day: number };
+  beta?: boolean;
   execute: (harmonix: Harmonix, msg: Message<TextableChannel> | Eris.CommandInteraction, args: string[] | Record<string, any>) => Promise<void>;
 };
 

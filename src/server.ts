@@ -1,36 +1,71 @@
-import express from 'express';
+import Fastify from 'fastify';
+import next from 'next';
+import { Harmonix } from './typedefinitions/harmonixtypes';
 
-const server = express();
+const dev = process.env.NODE_ENV !== 'production';
+const { resolve } = require('path');
+const dashboardPath = resolve(process.cwd(), 'dashboard');
 
-server.all('/', (req, res) => {
-    try {
-        res.status(200).send('Your bot is alive!');
-    } catch (error) {
-        console.error('Error handling request:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
+const app = next({ dev, dir: dashboardPath });
+const handle = app.getRequestHandler();
+
+if (!dashboardPath) {
+  console.error(`Dashboard folder not found at ${dashboardPath}`);
+  throw new Error(`Dashboard folder not found at ${dashboardPath}`);
+}
+
+const server = Fastify();
+
+export async function setupServer(harmonix: Harmonix) {
+  await app.prepare();
+
+  server.get('/api/commands', async (request, reply) => {
+    const commands = Array.from(harmonix.commands.values()).map(cmd => ({
+      name: cmd.name,
+      description: cmd.description,
+      category: cmd.category,
+    }));
+    return commands;
+  });
+
+  server.get('/api/featureflags', async (request, reply) => {
+    return harmonix.options.featureFlags;
+  });
+
+  server.all('*', async (request, reply) => {
+    return handle(request.raw, reply.raw);
+  });
+
+  server.setNotFoundHandler((request, reply) => {
+    return app.render404(request.raw, reply.raw);
+  });
+
+  server.setErrorHandler((error, request, reply) => {
+    console.error(error);
+    return app.renderError(error, request.raw, reply.raw, request.url, {});
+  });
+
+  try {
+    await server.listen({ port: 3000 });
+    console.log('> Ready on http://localhost:3000');
+  } catch (err) {
+    console.error('Error starting server:', err);
+    process.exit(1);
+  }
+}
 
 function keepAlive() {
     return new Promise<void>((resolve, reject) => {
-        server.listen(3000, () => {
-            console.log("Server is Ready!");
-            resolve();
-        }).on('error', (error) => {
-            console.error('Error starting server:', error);
-            reject(error);
+        server.listen({ port: 3000 }, (err) => {
+            if (err) {
+                console.error('Error starting server:', err);
+                reject(err);
+            } else {
+                console.log("Server is Ready!");
+                resolve();
+            }
         });
     });
 }
-
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
-});
 
 export default keepAlive;

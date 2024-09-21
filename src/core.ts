@@ -16,15 +16,90 @@ import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEven
 import type { Harmonix } from './typedefinitions/harmonixtypes';
 import { ApplicationCommandStructure } from 'eris';
 import { logError } from './code-utils/centralloggingfactory';
+import knex from 'knex';
+import { setupServer as setupFastifyServer } from './server';
 
+async function setupServer(harmonix: Harmonix): Promise<void> {
+  try {
+    await setupFastifyServer(harmonix);
+    consola.success(colors.green('Dashboard server started successfully'));
+  } catch (error) {
+    consola.error(colors.red('Failed to start dashboard server:'), error);
+    throw error; // Re-throw to allow main error handling to catch it
+  }
+}
 // Load configuration
 const loadConfig = Effect.tryPromise({
   try: async (): Promise<HarmonixOptions> => {
     const configPath = resolve(process.cwd(), 'config.json');
+    if (!configPath) {
+      consola.error(colors.red(`Config file not found at ${configPath}`));
+      throw new ConfigError(`Config file not found at ${configPath}`);
+    }
     consola.info(colors.yellow(` Loading configuration from: ${configPath}`));
-    const configFile = readFileSync(configPath, 'utf-8');
-    return JSON.parse(configFile);
-  },  catch: (error: unknown) => new ConfigError(`Failed to load config: ${error instanceof Error ? error.message : String(error)}`)
+    let configFile: string;
+    try {
+      configFile = readFileSync(configPath, 'utf-8');
+    } catch (error) {
+      consola.error(colors.red(`Failed to read config file: ${error.message}`));
+      consola.error(colors.red(`Stack trace:\n${error.stack}`));
+      throw new ConfigError(`Failed to read config file: ${error.message}`);
+    }
+
+    let config: HarmonixOptions;
+    try {
+      config = JSON.parse(configFile);
+    } catch (error) {
+      consola.error(colors.red(`Failed to parse config file: ${error.message}`));
+      consola.error(colors.red(`Stack trace:\n${error.stack}`));
+      throw new ConfigError(`Failed to parse config file: ${error.message}`);
+    }
+
+    const requiredFields = ['prefix', 'dirs', 'clientID', 'clientSecret', 'host', 'port', 'password'];
+    const missingFields = requiredFields.filter(field => !(field in config));
+
+    if (missingFields.length > 0) {
+      consola.warn(colors.yellow(`Warning: Missing fields in config: ${missingFields.join(', ')}`));
+      missingFields.forEach(field => {
+        switch (field) {
+          case 'prefix':
+            config.prefix = '!';
+            break;
+          case 'dirs':
+            config.dirs = { commands: './commands', events: './events' };
+            break;
+          case 'clientID':
+          case 'clientSecret':
+          case 'host':
+          case 'password':
+            config[field] = '';
+            break;
+          case 'port':
+            config.port = 0;
+            break;
+        }
+      });
+    }
+
+    if (!config.featureFlags) {
+      config.featureFlags = {
+        useDiscordJS: false,
+        disabledCommands: [],
+        betaCommands: [],
+        useDatabase: 'none'
+      };
+      consola.warn(colors.yellow('Warning: featureFlags not found in config, using default values'));
+    }
+
+    return config;
+  },
+  catch: (error: unknown) => {
+    consola.error(colors.red(`Failed to load config: ${error instanceof Error ? error.message : String(error)}`));
+    if (error instanceof Error && error.stack) {
+      consola.error(colors.red(`Stack trace:\n${error.stack}`));
+    }
+    return new ConfigError(`Failed to load config: ${error instanceof Error ? error.message : String(error)}`);
+  }
 });
 
 // Load token from .env
@@ -41,10 +116,36 @@ const loadToken = Effect.gen(function* (_) {
   return token;
 });
 
+const initDatabase = Effect.gen(function* (_) {
+  const config = yield* _(loadConfig);
+  if (config.featureFlags?.useDatabase === 'sqlite') {
+    return knex({
+      client: 'sqlite3',
+      connection: {
+        filename: './mydb.sqlite'
+      },
+      useNullAsDefault: true
+    });
+  } else if (config.featureFlags?.useDatabase === 'postgres') {
+    return knex({
+      client: 'pg',
+      connection: {
+        host: 'localhost',
+        user: 'your_database_user',
+        password: 'your_database_password',
+        database: 'myapp_database'
+      }
+    });
+  }
+  return null;
+});
+
 // Initialize Harmonix
 async function initHarmonix(): Promise<Harmonix> {
   const config = await Effect.runPromise(loadConfig);
   const token = await Effect.runPromise(loadToken);
+  const database = await Effect.runPromise(initDatabase);
+
 
   consola.info(colors.yellow(` Bot prefix: ${config.prefix}`));
   consola.info(colors.yellow(` Platform: ${process.platform}`));
@@ -64,7 +165,7 @@ async function initHarmonix(): Promise<Harmonix> {
 
   const harmonix: Harmonix = {
     client,
-    options: { ...config, token },
+    options: { ...config, token,database  },
     commands: new Collection<string, HarmonixCommand>(),
     slashCommands: new Collection<string, HarmonixCommand>(),
     events: new Collection<string, HarmonixEvent>(),
@@ -190,6 +291,15 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           }
 
           if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+            if (
+              (harmonix.options.featureFlags?.disabledCommands.includes(command.name)) ||
+              (harmonix.options.featureFlags?.betaCommands.includes(command.name) && !command.beta)
+            ) {
+              if (harmonix.options.debug) {
+                console.debug(`[DEBUG] Skipping ${harmonix.options.featureFlags?.disabledCommands.includes(command.name) ? 'disabled' : 'non-beta'} command: ${command.name}`);
+              }
+              return;
+            }
             const relativePath = path.relative(harmonix.options.dirs.commands, file);
             const folderPath = path.dirname(relativePath);
             const folderName = folderPath === '.' ? 'main' : folderPath;
@@ -204,8 +314,7 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           } else {
             throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
           }
-        },
-        catch: (error: Error) => Effect.sync(() => {
+        },        catch: (error: Error) => Effect.sync(() => {
           consola.error(colors.red(`An error has occurred while loading command from file: ${file}`));
           
           let errorMessage: string;
@@ -414,14 +523,12 @@ async function main() {
         console.log('\n');
         if (harmonix.options.debug) {
           console.debug(`The bot is running in debug mode.`);
-    
         }
         await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
         await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
-        
-       
-                
+        // Launch the server
+        await Effect.runPromise(Effect.tryPromise(() => setupServer(harmonix)));
 
         harmonix.client.on("rawWS", (packet: any) => {
           Effect.runPromise(Effect.tryPromise({
@@ -467,7 +574,6 @@ async function main() {
       catch: (error: Error) => {
         console.error(`An error has occurred in Harmonix core`);
         
-
         let errorMessage: string;
         let stackTrace: string;
         if (error instanceof Error) {
@@ -487,13 +593,11 @@ async function main() {
         error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
         consola.error(colors.red('Error occurred at:'), new Date().toISOString());
         consola.warn(colors.yellow(' Bot will continue running. The error has been logged above.'));
-        
       }
     })
   ).catch((error: Error) => {
     console.error(`A critical error has occurred in Harmonix core`);
     
-
     let errorMessage: string;
     let stackTrace: string;
     if (error instanceof Error) {
@@ -514,7 +618,6 @@ async function main() {
     consola.error(colors.red('Error occurred at:'), new Date().toISOString());
     consola.error(colors.red('Bot is shutting down due to critical error.'));
     process.exit(1);
-    
   });
 }
 
