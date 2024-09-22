@@ -1,4 +1,6 @@
 {
     "openctx.enable": false,
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "css.customData": [".vscode/tailwind.json"],
+    "scss.lint.unknownAtRules": "ignore"
 }

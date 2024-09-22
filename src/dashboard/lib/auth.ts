@@ -16,4 +16,4 @@ const authConfig = NextAuth({
 });
 
 export const { handlers = {}, signIn, signOut, auth } = authConfig;
-export const { GET, POST } = handlers || {};
+export const { GET, POST } = handlers as { GET: any; POST: any };
