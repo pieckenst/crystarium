@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { auth } from '@/lib/auth';
-import { signOut } from '@/lib/auth'
+import { auth, signOut } from '@/lib/auth';
 import Image from 'next/image';
 import {
   DropdownMenu,

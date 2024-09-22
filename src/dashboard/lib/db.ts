@@ -1,72 +1,73 @@
 import 'server-only';
+import { Harmonix } from '../../typedefinitions/harmonixtypes';
+import { Guild } from 'eris';
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import {
-  pgTable,
-  text,
-  numeric,
-  integer,
-  timestamp,
-  pgEnum,
-  serial
-} from 'drizzle-orm/pg-core';
-import { count, eq, ilike } from 'drizzle-orm';
-import { createInsertSchema } from 'drizzle-zod';
-
-export const db = drizzle(neon(process.env.POSTGRES_URL!));
-
-export const statusEnum = pgEnum('status', ['active', 'inactive', 'archived']);
-
-export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
-  imageUrl: text('image_url').notNull(),
-  name: text('name').notNull(),
-  status: statusEnum('status').notNull(),
-  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
-  stock: integer('stock').notNull(),
-  availableAt: timestamp('available_at').notNull()
-});
-
-export type SelectProduct = typeof products.$inferSelect;
-export const insertProductSchema = createInsertSchema(products);
-
-export async function getProducts(
+export async function getServers(
   search: string,
   offset: number
 ): Promise<{
-  products: SelectProduct[];
+  servers: Guild[];
   newOffset: number | null;
-  totalProducts: number;
+  totalServers: number;
 }> {
-  // Always search the full table, not per page
+  const harmonix = global.harmonix as Harmonix;
+  let servers = Array.from(harmonix.client.guilds.values());
+
   if (search) {
-    return {
-      products: await db
-        .select()
-        .from(products)
-        .where(ilike(products.name, `%${search}%`))
-        .limit(1000),
-      newOffset: null,
-      totalProducts: 0
-    };
+    servers = servers.filter(server => 
+      server.name.toLowerCase().includes(search.toLowerCase())
+    );
   }
 
-  if (offset === null) {
-    return { products: [], newOffset: null, totalProducts: 0 };
-  }
-
-  let totalProducts = await db.select({ count: count() }).from(products);
-  let moreProducts = await db.select().from(products).limit(5).offset(offset);
-  let newOffset = moreProducts.length >= 5 ? offset + 5 : null;
+  const totalServers = servers.length;
+  const paginatedServers = servers.slice(offset, offset + 5);
+  const newOffset = paginatedServers.length >= 5 ? offset + 5 : null;
 
   return {
-    products: moreProducts,
+    servers: paginatedServers,
     newOffset,
-    totalProducts: totalProducts[0].count
+    totalServers
   };
 }
 
-export async function deleteProductById(id: number) {
-  await db.delete(products).where(eq(products.id, id));
+export async function getServerFeatureFlags(serverId: string) {
+  const harmonix = global.harmonix as Harmonix;
+  const server = harmonix.client.guilds.get(serverId);
+  if (!server) {
+    throw new Error('Server not found');
+  }
+
+  // Assuming feature flags are stored per server in the bot's configuration
+  // You might need to adjust this based on how you're actually storing server-specific settings
+  return harmonix.options.featureFlags || {
+    useDiscordJS: false,
+    disabledCommands: [],
+    betaCommands: [],
+    useDatabase: 'none'
+  };
+}
+
+export async function updateServerFeatureFlags(serverId: string, featureFlags: any) {
+  const harmonix = global.harmonix as Harmonix;
+  const server = harmonix.client.guilds.get(serverId);
+  if (!server) {
+    throw new Error('Server not found');
+  }
+
+  // Update the feature flags for the specific server
+  // You'll need to implement the actual storage mechanism here
+  // This is just a placeholder
+  console.log(`Updating feature flags for server ${serverId}:`, featureFlags);
+
+  // Return the updated feature flags
+  return featureFlags;
+}
+
+export async function getCommands() {
+  const harmonix = global.harmonix as Harmonix;
+  return Array.from(harmonix.commands.values()).map(cmd => ({
+    name: cmd.name,
+    description: cmd.description,
+    category: cmd.category,
+  }));
 }

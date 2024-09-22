@@ -3,8 +3,10 @@
   "style": "default",
   "rsc": true,
   "tsx": true,
+
+  "jsx": true,
   "tailwind": {
-    "config": "tailwind.config.ts",
+    "config": "tailwind.config.js",
     "css": "app/globals.css",
     "baseColor": "slate",
     "cssVariables": true,
