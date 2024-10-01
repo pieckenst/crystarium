@@ -570,8 +570,7 @@ async function main() {
         }
 
         await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
-      },      
-      catch: (error: Error) => {
+      },            catch: (error: Error) => {
         console.error(`An error has occurred in Harmonix core`);
         
         let errorMessage: string;
