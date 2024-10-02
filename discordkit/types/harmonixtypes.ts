@@ -99,6 +99,8 @@ type HarmonixCommand = {
 
 type HarmonixEvent = {
   name: string;
+  description?: string;
+  once?: boolean;
   execute: (...args: any[]) => void;
 };
 

@@ -1,29 +1,32 @@
 import { Effect } from 'effect';
-import { Harmonix, HarmonixEvent } from '../types/harmonixtypes';
+import { Harmonix } from '../types/harmonixtypes';
 import { logInfo, logError } from './centralloggingfactory';
 import { Client, ClientEvents } from 'eris';
 
-type EventExecute<T extends keyof ClientEvents> = (harmonix: Harmonix, ...args: ClientEvents[T]) => Promise<void>;
+type EventExecute<T extends keyof ClientEvents | string> =
+  T extends keyof ClientEvents
+    ? (harmonix: Harmonix, ...args: ClientEvents[T]) => Promise<void>
+    : (harmonix: Harmonix, ...args: any[]) => Promise<void>;
 
-export function defineEvent<T extends keyof ClientEvents>(
+export function defineEvent<T extends keyof ClientEvents | string>(
   config: {
     name: T;
     description?: string;
+    once?: boolean;
   }
 ) {
   return class {
-    static execute: EventExecute<T> = async () => {
-      throw new Error('Execute method must be implemented');
-    }
+    static execute: EventExecute<T>;
 
-    static build(): HarmonixEvent {
+    static build() {
       return {
         name: String(config.name),
-        execute: async (harmonix: Harmonix, ...args: any[]) => {
+        once: config.once || false,
+        execute: async (harmonix: Harmonix, ...args: unknown[]): Promise<void> => {
           return Effect.runPromise(
             Effect.tryPromise(async () => {
               logInfo(`Executing event ${String(config.name)}`, 'event');
-              await this.execute(harmonix, ...args as ClientEvents[T]);
+              await this.execute(harmonix, ...(args as any));
             }).pipe(
               Effect.tapError((error) => Effect.sync(() => {
                 logError(`Error executing event ${String(config.name)}:`, error);
