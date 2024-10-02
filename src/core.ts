@@ -18,6 +18,7 @@ import { ApplicationCommandStructure } from 'eris';
 import { logError } from './code-utils/centralloggingfactory';
 import knex from 'knex';
 import { setupServer as setupFastifyServer } from './server';
+import { defineClientStart, HarmonixBuilderConfig } from './code-utils/defininingclientstart';
 
 async function setupServer(harmonix: Harmonix): Promise<void> {
   try {
@@ -146,47 +147,48 @@ async function initHarmonix(): Promise<Harmonix> {
   const token = await Effect.runPromise(loadToken);
   const database = await Effect.runPromise(initDatabase);
 
-
   consola.info(colors.yellow(` Bot prefix: ${config.prefix}`));
   consola.info(colors.yellow(` Platform: ${process.platform}`));
   consola.info(colors.yellow(` Start time: ${new Date().toISOString()}`));
 
-  const client = new Eris.Client(token, {
+  const harmonixBuilderConfig: HarmonixBuilderConfig = {
+    options: { ...config, token, database },
+    featureFlags: config.featureFlags,
+    token,
     intents: [
-        Constants.Intents.guilds,
-        Constants.Intents.guildMessages,
-        Constants.Intents.guildMessageReactions,
-        Constants.Intents.directMessages,
-        Constants.Intents.directMessageReactions,
-        Constants.Intents.guildVoiceStates
-    ],
-    restMode: true
-  });
-
-  const harmonix: Harmonix = {
-    client,
-    options: { ...config, token,database  },
-    commands: new Collection<string, HarmonixCommand>(),
-    slashCommands: new Collection<string, HarmonixCommand>(),
-    events: new Collection<string, HarmonixEvent>(),
-    startTime: new Date(),
-    manager: new Manager({
-      plugins: [
-        new Spotify({ clientID: config.clientID, clientSecret: config.clientSecret })
-      ],
-      nodes: [{
-        host: config.host,
-        port: config.port,
-        password: config.password,
-        retryDelay: 5000,
-      }],
-      autoPlay: true,
-      send: (id, payload) => {
-        const guild = client.guilds.get(id);
-        if (guild) guild.shard.sendWS(payload.op, payload.d);
-      }
-    })
+      'guilds',
+      'guildMessages',
+      'guildMessageReactions',
+      'directMessages',
+      'directMessageReactions',
+      'guildVoiceStates'
+    ]
   };
+
+  const clientStart = defineClientStart();
+  const harmonix = await Effect.runPromise(clientStart.buildHarmonix(harmonixBuilderConfig));
+
+  harmonix.commands = new Collection<string, HarmonixCommand>();
+  harmonix.slashCommands = new Collection<string, HarmonixCommand>();
+  harmonix.events = new Collection<string, HarmonixEvent>();
+  harmonix.startTime = new Date();
+
+  harmonix.manager = new Manager({
+    plugins: [
+      new Spotify({ clientID: config.clientID, clientSecret: config.clientSecret })
+    ],
+    nodes: [{
+      host: config.host,
+      port: config.port,
+      password: config.password,
+      retryDelay: 5000,
+    }],
+    autoPlay: true,
+    send: (id, payload) => {
+      const guild = harmonix.client.guilds.get(id);
+      if (guild) guild.shard.sendWS(payload.op, payload.d);
+    }
+  });
 
   initializeManager(harmonix);
 

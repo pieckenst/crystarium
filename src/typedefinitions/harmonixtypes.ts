@@ -68,6 +68,7 @@ type HarmonixOptions = {
   password: string;
   featureFlags?: FeatureFlags;
   database?: Knex | null;
+  intents?: (keyof typeof Constants.Intents)[];
 };
 
 type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {
