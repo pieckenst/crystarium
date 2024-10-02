@@ -1,6 +1,6 @@
 import { Message, TextableChannel, GuildChannel } from 'eris';
 import { Harmonix } from '../../core';
-import { logInfo,logError } from '../../code-utils/centralloggingfactory';
+import { logInfo,logError } from '../../../discordkit/utils/centralloggingfactory';
 
 export default {
     name: 'volume',

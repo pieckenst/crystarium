@@ -1,6 +1,6 @@
 import { CommandInteraction, Message, TextableChannel, Constants } from 'eris';
-import { BotActivityType, Harmonix } from '../../typedefinitions/harmonixtypes';
-import { defineCommand, createSlashCommandOption } from '../../code-utils/definingcommand';
+import { BotActivityType, Harmonix } from '../../../discordkit/types/harmonixtypes';
+import { defineCommand, createSlashCommandOption } from '../../../discordkit/utils/command';
 import { ActivityPartial } from 'eris';
 
 export default class extends defineCommand({

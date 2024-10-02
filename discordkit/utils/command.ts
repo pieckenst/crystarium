@@ -1,9 +1,9 @@
 import { Effect } from 'effect';
-import { Harmonix, HarmonixCommand, HarmonixOptions } from '../typedefinitions/harmonixtypes';
+import { Harmonix, HarmonixCommand, HarmonixOptions } from '../types/harmonixtypes';
 import { Message, TextableChannel, Constants } from 'eris';
-import { logError } from '../code-utils/centralloggingfactory';
+import { logError } from '../utils/centralloggingfactory';
 import { ApplicationCommandOptions, CommandInteraction } from 'eris';
-import { CustomApplicationCommandOptions } from '../typedefinitions/harmonixtypes';
+import { CustomApplicationCommandOptions } from '../types/harmonixtypes';
 
 export function defineCommand<T extends Record<string, any> = Record<string, any>>(
     config: {

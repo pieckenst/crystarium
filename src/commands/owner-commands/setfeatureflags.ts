@@ -1,5 +1,6 @@
-import { defineCommand } from '../../code-utils/definingcommand';
-import { Harmonix } from '../../typedefinitions/harmonixtypes';
+import { Harmonix } from '../../../discordkit/types/harmonixtypes';
+import { defineCommand } from '../../../discordkit/utils/command';
+import { logError } from '../../../discordkit/utils/centralloggingfactory';
 import { CommandInteraction, Message, TextableChannel } from 'eris';
 import { Effect } from 'effect';
 

@@ -21,23 +21,6 @@
     "noImplicitAny": false,
     "suppressImplicitAnyIndexErrors":true,
     
-    "paths": {
-      "*": [
-        "node_modules/*",
-        "src/types/*"
-      ],
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": [
-    "src/**/*",
-    "next-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ],
-  "files": [
-    "core.ts"
-  ]
+    
+  }
 }

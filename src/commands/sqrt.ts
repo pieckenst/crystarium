@@ -1,7 +1,7 @@
 import { Message, TextableChannel, GuildChannel, CommandInteraction } from 'eris';
 import { Harmonix } from '../core';
-import { logInfo } from '../code-utils/centralloggingfactory';
-import { defineCommand } from '../code-utils/definingcommand';
+import { logInfo } from '../../discordkit/utils/centralloggingfactory';
+import { defineCommand } from '../../discordkit/utils/command';
 
 
 export default class extends defineCommand({

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { Harmonix, HarmonixEvent } from '../typedefinitions/harmonixtypes';
+import { Harmonix, HarmonixEvent } from '../types/harmonixtypes';
 import { logInfo, logError } from './centralloggingfactory';
 import { Client, ClientEvents } from 'eris';
 

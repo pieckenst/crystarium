@@ -1,13 +1,15 @@
-import { JobData, ClassJob, Experience, ClassJobLevel, ClassLevel, Race, Clan, CharacterInfo, JobIconMapping } from '../typedefinitions/lodestonetypes';
+import { JobData, ClassJob, Experience, ClassJobLevel, ClassLevel, Race, Clan, CharacterInfo, JobIconMapping } from '../../src/typedefinitions/lodestonetypes';
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
+
 import fetch from 'node-fetch';
-import { LogLevel, centralLogger } from '../code-utils/centralloggingfactory';
-import { logInfo, logSuccess, logWarn, logError, logDebug } from '../code-utils/centralloggingfactory';
+import { LogLevel, centralLogger } from './centralloggingfactory';
+import { logInfo, logSuccess, logWarn, logError, logDebug } from './centralloggingfactory';
 
 
 
 function getJobNameFromIcon(iconUrl: string): string {
+    logInfo(`Getting job name from icon URL: ${iconUrl}`, 'lodestone-utils');
     const jobIconMapping: Record<string, string> = {
         'https://img.finalfantasyxiv.com/lds/h/U/F5JzG9RPIKFSogtaKNBk455aYA.png': 'Gladiator',
         'https://img.finalfantasyxiv.com/lds/h/E/d0Tx-vhnsMYfYpGe9MvslemEfg.png': 'Paladin',
@@ -42,14 +44,25 @@ function getJobNameFromIcon(iconUrl: string): string {
         'd0Tx-vhnsMYfYpGe9MvslemEfg': 'Paladin',
     };
 
+    logInfo(`Job icon mapping: ${JSON.stringify(jobIconMapping)}`, 'lodestone-utils');
+
     const iconId = iconUrl.split('/').pop()?.split('.')[0];
-    return jobIconMapping[iconUrl] || jobIconMapping[iconId || ''] || 'Unknown';
+    logInfo(`Extracted icon ID: ${iconId}`, 'lodestone-utils');
+
+    const jobName = jobIconMapping[iconUrl] || jobIconMapping[iconId || ''] || 'Unknown';
+    logInfo(`Resolved job name: ${jobName}`, 'lodestone-utils');
+
+    return jobName;
 }
 
 function parseRaceAndClan($: cheerio.CheerioAPI): { race: Race, clan: Clan } {
+  logInfo('Parsing race and clan', 'lodestone-utils');
   const charBlock = $('.character-block__name').first();
   const [raceStr, clanAndGender] = charBlock.html()?.split('<br>') ?? [];
   const [clanStr] = clanAndGender?.split(' / ') ?? [];
+
+  logInfo(`Raw race string: ${raceStr}`, 'lodestone-utils');
+  logInfo(`Raw clan string: ${clanStr}`, 'lodestone-utils');
 
   let race: Race;
   let clan: Clan;
@@ -88,15 +101,18 @@ function parseRaceAndClan($: cheerio.CheerioAPI): { race: Race, clan: Clan } {
           clan = clanStr.toLowerCase() === 'helion' ? Clan.Helion : Clan.Lost;
           break;
       default:
+          
           throw new Error(`Unknown race: ${raceStr}`);
   }
 
+  logInfo(`Parsed race: ${Race[race]}, clan: ${Clan[clan]}`, 'lodestone-utils');
   return { race, clan };
 }
 
-
 async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>> {
   const url = `https://na.finalfantasyxiv.com/lodestone/character/${id}/class_job/`;
+  logInfo(`Scraping character class/job data from URL: ${url}`, 'lodestone-utils');
+
   const response = await axios.get(url);
   const $ = cheerio.load(response.data);
 
@@ -111,6 +127,7 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
 
   $('.character__content.selected .character__job__role').each((_, roleElement) => {
       const roleName = $(roleElement).find('.heading--lead').text().trim();
+      logInfo(`Processing role: ${roleName}`, 'lodestone-utils');
       
       $(roleElement).find('.character__job li').each((_, jobElement) => {
           const jobName = $(jobElement).find('.character__job__name').text().trim();
@@ -129,6 +146,8 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
               experience: currentExp === 0 && expToNextLevel === 0 ? null : { currentExp, expToNextLevel }
           };
   
+          logInfo(`Processed job: ${jobName}, Level: ${level}, Exp: ${currentExp}/${expToNextLevel}`, 'lodestone-utils');
+
           const physicalRangedJobs = ['Archer','Bard', 'Machinist', 'Dancer'];
           const magicalRangedJobs = ['Thaumaturge','Black Mage', 'Arcanist', 'Summoner', 'Red Mage', 'Pictomancer', 'Blue Mage'];
 
@@ -165,10 +184,10 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
       });
   });    
   const processJobs = (jobs: JobData[], rolePrefix: string, classLevels: Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>) => {
-      logInfo(`--- ${rolePrefix} ---`, 'lodestone-utils');
+      logInfo(`--- Processing ${rolePrefix} jobs ---`, 'lodestone-utils');
       jobs.forEach(job => {
           const formattedJobName = job.name.toUpperCase().replace(/\s+/g, '_');
-          logInfo(`${formattedJobName}: Level ${job.level}`, 'lodestone-utils');
+          logInfo(`Processing job: ${formattedJobName}`, 'lodestone-utils');
           
           // Convert job name to ClassJob enum
           const classJobKey = ClassJob[formattedJobName as keyof typeof ClassJob];
@@ -180,6 +199,9 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
                   categoryname: rolePrefix,
                   jobname: job.name
               };
+              logInfo(`Added job to classLevels: ${formattedJobName}`, 'lodestone-utils');
+          } else {
+              logWarn(`Unknown job: ${formattedJobName}`, 'lodestone-utils');
           }
       });
   };
@@ -193,7 +215,7 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
   processJobs(handJobs, 'DISCIPLE_OF_THE_HAND', classLevels);
   processJobs(landJobs, 'DISCIPLE_OF_THE_LAND', classLevels);
 
-  logInfo('--- Special Jobs ---', 'lodestone-utils');
+  logInfo('--- Processing Special Jobs ---', 'lodestone-utils');
 
   // Handle Bozjan Southern Front
   const bozjaElement = $('.character__job__list:contains("Resistance Rank")');
@@ -210,7 +232,7 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
               categoryname: 'SPECIAL',
               jobname: 'Bozjan Southern Front'
           };
-          logInfo(`  Bozjan Southern Front - Resistance Rank: ${bozjaLevel}, Mettle: ${bozjaExp[1]}/${bozjaExp[2]}`, 'lodestone-utils');
+          logInfo(`Processed Bozjan Southern Front - Resistance Rank: ${bozjaLevel}, Mettle: ${bozjaExp[1]}/${bozjaExp[2]}`, 'lodestone-utils');
       }
   }
 
@@ -228,23 +250,29 @@ async function scrapeCharacterClassJob(id: string): Promise<Partial<Record<Class
           categoryname: 'SPECIAL',
           jobname: 'Eureka'
       };
-      logInfo(`  Eureka - Elemental Level: ${eurekaLevel}, Exp: ${eurekaExp[0]}/${eurekaExp[1]}`, 'lodestone-utils');
+      logInfo(`Processed Eureka - Elemental Level: ${eurekaLevel}, Exp: ${eurekaExp[0]}/${eurekaExp[1]}`, 'lodestone-utils');
   }
 
   if (Object.keys(classLevels).length === 0) {
-      logInfo("No classes or jobs found for this character.", 'lodestone-utils');
+      logWarn("No classes or jobs found for this character.", 'lodestone-utils');
   }
 
+  logInfo('Finished scraping character class/job data', 'lodestone-utils');
   return classLevels;
 }
 
 async function getLodestoneCharacterClassJob(id: string): Promise<Partial<Record<ClassJob, ClassJobLevel & { categoryname?: string; jobname?: string }>>> {
+  logInfo(`Getting Lodestone character class/job data for ID: ${id}`, 'lodestone-utils');
   try {
-    return await scrapeCharacterClassJob(id);
+    const result = await scrapeCharacterClassJob(id);
+    logInfo('Successfully retrieved character class/job data', 'lodestone-utils');
+    return result;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
+      
       throw new Error(`Character with ID ${id} not found on The Lodestone.`);
     }
+    
     throw new Error('An error occurred while fetching character information from The Lodestone.');
   }
 }
@@ -256,15 +284,24 @@ async function fetchCharacterInfo(id: string): Promise<CharacterInfo> {
     const html = response.data;
     const $ = cheerio.load(html);
 
+    logInfo('Parsing basic info', 'lodestone-utils');
     const basicInfo = parseBasicInfo($);
+    logInfo('Parsing server info', 'lodestone-utils');
     const serverInfo = parseServerInfo($);
+    logInfo('Parsing character details', 'lodestone-utils');
     const characterDetails = parseCharacterDetails($);
+    logInfo('Parsing job info', 'lodestone-utils');
     const jobInfo = parseJobInfo($);
+    logInfo('Parsing company info', 'lodestone-utils');
     const companyInfo = parseCompanyInfo($);
+    logInfo('Fetching class/job levels', 'lodestone-utils');
     const classJobLevels = await fetchClassJobLevels(id);
+    logInfo('Parsing social info', 'lodestone-utils');
     const socialInfo = parseSocialInfo($);
+    logInfo('Parsing additional info', 'lodestone-utils');
     const additionalInfo = parseAdditionalInfo($);
 
+    logInfo('Combining all parsed information', 'lodestone-utils');
     return {
         ...basicInfo,
         ...serverInfo,
@@ -395,7 +432,7 @@ async function fetchClassJobLevels(id: string) {
         }
         logInfo('All class levels processed', JSON.stringify({ data: classLevels, context: 'lodestone-utils' }));
     } catch (error) {
-        console.error('Error fetching or processing class/job levels:', error);
+        logError('Error fetching or processing class/job levels:', error);
         throw error;
     }
 
@@ -434,6 +471,7 @@ function parseAdditionalInfo($: cheerio.CheerioAPI) {
     };
     logInfo(`Guardian Deity: ${JSON.stringify(guardianDeity)}`, 'lodestone-utils');
 
+    logInfo('Parsing PvP team information', 'lodestone-utils');
     logInfo('Parsing PvP team information', 'lodestone-utils');
     const pvpTeamElement = $('.character__pvpteam__name > h4:nth-child(2) > a:nth-child(1)');
     const pvpTeam = pvpTeamElement.length

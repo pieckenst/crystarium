@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { Harmonix } from './typedefinitions/harmonixtypes';
+import { Harmonix } from '../discordkit/types/harmonixtypes';
 import { Guild } from 'eris';
 import fs from 'fs';
 import path from 'path';
@@ -10,26 +10,32 @@ const dev = process.env.NODE_ENV !== 'production';
 import { resolve } from 'path';
 const dashboardPath = resolve(process.cwd(), '..', 'dashboard');
 
-// Debug logging for Next.js paths
-console.log('Current working directory:', process.cwd());
-console.log('Dashboard path:', dashboardPath);
-console.log('Contents of dashboard directory:');
-fs.readdirSync(dashboardPath).forEach(file => {
-  console.log(file);
-});
+// Read and parse config.json
+const configPath = path.join(__dirname, 'config.json');
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-// Check for 'pages' and 'app' directories
-const pagesDir = path.join(dashboardPath, 'pages');
-const appDir = path.join(dashboardPath, 'app');
-console.log('Pages directory exists:', fs.existsSync(pagesDir));
-console.log('App directory exists:', fs.existsSync(appDir));
+if (config.debug) {
+  // Debug logging for Next.js paths
+  console.log('Current working directory:', process.cwd());
+  console.log('Dashboard path:', dashboardPath);
+  console.log('Contents of dashboard directory:');
+  fs.readdirSync(dashboardPath).forEach(file => {
+    console.log(file);
+  });
+
+  // Check for 'pages' and 'app' directories
+  const pagesDir = path.join(dashboardPath, 'pages');
+  const appDir = path.join(dashboardPath, 'app');
+  console.log('Pages directory exists:', fs.existsSync(pagesDir));
+  console.log('App directory exists:', fs.existsSync(appDir));
+}
 
 if (!fs.existsSync(dashboardPath)) {
   console.error(`Dashboard folder not found at ${dashboardPath}`);
   throw new Error(`Dashboard folder not found at ${dashboardPath}`);
 }
 
-if (!fs.existsSync(pagesDir) && !fs.existsSync(appDir)) {
+if (!fs.existsSync(path.join(dashboardPath, 'pages')) && !fs.existsSync(path.join(dashboardPath, 'app'))) {
   console.error(`Neither 'pages' nor 'app' directory found in ${dashboardPath}`);
   throw new Error(`Please create either a 'pages' or 'app' directory in ${dashboardPath}`);
 }

@@ -1,6 +1,6 @@
 import { Message, TextableChannel, GuildChannel } from 'eris';
 import { Harmonix } from '../../core';
-import { defineCommand } from '../../code-utils/definingcommand';
+import { defineCommand } from '../../../discordkit/utils/command';
 
 export default class extends defineCommand({
   name: "unban",

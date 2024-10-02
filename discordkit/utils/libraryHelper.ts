@@ -1,4 +1,4 @@
-import { FeatureFlags } from '../typedefinitions/harmonixtypes';
+import { FeatureFlags } from '../types/harmonixtypes';
 
 export async function loadLibrary(useDiscordJS: boolean) {
     //if (useDiscordJS) {

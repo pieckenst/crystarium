@@ -69,6 +69,11 @@ type HarmonixOptions = {
   featureFlags?: FeatureFlags;
   database?: Knex | null;
   intents?: (keyof typeof Constants.Intents)[];
+  activity?: {
+    name?: string;
+    type?: BotActivityType;
+  };
+  status?: 'online' | 'idle' | 'dnd' | 'invisible';
 };
 
 type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {

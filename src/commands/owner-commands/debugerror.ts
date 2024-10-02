@@ -1,7 +1,7 @@
 import { CommandInteraction } from 'eris';
-import { Harmonix } from '../../typedefinitions/harmonixtypes';
-import { defineCommand } from '../../code-utils/definingcommand';
-import { logError } from '../../code-utils/centralloggingfactory';
+import { Harmonix } from '../../../discordkit/types/harmonixtypes';
+import { defineCommand } from '../../../discordkit/utils/command';
+import { logError } from '../../../discordkit/utils/centralloggingfactory';
 
 export default class extends defineCommand({
     name: "throwerror",

@@ -1,7 +1,6 @@
 import { Message, Constants, EmbedOptions } from 'eris';
 import { stripIndents } from 'common-tags';
 import { Harmonix } from '../core';
-
 export default {
   name: 'help',
   description: 'Displays all commands that the bot has.',

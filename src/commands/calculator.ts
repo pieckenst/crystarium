@@ -1,7 +1,7 @@
 import { ActionRow, InteractionButton, Message, TextableChannel, CommandInteraction, ComponentInteraction } from 'eris';
-import { Harmonix } from '../typedefinitions/harmonixtypes';
+import { Harmonix } from '../../discordkit/types/harmonixtypes';
 import * as math from 'mathjs';
-import { defineCommand } from '../code-utils/definingcommand';
+import { defineCommand } from '../../discordkit/utils/command';
 
 export default class extends defineCommand({
   name: "calculator",

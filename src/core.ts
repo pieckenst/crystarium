@@ -11,15 +11,14 @@ import { globby } from 'globby';
 import path from 'path';
 import { Manager } from 'erela.js';
 import Spotify from 'erela.js-spotify';
-import { Effect, Console } from 'effect';
-import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from './typedefinitions/harmonixtypes';
-import type { Harmonix } from './typedefinitions/harmonixtypes';
+import { Effect, Console, Data } from 'effect';
+import { ConfigError, TokenError, HarmonixOptions, HarmonixCommand, HarmonixEvent } from '../discordkit/types/harmonixtypes';
+import type { Harmonix } from '../discordkit/types/harmonixtypes';
 import { ApplicationCommandStructure } from 'eris';
-import { logError } from './code-utils/centralloggingfactory';
+import { logError } from '../discordkit/utils/centralloggingfactory';
 import knex from 'knex';
 import { setupServer as setupFastifyServer } from './server';
-import { defineClientStart, HarmonixBuilderConfig } from './code-utils/defininingclientstart';
-
+import { ClientGen, ClientBuilder,ClientConfig } from '../discordkit/utils/ClientGen';
 async function setupServer(harmonix: Harmonix): Promise<void> {
   try {
     await setupFastifyServer(harmonix);
@@ -140,61 +139,194 @@ const initDatabase = Effect.gen(function* (_) {
   }
   return null;
 });
+async function setupListeners(harmonix: Harmonix): Promise<void> {
+  consola.info(colors.cyan('Setting up event listeners...'));
 
-// Initialize Harmonix
-async function initHarmonix(): Promise<Harmonix> {
-  const config = await Effect.runPromise(loadConfig);
-  const token = await Effect.runPromise(loadToken);
-  const database = await Effect.runPromise(initDatabase);
-
-  consola.info(colors.yellow(` Bot prefix: ${config.prefix}`));
-  consola.info(colors.yellow(` Platform: ${process.platform}`));
-  consola.info(colors.yellow(` Start time: ${new Date().toISOString()}`));
-
-  const harmonixBuilderConfig: HarmonixBuilderConfig = {
-    options: { ...config, token, database },
-    featureFlags: config.featureFlags,
-    token,
-    intents: [
-      'guilds',
-      'guildMessages',
-      'guildMessageReactions',
-      'directMessages',
-      'directMessageReactions',
-      'guildVoiceStates'
-    ]
-  };
-
-  const clientStart = defineClientStart();
-  const harmonix = await Effect.runPromise(clientStart.buildHarmonix(harmonixBuilderConfig));
-
-  harmonix.commands = new Collection<string, HarmonixCommand>();
-  harmonix.slashCommands = new Collection<string, HarmonixCommand>();
-  harmonix.events = new Collection<string, HarmonixEvent>();
-  harmonix.startTime = new Date();
-
-  harmonix.manager = new Manager({
-    plugins: [
-      new Spotify({ clientID: config.clientID, clientSecret: config.clientSecret })
-    ],
-    nodes: [{
-      host: config.host,
-      port: config.port,
-      password: config.password,
-      retryDelay: 5000,
-    }],
-    autoPlay: true,
-    send: (id, payload) => {
-      const guild = harmonix.client.guilds.get(id);
-      if (guild) guild.shard.sendWS(payload.op, payload.d);
+  // Set up ready event listener
+  harmonix.client.on('ready', () => {
+    const readyEvent = harmonix.events.get('ready');
+    if (readyEvent && 'execute' in readyEvent) {
+      readyEvent.execute(harmonix);
     }
   });
 
-  initializeManager(harmonix);
+  // Set up messageCreate event listener
+  harmonix.client.on('messageCreate', (msg) => {
+    const messageCreateEvent = harmonix.events.get('messageCreate');
+    if (messageCreateEvent && 'execute' in messageCreateEvent) {
+      messageCreateEvent.execute(harmonix, msg);
+    }
+  });
 
-  return harmonix;
+  // Set up interactionCreate event listener
+  harmonix.client.on('interactionCreate', (interaction) => {
+    const interactionCreateEvent = harmonix.events.get('interactionCreate');
+    if (interactionCreateEvent && 'execute' in interactionCreateEvent) {
+      interactionCreateEvent.execute(harmonix, interaction);
+    }
+  });
+
+  consola.success(colors.green('Event listeners set up successfully.'));
 }
 
+async function startClient(harmonix: Harmonix): Promise<Effect.Effect<void, Error, never>> {
+  return Effect.tryPromise(async () => {
+    consola.info(colors.cyan('Starting client...'));
+    
+    try {
+      await harmonix.client.connect();
+      consola.success(colors.green('Client connected successfully.'));
+    } catch (error) {
+      consola.error(colors.red(`Failed to connect client: ${error instanceof Error ? error.message : String(error)}`));
+      throw error;
+    }
+  });
+}
+
+class TerraClient extends ClientGen {
+  static defineClientStart(): ClientBuilder {
+    return {
+      buildClient: (config: ClientConfig): Effect.Effect<Harmonix, Error, never> => {
+        return Effect.tryPromise({
+          try: async () => {
+            if (!Eris.Client) {
+              throw new Error('Eris.Client is undefined. Make sure Eris is properly imported.');
+            }
+            const client = new Eris.Client(config.token, {
+              intents: config.intents || [],
+              restMode: true
+            });
+
+            const manager = new Manager({
+              plugins: [
+                new Spotify({ clientID: config.options.clientID, clientSecret: config.options.clientSecret })
+              ],
+              nodes: [{
+                host: config.options.host,
+                port: config.options.port,
+                password: config.options.password,
+                retryDelay: 5000,
+              }],
+              autoPlay: true,
+              send: (id, payload) => {
+                const guild = client.guilds.get(id);
+                if (guild) guild.shard.sendWS(payload.op, payload.d);
+              }
+            });
+
+            return {
+              client,
+              options: config.options,
+              commands: new Eris.Collection(),
+              slashCommands: new Eris.Collection(),
+              events: new Eris.Collection(),
+              startTime: new Date(),
+              manager
+            } as Harmonix;
+          },
+          catch: (error: unknown) => {
+            console.error('Error in TerraClient.buildClient:', error);
+            if (error instanceof Error) {
+              console.error('Error stack:', error.stack);
+            }
+            return new Error(`Failed to build client: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        });
+      }
+    };
+  }
+
+  static initializeClient = (config: ClientConfig): Effect.Effect<Harmonix, Error, never> => {
+    return Effect.gen(function* (_) {
+      const clientBuilder = TerraClient.defineClientStart();
+      const harmonix = yield* _(clientBuilder.buildClient(config));
+      if (harmonix.options.debug) {
+        console.debug('Debug: Harmonix client built');
+      }
+      return harmonix;
+    });
+  };
+
+  static loadCommands = (harmonix: Harmonix): Effect.Effect<void, Error, never> => 
+    Effect.tryPromise(() => loadCommands(harmonix));
+
+  static loadEvents = (harmonix: Harmonix): Effect.Effect<void, Error, never> => 
+    Effect.tryPromise(() => loadEvents(harmonix));
+
+  static setupListeners = (harmonix: Harmonix): Effect.Effect<void, Error, never> => 
+    Effect.tryPromise(() => setupListeners(harmonix));
+
+  static startClient = (harmonix: Harmonix): Effect.Effect<void, Error, never> => 
+    Effect.tryPromise(async () => {
+      await harmonix.client.connect();
+      if (harmonix.options.debug) {
+        console.debug('Debug: Client connected successfully');
+      }
+    });
+}
+
+async function initHarmonix(): Promise<Harmonix> {
+  try {
+    console.log('Starting Harmonix initialization');
+    const config = await Effect.runPromise(loadConfig);
+    const token = await Effect.runPromise(loadToken);
+    const database = await Effect.runPromise(initDatabase);
+
+    const clientConfig: ClientConfig = {
+      options: { ...config, token, database },
+      featureFlags: config.featureFlags,
+      token,
+      intents: [
+        'guilds',
+        'guildMessages',
+        'guildMessageReactions',
+        'directMessages',
+        'directMessageReactions',
+        'guildVoiceStates'
+      ]
+    };
+
+    const harmonix = await Effect.runPromise(TerraClient.initializeClient(clientConfig));
+
+    if (harmonix.options.debug) {
+      console.log('Debug: Initializing client');
+    }
+
+    try {
+      await Effect.runPromise(TerraClient.loadCommands(harmonix));
+      if (harmonix.options.debug) {
+        console.log('Debug: Loading commands');
+      }
+    } catch (error) {
+      console.error('Error loading commands:', error);
+      if (error instanceof Error) {
+        console.error('Stack trace:', error.stack);
+      }
+    }
+
+    await Effect.runPromise(TerraClient.loadEvents(harmonix));
+    if (harmonix.options.debug) {
+      console.log('Debug: Loading events');
+    }
+
+    setupEventListeners(harmonix);
+    if (harmonix.options.debug) {
+      console.log('Debug: Setting up event listeners');
+    }
+  
+
+    await Effect.runPromise(TerraClient.startClient(harmonix));
+    if (harmonix.options.debug) {
+      console.log('Debug: Starting client');
+      console.log('Debug: Harmonix initialization completed');
+    }
+
+    return harmonix;
+  } catch (error) {
+    console.error('Error initializing Harmonix:', error);
+    throw error;
+  }
+}
 // Added Effect-based error handling
 function initializeManager(harmonix: Harmonix): void {
   Effect.runPromise(
@@ -260,7 +392,8 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
   // Debug logging to show folder names where matches were found
   const folderNames = new Set(files.map(file => path.dirname(file)));
   if (harmonix.options.debug) {
-    console.debug(`[DEBUG] Matches found in folders: ${Array.from(folderNames).join(', ')}`);
+    console.log(`Files found in ${dir}:`, files);
+    console.info(`[DEBUG] Matches found in folders: ${Array.from(folderNames).join(', ')}`);
 
   }
   
@@ -269,16 +402,83 @@ async function scanFiles(harmonix: Harmonix, dir: string): Promise<string[]> {
 
 async function loadCommands(harmonix: Harmonix): Promise<void> {
   const files = await scanFiles(harmonix, 'commands');
+  console.log(`Total command files found: ${files.length}`);
 
-  for (const file of files) {
-    if (harmonix.options.debug) {
-      console.debug(`[DEBUG] Attempting to load command from file: ${file}`);
+  let loadedRegularCommands = 0;
+  let loadedSlashCommands = 0;
+  let skippedCommands = 0;
+  let loadedFiles = new Set<string>();
+  let erroredFiles = new Set<string>();
 
+  const loadCommandsProcess = async () => {
+    for (const file of files) {
+      if (loadedFiles.has(file) || erroredFiles.has(file)) {
+        skippedCommands++;
+        continue;
+      }
+
+      if (harmonix.options.debug) {
+        console.debug(`[DEBUG] Attempting to load command from file: ${file}`);
+      }
+      
+      try {
+        const commandModule = await import(file);
+        let command: HarmonixCommand;
+
+        if (typeof commandModule.default === 'function' && commandModule.default.build) {
+          command = commandModule.default.build();
+          consola.info(colors.cyan(` Command ${file} uses defineCommand structure`));
+        } else if (typeof commandModule.default === 'object' && 'execute' in commandModule.default) {
+          command = commandModule.default;
+          consola.info(colors.cyan(` Command ${file} uses regular command structure`));
+        } else {
+          throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
+        }
+
+        if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
+          if (
+            (harmonix.options.featureFlags?.disabledCommands.includes(command.name)) ||
+            (harmonix.options.featureFlags?.betaCommands.includes(command.name) && !command.beta)
+          ) {
+            if (harmonix.options.debug) {
+              console.debug(`[DEBUG] Skipping ${harmonix.options.featureFlags?.disabledCommands.includes(command.name) ? 'disabled' : 'non-beta'} command: ${command.name}`);
+            }
+            skippedCommands++;
+            continue;
+          }
+          const relativePath = path.relative(harmonix.options.dirs.commands, file);
+          const folderPath = path.dirname(relativePath);
+          const folderName = folderPath === '.' ? 'main' : folderPath;
+          
+          if (command.slashCommand) {
+            harmonix.slashCommands.set(command.name, command);
+            consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded slash command: ${command.name}`));
+            loadedSlashCommands++;
+          } else {
+            harmonix.commands.set(command.name, command);
+            consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded command: ${command.name}`));
+            loadedRegularCommands++;
+          }
+          loadedFiles.add(file);
+        } else {
+          throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
+        }
+      } catch (error) {
+        consola.error(colors.red(`An error has occurred while loading command from file: ${file}`));
+        consola.error(colors.red(`Error details: ${error instanceof Error ? error.message : String(error)}`));
+        consola.error(colors.red('Stack trace:'));
+        if (error instanceof Error && error.stack) {
+          consola.error(colors.red(error.stack));
+        }
+        erroredFiles.add(file);
+      }
     }
-    
-    await Effect.runPromise(
-      Effect.tryPromise({
-        try: async () => {
+  };
+
+  const loadNotFailedCommandsProcess = async () => {
+    for (const file of files) {
+      if (!loadedFiles.has(file) && !erroredFiles.has(file)) {
+        try {
           const commandModule = await import(file);
           let command: HarmonixCommand;
 
@@ -293,15 +493,6 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
           }
 
           if (command && typeof command === 'object' && 'name' in command && 'execute' in command) {
-            if (
-              (harmonix.options.featureFlags?.disabledCommands.includes(command.name)) ||
-              (harmonix.options.featureFlags?.betaCommands.includes(command.name) && !command.beta)
-            ) {
-              if (harmonix.options.debug) {
-                console.debug(`[DEBUG] Skipping ${harmonix.options.featureFlags?.disabledCommands.includes(command.name) ? 'disabled' : 'non-beta'} command: ${command.name}`);
-              }
-              return;
-            }
             const relativePath = path.relative(harmonix.options.dirs.commands, file);
             const folderPath = path.dirname(relativePath);
             const folderName = folderPath === '.' ? 'main' : folderPath;
@@ -309,44 +500,36 @@ async function loadCommands(harmonix: Harmonix): Promise<void> {
             if (command.slashCommand) {
               harmonix.slashCommands.set(command.name, command);
               consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded slash command: ${command.name}`));
+              loadedSlashCommands++;
             } else {
               harmonix.commands.set(command.name, command);
               consola.info(colors.blueBright(`[${folderName}] `) + colors.blue(`Loaded command: ${command.name}`));
+              loadedRegularCommands++;
             }
+            loadedFiles.add(file);
           } else {
             throw new Error(`Invalid command structure in file: ${file}. Please check for incorrect import statements or other issues.`);
           }
-        },        catch: (error: Error) => Effect.sync(() => {
-          consola.error(colors.red(`An error has occurred while loading command from file: ${file}`));
-          
-          let errorMessage: string;
-          let stackTrace: string;
-          if (error instanceof Error) {
-            errorMessage = error.message;
-            stackTrace = error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
-            if ('cause' in error && error.cause instanceof Error) {
-              errorMessage = error.cause.message;
-              stackTrace = error.cause.stack ? error.cause.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available';
-            }
-          } else {
-            errorMessage = String(error);
-            stackTrace = 'No stack trace available';
-          }
+        } catch (error) {
+          consola.error(colors.red(`Failed to load command from file: ${file}`));
+          consola.error(colors.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+          erroredFiles.add(file);
+          skippedCommands++;
+        }
+      }
+    }
+  };
 
-          consola.error(colors.red(`Error details: ${errorMessage}`));
-          consola.error(colors.red('Stack trace:'));
-          consola.error(colors.red(stackTrace));
-
-          // Log the error but continue execution
-          consola.warn(colors.yellow(`An error occured in : ${file} - Bot will continue running`));
-        })
-      })
-    );
+  try {
+    await loadCommandsProcess();
+  } catch (error) {
+    consola.error(colors.red('Error loading commands:'), error);
+    consola.warn(colors.yellow('Attempting to load commands that did not fail...'));
+    await loadNotFailedCommandsProcess();
   }
 
-  consola.info(colors.green(` Loaded ${harmonix.commands.size} regular commands and ${harmonix.slashCommands.size} slash commands.`));
+  consola.info(colors.green(` Loaded ${loadedRegularCommands} regular commands and ${loadedSlashCommands} slash commands. Skipped ${skippedCommands} commands due to errors.`));
 }
-
 
 // Load events with Effect-based error handling
 async function loadEvents(harmonix: Harmonix): Promise<void> {
@@ -354,7 +537,6 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
   for (const file of files) {
     if (harmonix.options.debug) {
       console.debug(`[DEBUG] Attempting to load event from file: ${file}`);
-
     }
     
     await Effect.runPromise(
@@ -374,9 +556,6 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
           }
 
           harmonix.events.set(event.name, event);
-          harmonix.client.on(event.name as keyof ClientEvents, (...args: any[]) => 
-            event.execute(harmonix, ...args)
-          );
 
           if (harmonix.options.debug) {
             consola.info(colors.blue(` Loaded event: ${event.name}`));
@@ -389,6 +568,18 @@ async function loadEvents(harmonix: Harmonix): Promise<void> {
       })
     );
   }
+}
+
+function setupEventListeners(harmonix: Harmonix): void {
+  consola.info(colors.cyan('Setting up event listeners...'));
+
+  harmonix.events.forEach((event, eventName) => {
+    harmonix.client.on(eventName as keyof ClientEvents, (...args: any[]) => 
+      event.execute(harmonix, ...args)
+    );
+  });
+
+  consola.success(colors.green('Event listeners set up successfully.'));
 }
 
 function watchAndReload(harmonix: Harmonix): void {
@@ -503,12 +694,12 @@ async function main() {
 
         // Create large font version of initMessage
         const largeFont = [
-                "┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
-                "│ I │ │ N │ │ I │ │ T │ │ I │ │ A │ │ L │ │ I │ │ Z │ │ I │ │ N │ │ G │",
-                "└───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘",
-                "                ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
-                "                │ T │ │ E │ │ R │ │ R │ │ A │",
-                "                └───┘ └───┘ └───┘ └───┘ └───┘"
+          "┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+          "│ I │ │ N │ │ I │ │ T │ │ I │ │ A │ │ L │ │ I │ │ Z │ │ I │ │ N │ │ G │",
+          "└───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘",
+          "                ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐",
+          "                │ T │ │ E │ │ R │ │ R │ │ A │",
+          "                └───┘ └───┘ └───┘ └───┘ └───┘"
         ];
 
         console.log('\n');
@@ -517,21 +708,20 @@ async function main() {
         const leftPadding = Math.floor((terminalWidth - maxAsciiWidth - largeMessageWidth - padding.length) / 2);
 
         asciiLines.forEach((line, index) => {
-                const paddedLine = line.padEnd(maxAsciiWidth);
-                const largeFontLine = largeFont[index] || '';
-                console.log('\x1b[94m' + ' '.repeat(leftPadding) + paddedLine + '\x1b[0m' + padding + colors.blue(largeFontLine));
+          const paddedLine = line.padEnd(maxAsciiWidth);
+          const largeFontLine = largeFont[index] || '';
+          console.log('\x1b[94m' + ' '.repeat(leftPadding) + paddedLine + '\x1b[0m' + padding + colors.blue(largeFontLine));
         });
 
         console.log('\n');
         if (harmonix.options.debug) {
           console.debug(`The bot is running in debug mode.`);
         }
-        await Effect.runPromise(Effect.tryPromise(() => loadCommands(harmonix)));
-        await Effect.runPromise(Effect.tryPromise(() => loadEvents(harmonix)));
 
         // Launch the server
         await Effect.runPromise(Effect.tryPromise(() => setupServer(harmonix)));
 
+        // Set up raw WebSocket event handling for Erela.js
         harmonix.client.on("rawWS", (packet: any) => {
           Effect.runPromise(Effect.tryPromise({
             try: async () => {
@@ -549,30 +739,33 @@ async function main() {
         harmonix.client.on('error', (error: Error, id: string) => {
           consola.error(colors.red('Command Error:'), error);
           if (id) {
-              harmonix.client.createMessage(id, {
+            harmonix.client.createMessage(id, {
               embed: {
                 title: 'Command Error',
                 description: 'An error occurred while executing the command.',
                 color: 0xFF0000,
                 fields: [
-                {
-                  name: 'Error Details',
-                  value: `\`\`\`${error.message}\`\`\``
-                }
+                  {
+                    name: 'Error Details',
+                    value: `\`\`\`${error.message}\`\`\``
+                  }
                 ]
               }
             }).catch(err => {
-            consola.error(colors.red('Failed to send error message:'), err);
-          });
-        }   
-        consola.warn(colors.yellow('Bot will continue running. The command error has been logged above.'));
-      });        
-      if (harmonix.options.debug) {
+              consola.error(colors.red('Failed to send error message:'), err);
+            });
+          }   
+          consola.warn(colors.yellow('Bot will continue running. The command error has been logged above.'));
+        });        
+
+        if (harmonix.options.debug) {
           watchAndReload(harmonix);
         }
 
-        await Effect.runPromise(Effect.tryPromise(() => harmonix.client.connect()));
-      },            catch: (error: Error) => {
+        // Remove the duplicate call to TerraClient.startClient
+        // await Effect.runPromise(TerraClient.startClient(harmonix));
+      },
+      catch: (error: Error) => {
         console.error(`An error has occurred in Harmonix core`);
         
         let errorMessage: string;
@@ -622,20 +815,24 @@ async function main() {
   });
 }
 
-  // Run the bot
+// Run the bot
 Effect.runPromise(
-    Effect.catchAll(
-      Effect.tryPromise(() => main()),
-      (error) => Effect.sync(() => {
-        consola.error(colors.red('An error occurred:'), error);
-        consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
-      })
-    )
+  Effect.catchAll(
+    Effect.tryPromise(() => main()),
+    (error) => Effect.sync(() => {
+      consola.error(colors.red('An error occurred:'), error);
+      consola.error(colors.red('Stack trace:'));
+      error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+      consola.warn(colors.yellow('Bot will continue running. The error has been logged above.'));
+    })
+  )
 );
 
 // Global error handling
 process.on('uncaughtException', (error) => {
     consola.error(colors.red('Uncaught Exception:'), error);
+    consola.error(colors.red('Stack trace:'));
+    error.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
   
     if (error.message.includes('Connection reset by peer')) {
       consola.warn(colors.yellow('Connection reset by peer detected. Attempting to reload the bot...'));
@@ -652,6 +849,11 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     consola.error(colors.red('Unhandled Rejection at:'), promise, 'reason:', reason);
+    
+    if (reason instanceof Error) {
+      consola.error(colors.red('Stack trace:'));
+      reason.stack?.split('\n').forEach(line => consola.error(colors.red(line)));
+    }
   
     if (reason instanceof Error && reason.message.includes('Connection reset by peer')) {
       consola.warn(colors.yellow('Connection reset by peer detected in unhandled rejection. Attempting to reload the bot...'));

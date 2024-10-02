@@ -106,7 +106,7 @@ async function main() {
 ```   
 Terra uses a flexible command structure defined in src/code-utils/definingcommand.ts. Here's how to create a command:
 ```
-import { defineCommand } from '../code-utils/definingcommand';
+import { defineCommand } from '../../discordkit/utils/definingcommand';
 
 export default class extends defineCommand({
   name: "commandname",

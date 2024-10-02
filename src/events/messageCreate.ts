@@ -1,8 +1,8 @@
-import { defineEvent } from '../code-utils/definingevent';
-import { Harmonix } from '../typedefinitions/harmonixtypes';
-import { EmbedOptions, Message, PossiblyUncachedTextableChannel } from 'eris';
+import { defineEvent } from '../../discordkit/utils/event';
+import { Harmonix } from '../../discordkit/types/harmonixtypes';
+import { Interaction, CommandInteraction, ComponentInteraction, EmbedOptions, Message, PossiblyUncachedTextableChannel } from 'eris';
 import { Effect } from 'effect';
-import { logInfo, logError } from '../code-utils/centralloggingfactory';
+import { logError } from '../../discordkit/utils/centralloggingfactory';
 import { colors } from 'consola/utils';
 import consola from 'consola';
 
