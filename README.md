@@ -104,9 +104,29 @@ async function main() {
   // ... (event listeners and error handling)
 }
 ```   
-Terra uses a flexible command structure defined in src/code-utils/definingcommand.ts. Here's how to create a command:
+Terra uses a flexible command structure defined in discordkit/utils/command.ts. 
+The command.ts file in the Terra project provides a robust and flexible structure for defining commands, which is essential for several reasons:
+
+Slash Command Support: Regular Eris has limited support for slash commands. By using the command.ts structure, Terra seamlessly integrates slash command functionality, allowing developers to create both traditional and slash commands with ease.
+
+Cleaner and More Readable Structure: The class-based approach with static members offers a clear and organized way to define commands. It separates configuration from execution logic, making the code more maintainable and easier to understand at a glance.
+
+Consistent Error Handling: The command structure incorporates built-in error handling, ensuring that all commands have a standardized way of dealing with exceptions. This consistency improves the overall reliability of the bot.
+
+Type Safety: By leveraging TypeScript's type system, the command structure provides better type checking and autocompletion, reducing the likelihood of runtime errors.
+
+Extensibility: The class-based approach allows for easy extension and modification of command behavior through inheritance if needed.
+
+Precondition and Permission Handling: The structure includes built-in support for command permissions and owner-only restrictions, simplifying the implementation of access control.
+
+Unified Interface: By using a consistent structure for all commands, it becomes easier to implement features like command help generation or command management systems.
+
+Hot Reloading Support: The structure is designed to work well with hot reloading, facilitating easier development and testing of commands.
+
+Using this command structure results in a more stable, maintainable, and feature-rich codebase for Terra, addressing the limitations of vanilla TypeScript structures when working with Eris and slash commands.
+Here's how to create a command:
 ```
-import { defineCommand } from '../../discordkit/utils/definingcommand';
+import { defineCommand } from '../../discordkit/utils/command';
 
 export default class extends defineCommand({
   name: "commandname",
