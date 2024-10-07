@@ -1,0 +1,41 @@
+{
+    "name": "terra-discord.bot",
+    "namespace": true,
+    "suffix": ".res.js",
+    "jsx": {
+      "version": 4,
+      "mode": "automatic"
+    },
+    "bsc-flags": [
+      "-bs-super-errors",
+      "-bs-no-version-header",
+      "-open RescriptCore"
+    ],
+    "sources": {
+      "dir": "src",
+      "subdirs": true
+    },
+    "package-specs": [
+      {
+        "module": "es6",
+        "in-source": true
+      }
+    ],
+    "bs-dependencies": [
+      "@glennsl/rescript-fetch",
+      "@rescript/core",
+      "@rescript/react",
+      "rescript-webapi"
+      
+    ],
+    "bs-dev-dependencies": [],
+    "gentypeconfig": {
+      "module": "esmodule",
+      "moduleResolution": "node",
+      "generatedFileExtension": ".gen.tsx",
+      "debug": {
+        "all": false,
+        "basic": false
+      }
+    }
+}
