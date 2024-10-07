@@ -112,8 +112,9 @@ async function main() {
   await loadEvents(harmonix);
   // ... (event listeners and error handling)
 }
-```   
-Terra uses a flexible command structure defined in discordkit/utils/command.ts. 
+```
+
+Terra uses a flexible command structure defined in discordkit/utils/command.ts.
 The command.ts file in the Terra project provides a robust and flexible structure for defining commands, which is essential for several reasons:
 
 Slash Command Support: Regular Eris has limited support for slash commands. By using the command.ts structure, Terra seamlessly integrates slash command functionality, allowing developers to create both traditional and slash commands with ease.
@@ -134,6 +135,7 @@ Hot Reloading Support: The structure is designed to work well with hot reloading
 
 Using this command structure results in a more stable, maintainable, and feature-rich codebase for Terra, addressing the limitations of vanilla TypeScript structures when working with Eris and slash commands.
 Here's how to create a command:
+
 ```
 import { defineCommand } from '../../discordkit/utils/command';
 
