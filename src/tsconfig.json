@@ -2,8 +2,6 @@
   "compilerOptions": {
     "module": "ES2022",
     "target": "es2022",
-    "allowSyntheticDefaultImports": true,
-    
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
@@ -22,7 +20,6 @@
     "noStrictGenericChecks": true,
     "noImplicitAny": false,
     "suppressImplicitAnyIndexErrors":true,
-    
     "paths": {
       "*": [
         "node_modules/*",
@@ -33,9 +30,6 @@
   },
   "include": [
     "src/**/*",
-    "src/**/*.res",
-    "src/**/*.res.js",
-    "src/**/*.gen.tsx",
     "next-env.d.ts"
   ],
   "exclude": [
