@@ -112,7 +112,6 @@ async function main() {
   await loadEvents(harmonix);
   // ... (event listeners and error handling)
 }
-
 ```
 
 Terra uses a flexible command structure defined in discordkit/utils/command.ts.
@@ -139,7 +138,6 @@ Here's how to create a command:
 
 ```
 import { defineCommand } from '../../discordkit/utils/command';
-
 
 export default class extends defineCommand({
   name: "commandname",
