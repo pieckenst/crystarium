@@ -35,30 +35,37 @@ export default class extends defineCommand({
     static async execute(harmonix: Harmonix, interaction: CommandInteraction | Message<TextableChannel>, args: { server?: string, character: string }) {
         if (harmonix.options.debug) {
             console.debug('[Lodestone] Debug: Starting execution');
-            console.debug('[Lodestone] Debug: Args:', args);
+            console.debug('[Lodestone] Debug: Interaction type:', interaction.constructor.name);
         }
+    
+        let character: string | undefined;
+        let server: string | undefined;
     
         if (interaction instanceof CommandInteraction) {
-            await interaction.defer();
-            if (harmonix.options.debug) {
-                console.debug('[Lodestone] Debug: Interaction deferred');
-            }
+            const characterOption = interaction.data.options?.find(opt => opt.name === 'character');
+            const serverOption = interaction.data.options?.find(opt => opt.name === 'server');
+            character = characterOption && 'value' in characterOption ? characterOption.value as string : undefined;
+            server = serverOption && 'value' in serverOption ? serverOption.value as string : undefined;
+        } else {
+            // Handle regular message command if needed
+            server = args.server;
+            character = args.character;
         }
     
-        const { character, server } = args;
+        if (harmonix.options.debug) {
+            console.debug('[Lodestone] Debug: Character:', character);
+            console.debug('[Lodestone] Debug: Server:', server);
+        }
+    
         let characterId: string | null = null;
         let emoji;
     
-        if (harmonix.options.debug) {
-            console.debug('[Lodestone] Debug: Determining character ID');
-        }
-    
-        if (/^\d+$/.test(character)) {
+        if (character && /^\d+$/.test(character)) {
             characterId = character;
             if (harmonix.options.debug) {
                 console.debug('[Lodestone] Debug: Character ID provided directly:', characterId);
             }
-        } else if (server) {
+        } else if (character && server) {
             if (harmonix.options.debug) {
                 console.debug('[Lodestone] Debug: Searching for character:', character, 'on server:', server);
             }
@@ -72,6 +79,18 @@ export default class extends defineCommand({
             await this.sendErrorMessage(harmonix, interaction, 'Character not found. Please check the server name and character name, or provide a valid Lodestone ID.');
             return;
         }
+
+        if (harmonix.options.debug) {
+            console.debug('[Lodestone] Debug: Starting execution');
+        }
+    
+        if (interaction instanceof CommandInteraction) {
+            await interaction.defer();
+            if (harmonix.options.debug) {
+                console.debug('[Lodestone] Debug: Interaction deferred');
+            }
+        }
+    
 
         try {
             if (harmonix.options.debug) {
