@@ -35,27 +35,30 @@ export default class extends defineCommand({
     static async execute(harmonix: Harmonix, interaction: CommandInteraction | Message<TextableChannel>, args: { type: string, status: string } | string[]) {
         let statusType: Constants['ActivityTypes'][keyof Constants['ActivityTypes']];
         let setActivity: string;
-      
+  
         if (harmonix.options.debug) {
             console.log(`Debug: Interaction type: ${interaction instanceof CommandInteraction ? 'CommandInteraction' : 'Message'}`);
-            console.log(`Debug: Args: ${JSON.stringify(args)}`);
+            console.log(`Debug: Args:`, args);
         }
 
         if (interaction instanceof CommandInteraction) {
-            statusType = Constants.ActivityTypes[(args as { type: string, status: string }).type as keyof typeof Constants.ActivityTypes];
-            setActivity = (args as { type: string, status: string }).status;
-            if (harmonix.options.debug) {
-                console.log(`Debug: StatusType: ${statusType}`);
-                console.log(`Debug: SetActivity: ${setActivity}`);
+            const typeOption = interaction.data.options?.find(opt => opt.name === 'type');
+            const statusOption = interaction.data.options?.find(opt => opt.name === 'status');
+            if (typeOption && 'value' in typeOption && statusOption && 'value' in statusOption) {
+                statusType = Constants.ActivityTypes[typeOption.value as keyof typeof Constants.ActivityTypes];
+                setActivity = statusOption.value as string;
+            } else {
+                throw new Error('Invalid interaction options');
             }
         } else {
             const [type, ...statusParts] = args as string[];
             statusType = Constants.ActivityTypes[type.toUpperCase() as keyof typeof Constants.ActivityTypes];
             setActivity = statusParts.join(" ");
-            if (harmonix.options.debug) {
-                console.log(`Debug: StatusType: ${statusType}`);
-                console.log(`Debug: SetActivity: ${setActivity}`);
-            }
+        }
+
+        if (harmonix.options.debug) {
+            console.log(`Debug: StatusType: ${statusType}`);
+            console.log(`Debug: SetActivity: ${setActivity}`);
         }
 
         try {
@@ -111,8 +114,7 @@ export default class extends defineCommand({
                 await harmonix.client.createMessage(interaction.channel.id, errorResponse);
             }
         }
-    }
-    static getStatusType(type: string): BotActivityType {
+    }    static getStatusType(type: string): BotActivityType {
         switch (type.toUpperCase()) {
             case "PLAYING": return Constants.ActivityTypes.GAME;
             case "STREAMING": return Constants.ActivityTypes.STREAMING;

@@ -611,7 +611,15 @@ function watchAndReload(harmonix: Harmonix): void {
           ],
           timestamp: new Date().toISOString()
         };
-        await dmChannel.createMessage({ embed });
+        try {
+          await dmChannel.createMessage({ embed });
+        } catch (dmError) {
+          if (dmError.code === 50007) {
+            consola.warn(colors.yellow(`Cannot send DM to owner: DMs are disabled or blocked.`));
+          } else {
+            throw dmError;
+          }
+        }
       }
     } catch (error) {
       consola.error(colors.red(`Failed to send DM to owner: ${error.message}`));
