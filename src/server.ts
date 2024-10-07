@@ -1,28 +1,28 @@
-import Fastify from 'fastify';
-import { Harmonix } from './typedefinitions/harmonixtypes';
-import { Guild } from 'eris';
-import fs from 'fs';
-import path from 'path';
-import cors from '@fastify/cors';
-import { spawn } from 'child_process';
+import Fastify from "fastify";
+import { Harmonix } from "./typedefinitions/harmonixtypes";
+import { Guild } from "eris";
+import fs from "fs";
+import path from "path";
+import cors from "@fastify/cors";
+import { spawn } from "child_process";
 
-const dev = process.env.NODE_ENV !== 'production';
-import { resolve } from 'path';
-const dashboardPath = resolve(process.cwd(), '..', 'dashboard');
+const dev = process.env.NODE_ENV !== "production";
+import { resolve } from "path";
+const dashboardPath = resolve(process.cwd(), "..", "dashboard");
 
 // Debug logging for Next.js paths
-console.log('Current working directory:', process.cwd());
-console.log('Dashboard path:', dashboardPath);
-console.log('Contents of dashboard directory:');
-fs.readdirSync(dashboardPath).forEach(file => {
+console.log("Current working directory:", process.cwd());
+console.log("Dashboard path:", dashboardPath);
+console.log("Contents of dashboard directory:");
+fs.readdirSync(dashboardPath).forEach((file) => {
   console.log(file);
 });
 
 // Check for 'pages' and 'app' directories
-const pagesDir = path.join(dashboardPath, 'pages');
-const appDir = path.join(dashboardPath, 'app');
-console.log('Pages directory exists:', fs.existsSync(pagesDir));
-console.log('App directory exists:', fs.existsSync(appDir));
+const pagesDir = path.join(dashboardPath, "pages");
+const appDir = path.join(dashboardPath, "app");
+console.log("Pages directory exists:", fs.existsSync(pagesDir));
+console.log("App directory exists:", fs.existsSync(appDir));
 
 if (!fs.existsSync(dashboardPath)) {
   console.error(`Dashboard folder not found at ${dashboardPath}`);
@@ -30,8 +30,12 @@ if (!fs.existsSync(dashboardPath)) {
 }
 
 if (!fs.existsSync(pagesDir) && !fs.existsSync(appDir)) {
-  console.error(`Neither 'pages' nor 'app' directory found in ${dashboardPath}`);
-  throw new Error(`Please create either a 'pages' or 'app' directory in ${dashboardPath}`);
+  console.error(
+    `Neither 'pages' nor 'app' directory found in ${dashboardPath}`,
+  );
+  throw new Error(
+    `Please create either a 'pages' or 'app' directory in ${dashboardPath}`,
+  );
 }
 
 const apiServer = Fastify();
@@ -39,14 +43,14 @@ const apiServer = Fastify();
 export async function setupServer(harmonix: Harmonix) {
   // Enable CORS for API server
   await apiServer.register(cors, {
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   });
 
   // API routes
-  apiServer.get('/api/commands', async (request, reply) => {
-    const commands = Array.from(harmonix.commands.values()).map(cmd => ({
+  apiServer.get("/api/commands", async (request, reply) => {
+    const commands = Array.from(harmonix.commands.values()).map((cmd) => ({
       name: cmd.name,
       description: cmd.description,
       category: cmd.category,
@@ -54,18 +58,18 @@ export async function setupServer(harmonix: Harmonix) {
     return reply.status(200).send(commands);
   });
 
-  apiServer.get('/api/featureflags', async (request, reply) => {
+  apiServer.get("/api/featureflags", async (request, reply) => {
     return reply.status(200).send(harmonix.options.featureFlags);
   });
 
-  apiServer.get('/api/servers', async (request, reply) => {
+  apiServer.get("/api/servers", async (request, reply) => {
     const { q, offset } = request.query as { q?: string; offset?: string };
-    const searchTerm = q?.toLowerCase() || '';
-    const offsetNum = parseInt(offset || '0', 10);
+    const searchTerm = q?.toLowerCase() || "";
+    const offsetNum = parseInt(offset || "0", 10);
 
     const allServers = Array.from(harmonix.client.guilds.values());
     const filteredServers = allServers.filter((server: Guild) =>
-      server.name.toLowerCase().includes(searchTerm)
+      server.name.toLowerCase().includes(searchTerm),
     );
 
     const paginatedServers = filteredServers.slice(offsetNum, offsetNum + 20);
@@ -82,51 +86,57 @@ export async function setupServer(harmonix: Harmonix) {
     });
   });
 
-  apiServer.post('/api/bot/restart', async (request, reply) => {
-    console.log('Restarting bot...');
+  apiServer.post("/api/bot/restart", async (request, reply) => {
+    console.log("Restarting bot...");
     // Implement bot restart logic here
-    return reply.status(200).send({ message: 'Bot restarted successfully' });
+    return reply.status(200).send({ message: "Bot restarted successfully" });
   });
 
-  apiServer.get('/api/logs/:serverId', async (request, reply) => {
+  apiServer.get("/api/logs/:serverId", async (request, reply) => {
     const { serverId } = request.params as { serverId: string };
     // Implement logic to fetch logs for the specific server
-    const logs = [`Log 1 for server ${serverId}`, `Log 2 for server ${serverId}`];
+    const logs = [
+      `Log 1 for server ${serverId}`,
+      `Log 2 for server ${serverId}`,
+    ];
     return reply.status(200).send(logs);
   });
 
   // Error handling for API server
   apiServer.setErrorHandler((error, request, reply) => {
     console.error(error);
-    reply.status(500).send({ error: 'Internal Server Error' });
+    reply.status(500).send({ error: "Internal Server Error" });
   });
 
   // Start the Next.js dashboard server
-  const nextProcess = spawn('npm', ['run', 'dev'], { cwd: dashboardPath, stdio: 'inherit' });
-  nextProcess.on('error', (err) => {
-    console.error('Failed to start Next.js process:', err);
+  const nextProcess = spawn("npm", ["run", "dev"], {
+    cwd: dashboardPath,
+    stdio: "inherit",
   });
-  console.log('> Next.js dashboard starting...');
+  nextProcess.on("error", (err) => {
+    console.error("Failed to start Next.js process:", err);
+  });
+  console.log("> Next.js dashboard starting...");
 
   // Start the API server
   try {
     await apiServer.listen({ port: 3001 });
-    console.log('> API server ready on http://localhost:3001');
+    console.log("> API server ready on http://localhost:3001");
   } catch (err) {
-    console.error('Error starting API server:', err);
+    console.error("Error starting API server:", err);
     process.exit(1);
   }
 }
 
 function keepAlive() {
   return new Promise<void>((resolve, reject) => {
-    setupServer({} as Harmonix)  // Pass a mock Harmonix object for testing
+    setupServer({} as Harmonix) // Pass a mock Harmonix object for testing
       .then(() => {
         console.log("Servers are Ready!");
         resolve();
       })
       .catch((err) => {
-        console.error('Error starting servers:', err);
+        console.error("Error starting servers:", err);
         reject(err);
       });
   });

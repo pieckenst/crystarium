@@ -37,16 +37,21 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
 1. Install Bun:
 
    For macOS and Linux:
+
    ```bash
    curl -fsSL https://bun.sh/install | bash
    ```
-   For Windows: 
+
+   For Windows:
+
    ```
    powershell -c "irm bun.sh/install.ps1|iex"
    ```
+
    Note: Bun requires a minimum of Windows 10 version 1809.
 
 2. Verify the installation:
+
    ```bash
    bun --version
    ```
@@ -64,38 +69,42 @@ Terra is a Discord bot written in TypeScript using the Eris library for Discord 
    ```
    token=YOUR_DISCORD_BOT_TOKEN
    ```
-6.  Create a config.json file in the root directory with the following structure: 
-   ```json
-     {
-      "prefix": "!",
-      "dirs": {
-         "commands": "./commands",
-         "events": "./events"
-      },
-      "debug": true,
-      "clientID": "YOUR_SPOTIFY_CLIENT_ID",
-      "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
-      "host": "localhost",
-      "port": 2333,
-      "password": "youshallnotpass",
-      "ownerId": "YOUR_DISCORD_USER_ID"
-     }
-   ```
+6. Create a config.json file in the root directory with the following structure:
 
-
+```json
+{
+  "prefix": "!",
+  "dirs": {
+    "commands": "./commands",
+    "events": "./events"
+  },
+  "debug": true,
+  "clientID": "YOUR_SPOTIFY_CLIENT_ID",
+  "clientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
+  "host": "localhost",
+  "port": 2333,
+  "password": "youshallnotpass",
+  "ownerId": "YOUR_DISCORD_USER_ID"
+}
+```
 
 ## Hosting
+
 We recommend using bun package manager to launch this TypeScript project. To start the bot, run:
+
 ```bash
 bun run core.ts
 ```
 
 **Command examples:**
+
 - `!lodestone Cerberus Zenos yae Galvus`: This command fetches FFXIV character information from Lodestone..
 - `!ban [user]`: Bans a user from the server.
 
 ## Code Structure
+
 The core file initializes the bot and sets up command and event handling:
+
 ```
 async function main() {
   const harmonix = await initHarmonix();
@@ -103,8 +112,10 @@ async function main() {
   await loadEvents(harmonix);
   // ... (event listeners and error handling)
 }
-```   
+```
+
 Terra uses a flexible command structure defined in src/code-utils/definingcommand.ts. Here's how to create a command:
+
 ```
 import { defineCommand } from '../code-utils/definingcommand';
 
@@ -124,13 +135,14 @@ export default class extends defineCommand({
   }
 }
 
-```   
-This structure allows for easy creation of both regular and slash commands, with built-in permission checks and owner-only restrictions.
+```
 
+This structure allows for easy creation of both regular and slash commands, with built-in permission checks and owner-only restrictions.
 
 ## Contributing
 
 We welcome contributions! Please follow these steps:
+
 1. Fork the repository.
 2. Create a new branch for your feature or fix.
 3. Submit a pull request describing your changes.
@@ -140,8 +152,6 @@ We welcome contributions! Please follow these steps:
 To run this project, you will need to add the following environment variables to your .env file
 
 `token` - Your Discord bot token
-
-
 
 ## Feedback
 
