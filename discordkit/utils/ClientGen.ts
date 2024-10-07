@@ -1,7 +1,11 @@
-import { Effect } from 'effect';
-import { HarmonixOptions, Harmonix, FeatureFlags } from '../../discordkit/types/harmonixtypes';
-import Eris from 'eris';
-import { Manager } from 'erela.js';
+import { Effect } from "effect";
+import {
+  HarmonixOptions,
+  Harmonix,
+  FeatureFlags,
+} from "../../discordkit/types/harmonixtypes";
+import Eris from "eris";
+import { Manager } from "erela.js";
 
 export interface ClientConfig {
   options: HarmonixOptions;
@@ -17,17 +21,21 @@ export interface ClientBuilder {
 export class ClientGen {
   static defineClientStart(): ClientBuilder {
     return {
-      buildClient: (config: ClientConfig): Effect.Effect<Harmonix, Error, never> => {
+      buildClient: (
+        config: ClientConfig,
+      ): Effect.Effect<Harmonix, Error, never> => {
         return Effect.tryPromise({
           try: async () => {
             if (!Eris.Client) {
-              throw new Error('Eris.Client is undefined. Make sure Eris is properly imported.');
+              throw new Error(
+                "Eris.Client is undefined. Make sure Eris is properly imported.",
+              );
             }
             const client = new Eris.Client(config.token, {
               intents: config.intents || [],
-              restMode: true
+              restMode: true,
             });
-  
+
             return {
               client,
               options: config.options,
@@ -35,19 +43,20 @@ export class ClientGen {
               slashCommands: new Eris.Collection(),
               events: new Eris.Collection(),
               startTime: new Date(),
-              manager: {} as Manager
+              manager: {} as Manager,
             } as Harmonix;
           },
           catch: (error: unknown) => {
-            console.error('Error in ClientGen.buildClient:', error);
+            console.error("Error in ClientGen.buildClient:", error);
             if (error instanceof Error) {
-              console.error('Error stack:', error.stack);
+              console.error("Error stack:", error.stack);
             }
-            return new Error(`Failed to build client: ${error instanceof Error ? error.message : String(error)}`);
-          }
+            return new Error(
+              `Failed to build client: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          },
         });
-      
-      }
+      },
     };
   }
 }

@@ -1,30 +1,29 @@
-
-import Eris, { Message, TextableChannel, Collection } from 'eris';
-import { Manager } from 'erela.js';
-import { ApplicationCommandOptions } from 'eris';
-import { Constants } from 'eris';
-import { Knex } from 'knex';
-
-
+import Eris, { Message, TextableChannel, Collection } from "eris";
+import { Manager } from "erela.js";
+import { ApplicationCommandOptions } from "eris";
+import { Constants } from "eris";
+import { Knex } from "knex";
 
 class ConfigError {
-  readonly _tag = 'ConfigError';
+  readonly _tag = "ConfigError";
   constructor(readonly message: string) {}
 }
 
 class TokenError {
-  readonly _tag = 'TokenError';
+  readonly _tag = "TokenError";
   constructor(readonly message: string) {}
 }
 
-type BotActivityType = Exclude<Constants['ActivityTypes'][keyof Constants['ActivityTypes']], 4>;
-
+type BotActivityType = Exclude<
+  Constants["ActivityTypes"][keyof Constants["ActivityTypes"]],
+  4
+>;
 
 export interface FeatureFlags {
   useDiscordJS?: boolean;
   disabledCommands: string[];
   betaCommands: string[];
-  useDatabase: 'sqlite' | 'postgres' | 'none';
+  useDatabase: "sqlite" | "postgres" | "none";
 }
 
 export interface UniversalClient {
@@ -73,16 +72,18 @@ type HarmonixOptions = {
     name?: string;
     type?: BotActivityType;
   };
-  status?: 'online' | 'idle' | 'dnd' | 'invisible';
+  status?: "online" | "idle" | "dnd" | "invisible";
 };
 
-type CustomApplicationCommandOptions = Omit<ApplicationCommandOptions, 'choices'> & {
+type CustomApplicationCommandOptions = Omit<
+  ApplicationCommandOptions,
+  "choices"
+> & {
   choices?: { name: string; value: string | number }[] | undefined;
   required?: boolean;
 };
 
 type HarmonixCommand = {
-  
   name: string;
   description: string;
   aliases?: string[];
@@ -94,7 +95,11 @@ type HarmonixCommand = {
   permissions?: string[];
   intervalLimit?: { minute: number; hour: number; day: number };
   beta?: boolean;
-  execute: (harmonix: Harmonix, msg: Message<TextableChannel> | Eris.CommandInteraction, args: string[] | Record<string, any>) => Promise<void>;
+  execute: (
+    harmonix: Harmonix,
+    msg: Message<TextableChannel> | Eris.CommandInteraction,
+    args: string[] | Record<string, any>,
+  ) => Promise<void>;
 };
 
 type HarmonixEvent = {
@@ -105,13 +110,13 @@ type HarmonixEvent = {
 };
 
 type Harmonix = {
-    client: Eris.Client;
-    options: HarmonixOptions;
-    commands: Collection<any>;
-    slashCommands: Collection<any>; // Add this line
-    events: Collection<any>;
-    startTime: Date;
-    manager: Manager;
+  client: Eris.Client;
+  options: HarmonixOptions;
+  commands: Collection<any>;
+  slashCommands: Collection<any>; // Add this line
+  events: Collection<any>;
+  startTime: Date;
+  manager: Manager;
 };
 export {
   ConfigError,
@@ -120,5 +125,6 @@ export {
   HarmonixCommand,
   HarmonixEvent,
   BotActivityType,
-  Harmonix, CustomApplicationCommandOptions
+  Harmonix,
+  CustomApplicationCommandOptions,
 };

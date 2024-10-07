@@ -1,6 +1,6 @@
-import { Effect } from 'effect';
-import { HarmonixOptions, Harmonix } from '../types/harmonixtypes';
-import Eris from 'eris';
+import { Effect } from "effect";
+import { HarmonixOptions, Harmonix } from "../types/harmonixtypes";
+import Eris from "eris";
 
 export const ClientTemplate = {
   define: (options: HarmonixOptions) => ({
@@ -19,7 +19,7 @@ export const ClientTemplate = {
     build: Effect.gen(function* (_) {
       const client = new Eris.Client(options.token, {
         intents: options.intents || [],
-        restMode: true
+        restMode: true,
       });
 
       const harmonix: Harmonix = {
@@ -29,10 +29,10 @@ export const ClientTemplate = {
         slashCommands: new Eris.Collection(),
         events: new Eris.Collection(),
         startTime: new Date(),
-        manager: {} as any // Manager initialization is deferred
+        manager: {} as any, // Manager initialization is deferred
       };
 
       return harmonix;
-    })
-  })
+    }),
+  }),
 };
