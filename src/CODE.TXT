@@ -1,0 +1,521 @@
+import DiscordBM
+
+let bot = await BotGatewayManager(
+    token: <#Your Bot Token#>,
+    presence: .init( /// Set up bot's initial presence
+        /// Will show up as "Playing Fortnite"
+        activities: [.init(name: "Fortnite", type: .game)], 
+        status: .online,
+        afk: false
+    ),
+    /// Add all the intents you want
+    /// You can also use `Gateway.Intent.unprivileged` or `Gateway.Intent.allCases`
+    intents: [.guildMessages, .messageContent]
+) 
+@main
+struct EntryPoint {
+    static func main() async throws {
+        /// Make an instance like above
+        let bot: BotGatewayManager = <#GatewayManager You Made In Previous Steps#>
+
+        /// You can also wrap this task-group in the `run()` function of a `Service`, if you're using `ServiceLifecycle`:
+        /// https://swiftpackageindex.com/swift-server/swift-service-lifecycle/main/documentation/servicelifecycle
+        await withTaskGroup(of: Void.self) { taskGroup in
+            taskGroup.addTask {
+                await bot.connect()
+            }
+
+            taskGroup.addTask {
+                /// Handle each event in the `bot.events` async stream
+                /// This stream will never end, therefore preventing your executable from exiting
+                for await event in await bot.events {
+                    EventHandler(event: event, client: bot.client).handle()
+                }
+            }
+        }
+    }
+}
+
+/// To keep things cleaner, use a type conforming to 
+/// `GatewayEventHandler` to handle your Gateway events.
+struct EventHandler: GatewayEventHandler {
+    let event: Gateway.Event
+    let client: any DiscordClient
+
+    /// Each Gateway payload has its own function. 
+    /// See `GatewayEventHandler` for the full list.
+    /// This function will only be called upon receiving `MESSAGE_CREATE` events.
+    func onMessageCreate(_ payload: Gateway.MessageCreate) async throws {
+        print("NEW MESSAGE!", payload)
+
+        /// Use `client` to send requests to Discord
+        let response = try await client.createMessage(
+            channelId: payload.channel_id,
+            payload: .init(content: "Got a message: '\(payload.content)'")
+        )
+            
+        /// Easily decode the response to the correct type
+        /// `message` will be of type `DiscordChannel.Message`.
+        let message = try response.decode()
+    }
+}
+
+import DiscordKitBot
+
+let bot = Client(intents: .unprivileged)
+
+// Guild to register commands in. If the COMMAND_GUILD_ID environment variable is set, commands are scoped
+// to that server and update instantly, useful for debugging. Otherwise, they are registered globally.
+let commandGuildID = ProcessInfo.processInfo.environment["COMMAND_GUILD_ID"]
+
+bot.ready.listen {
+    print("Logged in as \(bot.user!.username)#\(bot.user!.discriminator)!")
+
+    try? await bot.registerApplicationCommands(guild: commandGuildID) {
+        NewAppCommand("ping", description: "Ping me!") { interaction in
+            try? await interaction.reply("Pong!")
+        }
+    }
+}
+
+bot.login() // Reads the bot token from the DISCORD_TOKEN environment variable and logs in with the token
+
+// Run the main RunLoop to prevent the program from exiting
+RunLoop.main.run()
+
+
+also look at below code
+import { useMutation } from "@tanstack/react-query";
+import { modifyGuild, modifyGuildSchema } from "@discordkit/client";
+
+export const RenameGuild = ({ guild }) => {
+  const [name, setName] = useState(guild.name)
+  const { isLoading, isError, data, error } = useMutation({
+    mutationFn: modifyGuild,
+    onMutate: (variables) => {
+      // Will throw if invalid input is given
+      modifyGuildSchema.parse(variables)
+    }
+  });
+
+  const onSubmit = (e) => {
+    e.preventDefault()
+    mutation.mutate({ guild: guild.id, body: { name } })
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      {mutation.error && (
+        <h5 onClick={() => mutation.reset()}>{mutation.error}</h5>
+      )}
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <br />
+      <button type="submit">Rename Guild</button>
+    </form>
+  )
+};
+module Button = { @react.component let make = (~count) => { let times = switch count { | 1 => "once" | 2 => "twice" | n => n->Int.toString ++ " times" } let text = `Click me ${times}` <button> {text->React.string} </button> } }
+also look at 
+private static DiscordSocketClient _client; public static async Task Main() { _client = new DiscordSocketClient(); _client.Log += Log; // You can assign your bot token to a string, and pass that in to connect. // This is, however, insecure, particularly if you plan to have your code hosted in a public repository. var token = "token"; // Some alternative options would be to keep your token in an Environment Variable or a standalone file. // var token = Environment.GetEnvironmentVariable("NameOfYourEnvironmentVariable"); // var token = File.ReadAllText("token.txt"); // var token = JsonConvert.DeserializeObject<AConfigurationClass>(File.ReadAllText("config.json")).Token; await _client.LoginAsync(TokenType.Bot, token); await _client.StartAsync(); // Block this task until the program is closed. await Task.Delay(-1); }
+
+and this code sample
+extern crate discord;
+
+use discord::model::{ChannelType, Event};
+use discord::{ChannelRef, Discord, State};
+use std::env;
+
+fn main() {
+	// Log in to Discord using a bot token from the environment
+	let discord = Discord::from_bot_token(&env::var("DISCORD_TOKEN").expect("Expected token"))
+		.expect("login failed");
+
+	// Establish the websocket connection
+	let (mut connection, ready) = discord.connect().expect("connect failed");
+	let mut state = State::new(ready);
+	let channel_count: usize = state
+		.servers()
+		.iter()
+		.map(|srv| {
+			srv.channels
+				.iter()
+				.filter(|chan| chan.kind == ChannelType::Text)
+				.count()
+		})
+		.fold(0, |v, s| v + s);
+	println!(
+		"[Ready] {} logging {} servers with {} text channels",
+		state.user().username,
+		state.servers().len(),
+		channel_count
+	);
+
+	loop {
+		// Receive an event and update the state with it
+		let event = match connection.recv_event() {
+			Ok(event) => event,
+			Err(discord::Error::Closed(code, body)) => {
+				println!("[Error] Connection closed with status {:?}: {}", code, body);
+				break;
+			}
+			Err(err) => {
+				println!("[Warning] Receive error: {:?}", err);
+				continue;
+			}
+		};
+		state.update(&event);
+
+		// Log messages
+		match event {
+			Event::MessageCreate(message) => match state.find_channel(message.channel_id) {
+				Some(ChannelRef::Public(server, channel)) => {
+					println!(
+						"[{} #{}] {}: {}",
+						server.name, channel.name, message.author.name, message.content
+					);
+				}
+				Some(ChannelRef::Group(group)) => {
+					println!(
+						"[Group {}] {}: {}",
+						group.name(),
+						message.author.name,
+						message.content
+					);
+				}
+				Some(ChannelRef::Private(channel)) => {
+					if message.author.name == channel.recipient.name {
+						println!("[Private] {}: {}", message.author.name, message.content);
+					} else {
+						println!(
+							"[Private] To {}: {}",
+							channel.recipient.name, message.content
+						);
+					}
+				}
+				None => println!(
+					"[Unknown Channel] {}: {}",
+					message.author.name, message.content
+				),
+			},
+			Event::Unknown(name, data) => {
+				// log unknown event types for later study
+				println!("[Unknown Event] {}: {:?}", name, data);
+			}
+			_ => {} // discard other known events
+		}
+	}
+}
+# Import Discord.jl.
+using Discord
+# Create a client.
+c = Client("token"; presence=(game=(name="with Discord.jl", type=AT_GAME),))
+
+# Create a handler for the MessageCreate event.
+function handler(c::Client, e::MessageCreate)
+    # Display the message contents.
+    println("Received message: $(e.message.content)")
+    # Add a reaction to the message.
+    create(c, Reaction, e.message, '👍')
+end
+
+# Add the handler.
+add_handler!(c, MessageCreate, handler)
+# Log in to the Discord gateway.
+open(c)
+# Wait for the client to disconnect.
+wait(c)
+
+﻿//
+//  SPDX-FileName: Program.cs
+//  SPDX-FileCopyrightText: Copyright (c) Jarl Gullberg
+//  SPDX-License-Identifier: MIT
+//
+
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Remora.Commands.Extensions;
+using Remora.Discord.API;
+using Remora.Discord.API.Abstractions.Gateway.Commands;
+using Remora.Discord.Commands.Extensions;
+using Remora.Discord.Commands.Services;
+using Remora.Discord.Gateway;
+using Remora.Discord.Hosting.Extensions;
+using Remora.Discord.Samples.SlashCommands.Commands;
+using Remora.Rest.Core;
+
+namespace Remora.Discord.Samples.SlashCommands;
+
+/// <summary>
+/// Represents the main class of the program.
+/// </summary>
+public class Program
+{
+    /// <summary>
+    /// The main entrypoint of the program.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous program execution.</returns>
+    public static async Task Main(string[] args)
+    {
+        var host = CreateHostBuilder(args)
+            .UseConsoleLifetime()
+            .Build();
+
+        var services = host.Services;
+        var log = services.GetRequiredService<ILogger<Program>>();
+        var configuration = services.GetRequiredService<IConfiguration>();
+
+        Snowflake? debugServer = null;
+
+        #if DEBUG
+        var debugServerString = configuration.GetValue<string?>("REMORA_DEBUG_SERVER");
+        if (debugServerString is not null)
+        {
+            if (!DiscordSnowflake.TryParse(debugServerString, out debugServer))
+            {
+                log.LogWarning("Failed to parse debug server from environment");
+            }
+        }
+        #endif
+
+        var slashService = services.GetRequiredService<SlashService>();
+        var updateSlash = await slashService.UpdateSlashCommandsAsync(debugServer);
+        if (!updateSlash.IsSuccess)
+        {
+            log.LogWarning("Failed to update slash commands: {Reason}", updateSlash.Error.Message);
+        }
+
+        await host.RunAsync();
+    }
+
+    /// <summary>
+    /// Creates a generic application host builder.
+    /// </summary>
+    /// <param name="args">The arguments passed to the application.</param>
+    /// <returns>The host builder.</returns>
+    private static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
+        .AddDiscordService
+        (
+            services =>
+            {
+                var configuration = services.GetRequiredService<IConfiguration>();
+
+                return configuration.GetValue<string?>("REMORA_BOT_TOKEN") ??
+                       throw new InvalidOperationException
+                       (
+                           "No bot token has been provided. Set the REMORA_BOT_TOKEN environment variable to a " +
+                           "valid token."
+                       );
+            }
+        )
+        .ConfigureServices
+        (
+            (_, services) =>
+            {
+                services.Configure<DiscordGatewayClientOptions>(g => g.Intents |= GatewayIntents.MessageContents);
+                services
+                    .AddDiscordCommands(true)
+                    .AddCommandTree()
+                        .WithCommandGroup<HttpCatCommands>();
+            }
+        )
+        .ConfigureLogging
+        (
+            c => c
+                .AddConsole()
+                .AddFilter("System.Net.Http.HttpClient.*.LogicalHandler", LogLevel.Warning)
+                .AddFilter("System.Net.Http.HttpClient.*.ClientHandler", LogLevel.Warning)
+        );
+}
+
+import 'package:nyxx/nyxx.dart';
+
+void main() async {
+  final client = await Nyxx.connectGateway('<TOKEN>', GatewayIntents.allUnprivileged);
+
+  final botUser = await client.users.fetchCurrentUser();
+
+  client.onMessageCreate.listen((event) async {
+    if (event.mentions.contains(botUser)) {
+      await event.message.channel.sendMessage(MessageBuilder(
+        content: 'You mentioned me!',
+        replyId: event.message.id,
+      ));
+    }
+  });
+}
+
+use std::{env, error::Error, sync::Arc};
+use twilight_cache_inmemory::{DefaultInMemoryCache, ResourceType};
+use twilight_gateway::{Event, EventTypeFlags, Intents, Shard, ShardId, StreamExt as _};
+use twilight_http::Client as HttpClient;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Initialize the tracing subscriber.
+    tracing_subscriber::fmt::init();
+
+    let token = env::var("DISCORD_TOKEN")?;
+
+    // Use intents to only receive guild message events.
+    let mut shard = Shard::new(
+        ShardId::ONE,
+        token.clone(),
+        Intents::GUILD_MESSAGES | Intents::MESSAGE_CONTENT,
+    );
+
+    // HTTP is separate from the gateway, so create a new client.
+    let http = Arc::new(HttpClient::new(token));
+
+    // Since we only care about new messages, make the cache only
+    // cache new messages.
+    let cache = DefaultInMemoryCache::builder()
+        .resource_types(ResourceType::MESSAGE)
+        .build();
+
+    // Process each event as they come in.
+    while let Some(item) = shard.next_event(EventTypeFlags::all()).await {
+        let Ok(event) = item else {
+            tracing::warn!(source = ?item.unwrap_err(), "error receiving event");
+
+            continue;
+        };
+
+        // Update the cache with the event.
+        cache.update(&event);
+
+        tokio::spawn(handle_event(event, Arc::clone(&http)));
+    }
+
+    Ok(())
+}
+
+async fn handle_event(
+    event: Event,
+    http: Arc<HttpClient>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    match event {
+        Event::MessageCreate(msg) if msg.content == "!ping" => {
+            http.create_message(msg.channel_id)
+                .content("Pong!")
+                .await?;
+        }
+        // Other events here...
+        _ => {}
+    }
+
+    Ok(())
+}
+
+import DiscordBM
+
+let bot = await BotGatewayManager(
+    token: <#Your Bot Token#>,
+    presence: .init( /// Set up bot's initial presence
+        /// Will show up as "Playing Fortnite"
+        activities: [.init(name: "Fortnite", type: .game)], 
+        status: .online,
+        afk: false
+    ),
+    /// Add all the intents you want
+    /// You can also use `Gateway.Intent.unprivileged` or `Gateway.Intent.allCases`
+    intents: [.guildMessages, .messageContent]
+)
+@main
+struct EntryPoint {
+    static func main() async throws {
+        /// Make an instance like above
+        let bot: BotGatewayManager = <#GatewayManager You Made In Previous Steps#>
+
+        /// You can also wrap this task-group in the `run()` function of a `Service`, if you're using `ServiceLifecycle`:
+        /// https://swiftpackageindex.com/swift-server/swift-service-lifecycle/main/documentation/servicelifecycle
+        await withTaskGroup(of: Void.self) { taskGroup in
+            taskGroup.addTask {
+                await bot.connect()
+            }
+
+            taskGroup.addTask {
+                /// Handle each event in the `bot.events` async stream
+                /// This stream will never end, therefore preventing your executable from exiting
+                for await event in await bot.events {
+                    EventHandler(event: event, client: bot.client).handle()
+                }
+            }
+        }
+    }
+}
+
+/// To keep things cleaner, use a type conforming to 
+/// `GatewayEventHandler` to handle your Gateway events.
+struct EventHandler: GatewayEventHandler {
+    let event: Gateway.Event
+    let client: any DiscordClient
+
+    /// Each Gateway payload has its own function. 
+    /// See `GatewayEventHandler` for the full list.
+    /// This function will only be called upon receiving `MESSAGE_CREATE` events.
+    func onMessageCreate(_ payload: Gateway.MessageCreate) async throws {
+        print("NEW MESSAGE!", payload)
+
+        /// Use `client` to send requests to Discord
+        let response = try await client.createMessage(
+            channelId: payload.channel_id,
+            payload: .init(content: "Got a message: '\(payload.content)'")
+        )
+            
+        /// Easily decode the response to the correct type
+        /// `message` will be of type `DiscordChannel.Message`.
+        let message = try response.decode()
+    }
+}
+
+package main
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/gateway"
+)
+
+func main() {
+	client, err := disgo.New("token",
+		// set gateway options
+		bot.WithGatewayConfigOpts(
+			// set enabled intents
+			gateway.WithIntents(
+				gateway.IntentGuilds,
+				gateway.IntentGuildMessages,
+				gateway.IntentDirectMessages,
+			),
+		),
+		// add event listeners
+		bot.WithEventListenerFunc(func(e *events.MessageCreate) {
+			// event code here
+		}),
+	)
+	if err != nil {
+		panic(err)
+	}
+	// connect to the gateway
+	if err = client.OpenGateway(context.TODO()); err != nil {
+		panic(err)
+	}
+
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
+	<-s
+}

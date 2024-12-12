@@ -1,0 +1,19 @@
+{
+  "installation": {
+    "version": "20.1.2",
+    "plugins": {
+      "@nx/next": "20.1.2"
+    }
+  },
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "test": {
+      "cache": true
+    },
+    "build": {
+      "cache": true
+    }
+  },
+  "defaultBase": "master",
+  "nxCloudId": "673f4949a870df2f07d32438"
+}
